@@ -1,0 +1,34 @@
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# testing
+/coverage
+/playwright-report
+/test-results
+
+# misc
+.DS_Store
+*.pem
+npm-debug.log*
+
+# env files
+.env
+.env.local
+.env.*.local
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# supabase
+supabase/.temp
+
+# claude code (config local de la máquina, no compartido en el repo)
+.claude/settings.local.json
