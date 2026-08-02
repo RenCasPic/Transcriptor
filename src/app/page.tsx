@@ -18,7 +18,7 @@ const STEPS = [
   {
     icon: Mic,
     title: '1. Sube tu transcripción',
-    description: 'Pega el texto, sube un archivo TXT, SRT o VTT, o prueba con un ejemplo ya listo.',
+    description: 'Pega el texto, sube un archivo TXT, SRT, VTT, o formatos de video como MP4 o MOV, o prueba con un ejemplo ya listo.',
   },
   {
     icon: Sparkles,
