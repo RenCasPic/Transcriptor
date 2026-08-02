@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { LoginForm } from './login-form';
 
@@ -11,7 +12,9 @@ export default function LoginPage() {
         <h1 className="text-2xl font-semibold tracking-tight">Inicia sesión</h1>
         <p className="text-sm text-muted-foreground">Accede a tus proyectos y artículos</p>
       </div>
-      <LoginForm />
+      <Suspense fallback={null}>
+        <LoginForm />
+      </Suspense>
       <div className="space-y-2 text-center text-sm">
         <Link href="/forgot-password" className="text-muted-foreground hover:text-foreground hover:underline">
           ¿Olvidaste tu contraseña?

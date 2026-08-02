@@ -36,7 +36,7 @@ function extractSpeaker(rawText: string): { speaker: string | null; text: string
 export function normalizePlainText(raw: string): NormalizedTranscript {
   const paragraphs = raw
     .replace(/\r\n/g, '\n')
-    .split(/\n{1,}/)
+    .split(/\n{2,}/)
     .map((p) => p.trim())
     .filter(Boolean);
 

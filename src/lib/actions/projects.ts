@@ -13,6 +13,7 @@ import {
   type ImportTranscriptInput,
 } from '@/lib/validations/project';
 import { normalizeTranscript } from '@/lib/content/normalize';
+import type { Database } from '@/lib/types/database';
 import { getCurrentWorkspace } from '@/lib/data/workspace';
 
 const MAX_TRANSCRIPT_LENGTH = 200_000;
@@ -72,7 +73,7 @@ export async function updateProjectAction(
   }
 
   const supabase = await createClient();
-  const update: Record<string, unknown> = {};
+  const update: Database['public']['Tables']['projects']['Update'] = {};
   if (parsed.data.name !== undefined) update.name = parsed.data.name;
   if (parsed.data.provisionalTitle !== undefined) update.provisional_title = parsed.data.provisionalTitle || null;
   if (parsed.data.contentType !== undefined) update.content_type = parsed.data.contentType;

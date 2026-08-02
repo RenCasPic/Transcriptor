@@ -3,6 +3,11 @@
 // con `supabase gen types typescript`, este archivo puede ser reemplazado sin romper
 // el resto de la aplicación porque solo se consume a través de los alias de dominio
 // definidos en `src/lib/types/domain.ts`.
+//
+// El campo `Relationships: []` en cada tabla y las claves `Views`/`Functions`/`Enums`/
+// `CompositeTypes` (aunque vacías) son requeridos por el tipo `GenericSchema` de
+// @supabase/postgrest-js: sin ellos, TypeScript no puede resolver `Database['public']`
+// como un `GenericSchema` válido y todas las filas colapsan a `never`.
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
@@ -57,6 +62,9 @@ export type IntegrationProvider = 'wordpress' | 'webflow' | 'ghost' | 'youtube';
 export type IntegrationStatus = 'disconnected' | 'connected' | 'error';
 
 export interface Database {
+  __InternalSupabase: {
+    PostgrestVersion: '12';
+  };
   public: {
     Tables: {
       profiles: {
@@ -75,6 +83,7 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>;
+        Relationships: [];
       };
       workspaces: {
         Row: {
@@ -94,6 +103,7 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<Database['public']['Tables']['workspaces']['Insert']>;
+        Relationships: [];
       };
       workspace_members: {
         Row: {
@@ -111,6 +121,7 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['workspace_members']['Insert']>;
+        Relationships: [];
       };
       projects: {
         Row: {
@@ -148,6 +159,7 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<Database['public']['Tables']['projects']['Insert']>;
+        Relationships: [];
       };
       media_sources: {
         Row: {
@@ -173,6 +185,7 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['media_sources']['Insert']>;
+        Relationships: [];
       };
       transcripts: {
         Row: {
@@ -196,6 +209,7 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<Database['public']['Tables']['transcripts']['Insert']>;
+        Relationships: [];
       };
       transcript_segments: {
         Row: {
@@ -221,6 +235,7 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['transcript_segments']['Insert']>;
+        Relationships: [];
       };
       content_documents: {
         Row: {
@@ -254,6 +269,7 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<Database['public']['Tables']['content_documents']['Insert']>;
+        Relationships: [];
       };
       document_versions: {
         Row: {
@@ -279,6 +295,7 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['document_versions']['Insert']>;
+        Relationships: [];
       };
       content_source_links: {
         Row: {
@@ -298,6 +315,7 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['content_source_links']['Insert']>;
+        Relationships: [];
       };
       content_warnings: {
         Row: {
@@ -325,6 +343,7 @@ export interface Database {
           resolved_by?: string | null;
         };
         Update: Partial<Database['public']['Tables']['content_warnings']['Insert']>;
+        Relationships: [];
       };
       seo_metadata: {
         Row: {
@@ -350,6 +369,7 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<Database['public']['Tables']['seo_metadata']['Insert']>;
+        Relationships: [];
       };
       generation_jobs: {
         Row: {
@@ -379,6 +399,7 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['generation_jobs']['Insert']>;
+        Relationships: [];
       };
       integrations: {
         Row: {
@@ -402,7 +423,12 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<Database['public']['Tables']['integrations']['Insert']>;
+        Relationships: [];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 }

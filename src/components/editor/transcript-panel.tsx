@@ -98,7 +98,9 @@ export function TranscriptPanel({
           );
         })}
         {filtered.length === 0 && (
-          <p className="p-4 text-center text-xs text-muted-foreground">Sin resultados para "{search}"</p>
+          <p className="p-4 text-center text-xs text-muted-foreground">
+            Sin resultados para &quot;{search}&quot;
+          </p>
         )}
       </div>
     </div>
