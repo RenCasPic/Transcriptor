@@ -17,54 +17,46 @@ import { Badge } from '@/components/ui/badge';
 const STEPS = [
   {
     icon: Mic,
-    title: '1. Añade tu contenido',
-    description:
-      'Pega una transcripción, sube un archivo TXT, SRT o VTT, o utiliza una transcripción de demostración para explorar la app.',
+    title: '1. Sube tu transcripción',
+    description: 'Pega el texto, sube un archivo TXT, SRT o VTT, o prueba con un ejemplo ya listo.',
   },
   {
     icon: Sparkles,
-    title: '2. Generación automática',
-    description:
-      'La IA reorganiza la transcripción en un artículo con título, estructura de encabezados, conclusión, preguntas frecuentes y SEO.',
+    title: '2. La IA arma tu artículo',
+    description: 'En segundos tienes un artículo con título, secciones y preguntas frecuentes.',
   },
   {
     icon: FileText,
-    title: '3. Edita con precisión',
-    description:
-      'Ajusta el resultado en un editor enriquecido, selecciona texto y pide reescribir, acortar, expandir o mejorar para SEO.',
+    title: '3. Edítalo a tu gusto',
+    description: 'Cambia lo que quieras, ajusta el tono o pídele a la IA que reescriba una parte.',
   },
   {
     icon: ShieldCheck,
-    title: '4. Verifica y publica',
-    description:
-      'Revisa alertas de cifras, nombres y fechas, relaciona cada sección con su fuente y exporta cuando esté listo.',
+    title: '4. Revisa y publícalo',
+    description: 'Verifica que todo esté correcto y exporta tu artículo en el formato que necesites.',
   },
 ];
 
 const BENEFITS = [
   {
     icon: Quote,
-    title: 'Fiel a la fuente',
-    description:
-      'El artículo se construye a partir de tu transcripción: no se inventan cifras, nombres, fechas ni testimonios.',
+    title: 'Fiel a lo que dijiste',
+    description: 'El artículo se arma con tu contenido real, sin inventar cifras, nombres ni datos.',
   },
   {
     icon: SearchCheck,
-    title: 'Cada afirmación es rastreable',
-    description:
-      'Cada bloque del artículo puede vincularse al segmento exacto de la transcripción que lo respalda.',
+    title: 'Todo tiene su fuente',
+    description: 'Puedes rastrear cualquier parte del artículo hasta el fragmento original.',
   },
   {
     icon: History,
-    title: 'Historial de versiones',
-    description:
-      'Cada generación, reescritura o restauración queda registrada para que nunca pierdas una versión anterior.',
+    title: 'Nunca pierdes nada',
+    description: 'Guardamos cada versión para que puedas volver atrás cuando quieras.',
   },
   {
     icon: ListChecks,
-    title: 'SEO desde el primer borrador',
-    description:
-      'Título, slug, meta description y checklist SEO se generan junto al artículo, no como un paso aparte.',
+    title: 'Listo para buscadores',
+    description: 'Título, resumen y palabras clave se generan junto con tu artículo.',
   },
 ];
 
@@ -97,16 +89,14 @@ export default function LandingPage() {
         <section className="container flex flex-col items-center gap-6 py-20 text-center md:py-28">
           <Badge variant="secondary" className="gap-1.5">
             <Sparkles className="h-3 w-3" />
-            De video a artículo, sin perder fidelidad
+            Listo en minutos, sin complicaciones
           </Badge>
           <h1 className="max-w-3xl text-4xl font-bold tracking-tight md:text-6xl">
-            Convierte contenido audiovisual en artículos{' '}
-            <span className="text-primary">editables, verificables</span> y listos para publicar
+            Convierte tus videos y podcasts en <span className="text-primary">artículos</span>
           </h1>
           <p className="max-w-2xl text-lg text-muted-foreground">
-            Pega la transcripción de tu video o podcast, configura audiencia y tono, y obtén un
-            borrador de blog estructurado que puedes editar, verificar contra la fuente original y
-            exportar en minutos.
+            Transforma una transcripción en un artículo bien organizado en pocos minutos. Edita el
+            resultado, ajusta el tono y publícalo cuando esté listo.
           </p>
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button size="lg" asChild>
@@ -125,10 +115,7 @@ export default function LandingPage() {
           <div className="container">
             <div className="mx-auto mb-12 max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight">Cómo funciona</h2>
-              <p className="mt-3 text-muted-foreground">
-                Un flujo pensado para llevar tu contenido audiovisual a un artículo publicable sin
-                perder el control editorial.
-              </p>
+              <p className="mt-3 text-muted-foreground">Del video a la página web, en cuatro pasos.</p>
             </div>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {STEPS.map((step) => (
@@ -153,8 +140,7 @@ export default function LandingPage() {
             <div className="mx-auto mb-12 max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight">Por qué Transcriptor</h2>
               <p className="mt-3 text-muted-foreground">
-                Generar contenido automáticamente no debería significar perder el control sobre lo
-                que se publica.
+                Rápido no tiene por qué significar perder el control de lo que publicas.
               </p>
             </div>
             <div className="grid gap-6 sm:grid-cols-2">
@@ -175,12 +161,9 @@ export default function LandingPage() {
 
         <section className="border-t bg-primary text-primary-foreground">
           <div className="container flex flex-col items-center gap-6 py-16 text-center">
-            <h2 className="text-3xl font-bold tracking-tight">
-              Convierte tu próxima transcripción en un artículo hoy
-            </h2>
+            <h2 className="text-3xl font-bold tracking-tight">Prueba tu primer artículo hoy</h2>
             <p className="max-w-xl text-primary-foreground/80">
-              Crea tu cuenta, pega una transcripción y prueba el modo demo sin necesidad de
-              configurar ninguna clave de IA.
+              Crea tu cuenta y pruébalo gratis con un ejemplo, sin configurar nada.
             </p>
             <Button size="lg" variant="secondary" asChild>
               <Link href="/register">
