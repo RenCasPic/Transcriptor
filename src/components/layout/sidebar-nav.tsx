@@ -15,7 +15,7 @@ export function SidebarNav({ workspaceName }: { workspaceName: string }) {
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
           <Sparkles className="h-4 w-4" />
         </div>
-        Transcriptor
+        TalkToPost
       </Link>
 
       <div className="rounded-lg bg-muted/60 px-3 py-2">

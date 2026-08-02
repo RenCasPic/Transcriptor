@@ -1,6 +1,6 @@
 {
-  "name": "Transcriptor",
-  "short_name": "Transcriptor",
+  "name": "TalkToPost",
+  "short_name": "TalkToPost",
   "description": "Convierte videos y transcripciones en artículos editables y listos para publicar.",
   "start_url": "/dashboard",
   "display": "standalone",

@@ -4,8 +4,8 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Transcriptor — De video a artículo',
-    template: '%s · Transcriptor',
+    default: 'TalkToPost — De video a artículo',
+    template: '%s · TalkToPost',
   },
   description:
     'Convierte transcripciones de video y audio en artículos de blog editables, verificables y listos para publicar.',

@@ -69,7 +69,7 @@ export default function LandingPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Sparkles className="h-4 w-4" />
             </div>
-            Transcriptor
+            TalkToPost
           </Link>
           <nav className="flex items-center gap-2">
             <Button variant="ghost" asChild>
@@ -138,7 +138,7 @@ export default function LandingPage() {
         <section className="py-20">
           <div className="container">
             <div className="mx-auto mb-12 max-w-2xl text-center">
-              <h2 className="text-3xl font-bold tracking-tight">Por qué Transcriptor</h2>
+              <h2 className="text-3xl font-bold tracking-tight">Por qué TalkToPost</h2>
               <p className="mt-3 text-muted-foreground">
                 Rápido no tiene por qué significar perder el control de lo que publicas.
               </p>
@@ -177,7 +177,7 @@ export default function LandingPage() {
 
       <footer className="border-t py-8">
         <div className="container flex flex-col items-center justify-between gap-4 text-sm text-muted-foreground sm:flex-row">
-          <p>© {new Date().getFullYear()} Transcriptor. Todos los derechos reservados.</p>
+          <p>© {new Date().getFullYear()} TalkToPost. Todos los derechos reservados.</p>
           <div className="flex gap-4">
             <Link href="/login" className="hover:text-foreground">
               Iniciar sesión

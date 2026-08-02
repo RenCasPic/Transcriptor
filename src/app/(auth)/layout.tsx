@@ -8,7 +8,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
           <Sparkles className="h-4 w-4" />
         </div>
-        Transcriptor
+        TalkToPost
       </Link>
       <div className="w-full max-w-md rounded-xl border bg-background p-8 shadow-sm">{children}</div>
     </div>
