@@ -9,6 +9,19 @@ function isPublicPath(pathname: string) {
   return pathname.startsWith('/_next') || pathname.startsWith('/api/public');
 }
 
+/**
+ * Las invocaciones de Server Actions son POST a la misma URL de la página,
+ * identificadas por el header `Next-Action`. Si el middleware responde con un
+ * redirect a una de estas peticiones, Next.js no puede interpretar la
+ * respuesta ("An unexpected response was received from the server") en vez de
+ * mostrar un error de sesión manejable. Las Server Actions ya validan el
+ * usuario internamente y devuelven un `ActionResult` de error, así que el
+ * middleware debe dejarlas pasar en vez de redirigir.
+ */
+function isServerActionRequest(request: NextRequest) {
+  return request.headers.has('next-action');
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -36,6 +49,10 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
+
+  if (isServerActionRequest(request)) {
+    return supabaseResponse;
+  }
 
   if (!user && !isPublicPath(pathname)) {
     const redirectUrl = new URL('/login', request.url);
