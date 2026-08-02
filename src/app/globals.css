@@ -82,6 +82,11 @@
   * {
     @apply border-border;
   }
+  html {
+    /* Tamaño base más grande: todo el texto de la app usa unidades rem,
+       así que este único ajuste escala las letras de toda la página. */
+    font-size: 112.5%;
+  }
   body {
     @apply bg-background text-foreground;
   }
