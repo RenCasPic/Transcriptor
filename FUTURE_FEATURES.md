@@ -2,15 +2,14 @@
 
 Marcadas como "Próximamente" en la interfaz actual. La arquitectura ya las contempla en el modelo de datos y en las abstracciones; esto describe qué falta para activarlas.
 
-## Subida de audio/video
+## Subida de audio/video (implementado)
 
-- **Modelo de datos**: `media_sources.source_type` ya acepta `'audio'` y `'video'`; el bucket `project-sources` en Storage ya permite los MIME types correspondientes (`supabase/migrations/0015_storage.sql`).
-- **Falta**: UI de subida con progreso, un `TranscriptionProvider` real (ver siguiente punto) y un `generation_jobs.job_type = 'transcribe'` que procese el archivo en segundo plano.
+Ya implementado: pestaña "Video o audio" en la página de proyecto, sube el archivo a Storage y lo transcribe con `WhisperTranscriptionProvider` (`src/lib/ai/transcription/whisper-provider.ts`) a través de la Server Action `transcribeMediaAction` (`src/lib/actions/transcription.ts`). Limitaciones conocidas de esta primera versión:
 
-## Proveedor de transcripción real (Whisper u otro)
-
-- **Ya existe**: la interfaz `TranscriptionProvider` (`src/lib/ai/provider.ts`) y la fábrica `getTranscriptionProvider()` (`src/lib/ai/transcription/index.ts`), hoy solo con `DemoTranscriptionProvider`.
-- **Falta**: implementar una clase que llame a la API de Whisper (u otro proveedor) recibiendo una URL firmada del archivo en Storage, mapeando su respuesta a `TranscriptResult`. No requiere cambios en el resto de la app: los proyectos ya consumen segmentos con `startSeconds`/`endSeconds`/`confidence`.
+- **25 MB por archivo** (límite duro de la API de Whisper). No hay compresión ni troceo del lado del servidor.
+- **Sin conversión de formato**: se envía el archivo tal cual en los formatos que Whisper acepta de forma nativa (mp4, mov, webm, mp3, wav, m4a). Un `.mov` con un códec poco común podría ser rechazado por la API.
+- **Síncrono**: la Server Action espera la respuesta completa de Whisper antes de responder: en archivos largos puede acercarse al timeout de la función serverless (ver "Procesamiento en segundo plano" más abajo).
+- **Sin extracción de audio de video**: no se separa la pista de audio antes de enviarla (requeriría ffmpeg); Whisper procesa el contenedor de video completo.
 
 ## Conexión OAuth con YouTube
 

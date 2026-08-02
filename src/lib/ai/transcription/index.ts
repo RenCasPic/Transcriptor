@@ -1,17 +1,20 @@
 import type { TranscriptionProvider } from '@/lib/ai/provider';
 import { DemoTranscriptionProvider } from './demo-provider';
+import { WhisperTranscriptionProvider } from './whisper-provider';
 
 /**
- * Fábrica del proveedor de transcripción. Hoy solo existe el modo "demo"
- * (TRANSCRIPTION_PROVIDER=demo). La interfaz ya está lista para que un futuro
- * proveedor real (p. ej. Whisper) se conecte sin cambiar el código que lo consume.
+ * Fábrica del proveedor de transcripción. Se controla con las variables de
+ * entorno TRANSCRIPTION_PROVIDER ("demo" | "whisper") y TRANSCRIPTION_API_KEY.
+ * Sin clave configurada, siempre recurre al proveedor demo para no romper el
+ * modo de exploración sin servicios externos.
  */
 export function getTranscriptionProvider(): TranscriptionProvider {
   const providerName = (process.env.TRANSCRIPTION_PROVIDER ?? 'demo').toLowerCase();
+  const apiKey = process.env.TRANSCRIPTION_API_KEY;
 
-  switch (providerName) {
-    case 'demo':
-    default:
-      return new DemoTranscriptionProvider();
+  if (providerName === 'whisper' && apiKey) {
+    return new WhisperTranscriptionProvider(apiKey);
   }
+
+  return new DemoTranscriptionProvider();
 }

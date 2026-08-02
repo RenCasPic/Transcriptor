@@ -97,6 +97,17 @@ Si `AI_PROVIDER` no es `mock` pero falta `AI_API_KEY`, la app recurre automátic
 
 Para añadir un proveedor nuevo: implementa `ContentGenerationProvider` en `src/lib/ai/providers/`, y regístralo en el switch de `src/lib/ai/providers/generic-provider.ts` (o crea una clase independiente y añade el caso en `src/lib/ai/providers/index.ts`).
 
+### Transcripción de video/audio (Whisper)
+
+Además de pegar texto o subir TXT/SRT/VTT, se puede subir un archivo de video o audio (mp4, mov, webm, mp3, wav, m4a de hasta 25 MB) para transcribirlo automáticamente:
+
+```env
+TRANSCRIPTION_PROVIDER=whisper   # demo | whisper
+TRANSCRIPTION_API_KEY=           # API key de OpenAI
+```
+
+Usa la API de Whisper de OpenAI (`whisper-1`), que **tiene costo por minuto transcrito**. Sin `TRANSCRIPTION_API_KEY`, la app usa una transcripción de demostración en su lugar.
+
 ## Modo demo (sin claves de IA)
 
 Con `AI_PROVIDER=mock` (el valor por defecto en `.env.example`) puedes recorrer todo el flujo —crear proyecto, cargar transcripción de demo, generar artículo, editar, ver alertas y fuentes, historial de versiones, exportar— sin configurar ninguna clave externa.
