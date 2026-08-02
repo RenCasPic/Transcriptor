@@ -51,7 +51,7 @@ export function ProjectCard({ project }: { project: ProjectListItem }) {
       <Card className="relative h-full transition-shadow hover:shadow-md">
         <CardContent className="flex h-full flex-col gap-3 p-5">
           <div className="flex items-start justify-between gap-2">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600">
               <FileText className="h-4 w-4" />
             </div>
             <div className="flex items-center gap-1.5">

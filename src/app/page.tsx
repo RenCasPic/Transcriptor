@@ -19,21 +19,25 @@ const STEPS = [
     icon: Mic,
     title: '1. Sube tu transcripción',
     description: 'Pega el texto, sube un archivo TXT, SRT, VTT, o formatos de video como MP4 o MOV, o prueba con un ejemplo ya listo.',
+    color: 'bg-indigo-500/10 text-indigo-600',
   },
   {
     icon: Sparkles,
     title: '2. La IA arma tu artículo',
     description: 'En segundos tienes un artículo con título, secciones y preguntas frecuentes.',
+    color: 'bg-violet-500/10 text-violet-600',
   },
   {
     icon: FileText,
     title: '3. Edítalo a tu gusto',
     description: 'Cambia lo que quieras, ajusta el tono o pídele a la IA que reescriba una parte.',
+    color: 'bg-amber-500/10 text-amber-600',
   },
   {
     icon: ShieldCheck,
     title: '4. Revisa y publícalo',
     description: 'Verifica que todo esté correcto y exporta tu artículo en el formato que necesites.',
+    color: 'bg-emerald-500/10 text-emerald-600',
   },
 ];
 
@@ -42,21 +46,25 @@ const BENEFITS = [
     icon: Quote,
     title: 'Fiel a lo que dijiste',
     description: 'El artículo se arma con tu contenido real, sin inventar cifras, nombres ni datos.',
+    color: 'bg-rose-500/10 text-rose-600',
   },
   {
     icon: SearchCheck,
     title: 'Todo tiene su fuente',
     description: 'Puedes rastrear cualquier parte del artículo hasta el fragmento original.',
+    color: 'bg-sky-500/10 text-sky-600',
   },
   {
     icon: History,
     title: 'Nunca pierdes nada',
     description: 'Guardamos cada versión para que puedas volver atrás cuando quieras.',
+    color: 'bg-emerald-500/10 text-emerald-600',
   },
   {
     icon: ListChecks,
     title: 'Listo para buscadores',
     description: 'Título, resumen y palabras clave se generan junto con tu artículo.',
+    color: 'bg-violet-500/10 text-violet-600',
   },
 ];
 
@@ -86,28 +94,36 @@ export default function LandingPage() {
       </header>
 
       <main className="flex-1">
-        <section className="container flex flex-col items-center gap-6 py-20 text-center md:py-28">
-          <Badge variant="secondary" className="gap-1.5">
-            <Sparkles className="h-3 w-3" />
-            Listo en minutos, sin complicaciones
-          </Badge>
-          <h1 className="max-w-3xl text-4xl font-bold tracking-tight md:text-6xl">
-            Convierte tus videos y podcasts en <span className="text-primary">artículos</span>
-          </h1>
-          <p className="max-w-2xl text-lg text-muted-foreground">
-            Transforma una transcripción en un artículo bien organizado en pocos minutos. Edita el
-            resultado, ajusta el tono y publícalo cuando esté listo.
-          </p>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Button size="lg" asChild>
-              <Link href="/register">
-                Empezar gratis
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link href="/login">Ya tengo cuenta</Link>
-            </Button>
+        <section className="relative overflow-hidden py-20 md:py-28">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-[-10rem] -z-10 flex justify-center blur-3xl"
+          >
+            <div className="h-[36rem] w-[64rem] rounded-full bg-gradient-to-tr from-indigo-400/30 via-violet-300/30 to-amber-300/30" />
+          </div>
+          <div className="container flex flex-col items-center gap-6 text-center">
+            <Badge variant="secondary" className="gap-1.5">
+              <Sparkles className="h-3 w-3" />
+              Listo en minutos, sin complicaciones
+            </Badge>
+            <h1 className="max-w-3xl text-4xl font-bold tracking-tight md:text-6xl">
+              Convierte tus videos y podcasts en <span className="text-primary">artículos</span>
+            </h1>
+            <p className="max-w-2xl text-lg text-muted-foreground">
+              Transforma una transcripción en un artículo bien organizado en pocos minutos. Edita el
+              resultado, ajusta el tono y publícalo cuando esté listo.
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button size="lg" asChild>
+                <Link href="/register">
+                  Empezar gratis
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild>
+                <Link href="/login">Ya tengo cuenta</Link>
+              </Button>
+            </div>
           </div>
         </section>
 
@@ -121,7 +137,7 @@ export default function LandingPage() {
               {STEPS.map((step) => (
                 <Card key={step.title}>
                   <CardHeader>
-                    <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <div className={`mb-2 flex h-10 w-10 items-center justify-center rounded-lg ${step.color}`}>
                       <step.icon className="h-5 w-5" />
                     </div>
                     <CardTitle className="text-base">{step.title}</CardTitle>
@@ -145,8 +161,8 @@ export default function LandingPage() {
             </div>
             <div className="grid gap-6 sm:grid-cols-2">
               {BENEFITS.map((benefit) => (
-                <div key={benefit.title} className="flex gap-4 rounded-xl border p-6">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <div key={benefit.title} className="flex gap-4 rounded-xl border bg-card p-6">
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${benefit.color}`}>
                     <benefit.icon className="h-5 w-5" />
                   </div>
                   <div>
