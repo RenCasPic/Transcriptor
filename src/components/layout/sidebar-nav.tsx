@@ -18,7 +18,7 @@ export function SidebarNav({ workspaceName }: { workspaceName: string }) {
         TalkToPost
       </Link>
 
-      <div className="rounded-lg bg-muted/60 px-3 py-2">
+      <div className="rounded-lg border-l-2 border-primary bg-gradient-to-br from-indigo-500/10 to-violet-500/10 px-3 py-2">
         <p className="truncate text-xs font-medium text-muted-foreground">Espacio de trabajo</p>
         <p className="truncate text-sm font-semibold">{workspaceName}</p>
       </div>

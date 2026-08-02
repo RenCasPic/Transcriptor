@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { FolderPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DashboardFilters } from '@/components/dashboard/dashboard-filters';
+import { DashboardStats } from '@/components/dashboard/dashboard-stats';
 import { ProjectList } from '@/components/dashboard/project-list';
 import { getCurrentWorkspace } from '@/lib/data/workspace';
 import { listProjects } from '@/lib/data/projects';
@@ -23,7 +24,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   }
 
   const status = (params.status as ProjectStatus | undefined) ?? 'all';
-  const projects = await listProjects(workspace.id, { search: params.q, status });
+  const [projects, allProjects] = await Promise.all([
+    listProjects(workspace.id, { search: params.q, status }),
+    listProjects(workspace.id, {}),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -41,6 +45,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           </Link>
         </Button>
       </div>
+
+      <DashboardStats projects={allProjects} />
 
       <DashboardFilters initialSearch={params.q ?? ''} initialStatus={status} />
 
