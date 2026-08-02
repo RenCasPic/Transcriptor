@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProjectStatusBadge } from '@/components/shared/status-badge';
 import { EditProjectDialog } from '@/components/projects/edit-project-dialog';
+import { DeleteProjectDialog } from '@/components/projects/delete-project-dialog';
 import { ContentSourcePanel } from '@/components/projects/content-source-panel';
 import { TranscriptPreview } from '@/components/projects/transcript-preview';
 import { GenerateArticlePanel } from '@/components/projects/generate-article-panel';
@@ -44,7 +45,10 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
             <p className="mt-1 text-sm text-muted-foreground">{project.provisional_title}</p>
           )}
         </div>
-        <EditProjectDialog project={project} />
+        <div className="flex gap-2">
+          <EditProjectDialog project={project} />
+          <DeleteProjectDialog projectId={project.id} projectName={project.name} />
+        </div>
       </div>
 
       <Card>
