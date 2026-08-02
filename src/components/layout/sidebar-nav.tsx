@@ -11,7 +11,7 @@ export function SidebarNav({ workspaceName }: { workspaceName: string }) {
 
   return (
     <div className="flex h-full flex-col gap-6 p-4">
-      <Link href="/dashboard" className="flex items-center gap-2 px-2 font-semibold">
+      <Link href="/" className="flex items-center gap-2 px-2 font-semibold">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
           <Sparkles className="h-4 w-4" />
         </div>
