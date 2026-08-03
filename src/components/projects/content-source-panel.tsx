@@ -2,19 +2,19 @@
 
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Loader2, Upload, Sparkles, Youtube, Film, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 import { importTranscriptAction } from '@/lib/actions/projects';
 import { transcribeMediaAction, importMediaFromUrlAction } from '@/lib/actions/transcription';
 import { createClient } from '@/lib/supabase/client';
 import { DEMO_TRANSCRIPT_TEXT } from '@/lib/content/demo-transcript';
 import { useDictionary } from '@/lib/i18n/dictionary-provider';
+import { YoutubeImportPanel } from './youtube-import-panel';
 
 const MAX_TEXT_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_MEDIA_FILE_SIZE_BYTES = 25 * 1024 * 1024;
@@ -38,10 +38,12 @@ export function ContentSourcePanel({
   projectId,
   workspaceId,
   language,
+  youtubeConnected,
 }: {
   projectId: string;
   workspaceId: string;
   language: string;
+  youtubeConnected: boolean;
 }) {
   const router = useRouter();
   const t = useDictionary();
@@ -204,6 +206,7 @@ export function ContentSourcePanel({
           <TabsTrigger value="paste">{t.projects.source.pasteTab}</TabsTrigger>
           <TabsTrigger value="upload">{t.projects.source.uploadTab}</TabsTrigger>
           <TabsTrigger value="media">{t.projects.source.mediaTab}</TabsTrigger>
+          <TabsTrigger value="youtube">{t.projects.source.youtubeTab}</TabsTrigger>
           <TabsTrigger value="demo">{t.projects.source.demoTab}</TabsTrigger>
         </TabsList>
 
@@ -277,6 +280,22 @@ export function ContentSourcePanel({
           </div>
         </TabsContent>
 
+        <TabsContent value="youtube" className="space-y-3">
+          {youtubeConnected ? (
+            <YoutubeImportPanel projectId={projectId} workspaceId={workspaceId} language={language} />
+          ) : (
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">{t.projects.source.youtubeNotConnected}</p>
+              <Button variant="outline" asChild>
+                <Link href="/settings/integrations">
+                  <Youtube className="h-4 w-4" />
+                  {t.projects.source.youtubeGoToSettings}
+                </Link>
+              </Button>
+            </div>
+          )}
+        </TabsContent>
+
         <TabsContent value="demo" className="space-y-3">
           <p className="text-sm text-muted-foreground">{t.projects.source.demoDescription}</p>
           <Button onClick={handleUseDemo} disabled={isSubmitting}>
@@ -285,25 +304,6 @@ export function ContentSourcePanel({
           </Button>
         </TabsContent>
       </Tabs>
-
-      <div>
-        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {t.projects.source.comingSoonLabel}
-        </p>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {[{ icon: Youtube, label: t.projects.source.connectYoutube }].map((item) => (
-            <Card key={item.label} className="opacity-60">
-              <CardContent className="flex items-center gap-3 p-4">
-                <item.icon className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">{item.label}</span>
-                <Badge variant="outline" className="ml-auto">
-                  {t.projects.source.comingSoonLabel}
-                </Badge>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

@@ -11,10 +11,16 @@ Ya implementado: pestaña "Video o audio" en la página de proyecto, sube el arc
 - **Síncrono**: la Server Action espera la respuesta completa de Whisper antes de responder: en archivos largos puede acercarse al timeout de la función serverless (ver "Procesamiento en segundo plano" más abajo).
 - **Sin extracción de audio de video**: no se separa la pista de audio antes de enviarla (requeriría ffmpeg); Whisper procesa el contenedor de video completo.
 
-## Conexión OAuth con YouTube
+## Conexión OAuth con YouTube (implementado, solo subtítulos)
 
-- **Modelo de datos**: `media_sources.source_type = 'youtube'`, `integrations.provider = 'youtube'` y `integrations.encrypted_credentials` ya existen.
-- **Falta**: flujo OAuth (autorización del canal propio del usuario, nunca descarga no autorizada de videos de terceros), almacenamiento cifrado del refresh token, y un job que extraiga el audio del video del propio canal para transcribirlo con el proveedor anterior.
+Implementado: Configuración → Integraciones permite conectar el canal propio de YouTube por OAuth (`src/app/api/integrations/youtube/{connect,callback}/route.ts`); el refresh token se cifra (`src/lib/security/crypto.ts`) antes de guardarse en `integrations.encrypted_credentials`. Desde la pestaña "YouTube" de un proyecto (`src/components/projects/youtube-import-panel.tsx`) se listan los videos del canal y se pueden importar sus subtítulos ya existentes como transcripción (`importYoutubeCaptionsAction`, `src/lib/actions/youtube.ts`).
+
+**Por qué no se transcribe el audio del video**: la YouTube Data API v3 no ofrece ningún endpoint oficial para descargar el video o el audio real de un video, ni siquiera del propio canal autenticado — solo metadata y las pistas de `captions` (manuales o generadas automáticamente por YouTube). Bajar el audio real requeriría una librería no oficial tipo yt-dlp/ytdl-core, lo cual viola los Términos de Servicio de YouTube (el mismo motivo por el que `importMediaFromUrlAction` en `src/lib/actions/transcription.ts` rechaza explícitamente enlaces de YouTube). Por eso, si un video no tiene subtítulos, hoy no hay forma de importarlo automáticamente: hay que subirlo manualmente en la pestaña "Video o audio" (Whisper) u otro video.
+
+**Limitaciones conocidas de esta primera versión**:
+- Solo se opera sobre el canal propio autorizado (RLS + verificación de rol restringen conectar/desconectar a `owner`/`admin` del workspace).
+- No hay paginación en la UI de "videos del canal" (se trae la primera página de `playlistItems`, 25 videos).
+- Si el video no tiene subtítulos en absoluto, la importación falla con un mensaje explícito; no hay fallback automático a Whisper.
 
 ## Publicación en WordPress / Webflow / Ghost
 

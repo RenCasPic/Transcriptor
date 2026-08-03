@@ -12,6 +12,7 @@ Aplicación SaaS construida con **Next.js (App Router) + TypeScript estricto + S
 - [Desarrollo local](#desarrollo-local)
 - [Conectar Supabase](#conectar-supabase)
 - [Configurar el proveedor de IA](#configurar-el-proveedor-de-ia)
+- [Conectar YouTube](#conectar-youtube-importar-subtítulos-del-canal-propio)
 - [Modo demo (sin claves de IA)](#modo-demo-sin-claves-de-ia)
 - [Ejecutar pruebas](#ejecutar-pruebas)
 - [Desplegar en Vercel](#desplegar-en-vercel)
@@ -108,6 +109,26 @@ TRANSCRIPTION_API_KEY=           # API key de OpenAI
 
 Usa la API de Whisper de OpenAI (`whisper-1`), que **tiene costo por minuto transcrito**. Sin `TRANSCRIPTION_API_KEY`, la app usa una transcripción de demostración en su lugar.
 
+### Conectar YouTube (importar subtítulos del canal propio)
+
+Permite conectar el canal de YouTube propio (OAuth) para importar, dentro de un proyecto, los subtítulos ya existentes de un video como transcripción. **No descarga el video ni el audio**: la YouTube Data API v3 no ofrece esa opción de forma oficial ni para el propio canal autenticado, así que si un video no tiene subtítulos hay que subirlo manualmente (pestaña "Video o audio").
+
+1. Crea (o reutiliza) un proyecto en [Google Cloud Console](https://console.cloud.google.com/).
+2. Habilita la **YouTube Data API v3** (APIs & Services → Library).
+3. Configura la pantalla de consentimiento OAuth (APIs & Services → OAuth consent screen). Mientras la app esté en modo "Testing", añade como test user el correo de cada cuenta de Google/YouTube que vaya a conectar.
+4. Crea una credencial OAuth 2.0 de tipo **"Web application"** (APIs & Services → Credentials) con este redirect URI autorizado:
+   - `http://localhost:3000/api/integrations/youtube/callback` (desarrollo)
+   - `https://tu-app.vercel.app/api/integrations/youtube/callback` (producción)
+5. Copia el `Client ID` y `Client secret` a `.env.local`:
+
+```env
+YOUTUBE_CLIENT_ID=
+YOUTUBE_CLIENT_SECRET=
+```
+
+6. Asegúrate de tener `INTEGRATIONS_ENCRYPTION_KEY` configurado (ver más abajo): el refresh token de YouTube se cifra con esa clave antes de guardarse.
+7. Desde la app: Configuración → Integraciones → "Conectar YouTube" (solo disponible para el propietario/administrador del espacio de trabajo).
+
 ## Modo demo (sin claves de IA)
 
 Con `AI_PROVIDER=mock` (el valor por defecto en `.env.example`) puedes recorrer todo el flujo —crear proyecto, cargar transcripción de demo, generar artículo, editar, ver alertas y fuentes, historial de versiones, exportar— sin configurar ninguna clave externa.
@@ -132,7 +153,8 @@ Las pruebas end-to-end (`npm run test:e2e`) asumen `AI_PROVIDER=mock` y Supabase
    - `AI_PROVIDER`, `AI_API_KEY`, `AI_MODEL`
    - `APP_URL` (la URL pública de tu deployment, p. ej. `https://tu-app.vercel.app`)
    - `INTEGRATIONS_ENCRYPTION_KEY` (una cadena aleatoria de 32 bytes en base64)
-4. En Supabase → Authentication → URL Configuration, añade `https://tu-app.vercel.app/auth/callback` a las Redirect URLs.
+   - `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET` (opcional, solo si vas a conectar YouTube — ver [Conectar YouTube](#conectar-youtube-importar-subtítulos-del-canal-propio))
+4. En Supabase → Authentication → URL Configuration, añade `https://tu-app.vercel.app/auth/callback` a las Redirect URLs. Si conectas YouTube, añade también el redirect URI del paso 4 de esa sección en Google Cloud Console.
 5. Despliega. Vercel detecta Next.js automáticamente (`npm run build`).
 
 ## Estructura del proyecto
