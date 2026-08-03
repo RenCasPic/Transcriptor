@@ -1,10 +1,6 @@
-import { LayoutDashboard, FolderPlus, LayoutTemplate, Settings, User, Building2, Youtube } from 'lucide-react';
+import { LayoutDashboard, Settings, User, Building2, Youtube } from 'lucide-react';
 
-export const MAIN_NAV_ITEMS = [
-  { href: '/dashboard', key: 'dashboard', icon: LayoutDashboard },
-  { href: '/projects/new', key: 'newProject', icon: FolderPlus },
-  { href: '/templates', key: 'templates', icon: LayoutTemplate },
-] as const;
+export const MAIN_NAV_ITEMS = [{ href: '/dashboard', key: 'dashboard', icon: LayoutDashboard }] as const;
 
 export const SETTINGS_NAV_ITEMS = [
   { href: '/settings/profile', key: 'profile', icon: User },
