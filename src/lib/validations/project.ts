@@ -34,6 +34,20 @@ export const CreateProjectSchema = z.object({
 
 export type CreateProjectInput = z.infer<typeof CreateProjectSchema>;
 
+/**
+ * Subconjunto de `CreateProjectSchema` con solo los campos de "configuración
+ * del artículo" (sin nombre/título/idioma). Se usa en las dos tarjetas del
+ * Dashboard (subir video / conectar YouTube), donde el nombre se genera
+ * automáticamente y no hay selector de idioma.
+ */
+export const ArticleConfigSchema = CreateProjectSchema.omit({
+  name: true,
+  provisionalTitle: true,
+  language: true,
+});
+
+export type ArticleConfigInput = z.infer<typeof ArticleConfigSchema>;
+
 export const UpdateProjectSchema = CreateProjectSchema.partial().extend({
   status: z.enum(['draft', 'processing', 'review', 'ready', 'published', 'failed']).optional(),
 });

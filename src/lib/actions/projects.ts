@@ -9,6 +9,7 @@ import {
   CreateProjectSchema,
   UpdateProjectSchema,
   ImportTranscriptSchema,
+  ArticleConfigSchema,
   type CreateProjectInput,
   type UpdateProjectInput,
   type ImportTranscriptInput,
@@ -69,7 +70,7 @@ const QUICK_PROJECT_DEFAULTS = {
   youtube: { namePrefix: 'Video de YouTube' },
 } as const;
 
-const QuickCreateProjectSchema = z.object({
+const QuickCreateProjectSchema = ArticleConfigSchema.extend({
   source: z.enum(['upload', 'youtube']),
 });
 
@@ -124,9 +125,13 @@ export async function createQuickProjectAction(
       workspace_id: workspace.id,
       created_by: user.id,
       name,
-      content_type: 'guide',
-      tone: 'professional',
+      content_type: parsed.data.contentType,
+      tone: parsed.data.tone,
       language: 'es',
+      audience: parsed.data.audience || null,
+      primary_keyword: parsed.data.primaryKeyword || null,
+      objective: parsed.data.objective || null,
+      call_to_action: parsed.data.callToAction || null,
     })
     .select('id')
     .single();
