@@ -41,7 +41,7 @@ export function SidebarNav({
     <TooltipProvider delayDuration={200}>
       <aside
         className={cn(
-          'shrink-0 bg-violet-700 text-white transition-[width] duration-200',
+          'shrink-0 bg-primary text-primary-foreground transition-[width] duration-200',
           inSheet ? 'block w-full' : 'hidden lg:block',
           !inSheet && (collapsed ? 'w-16' : 'w-64'),
         )}
