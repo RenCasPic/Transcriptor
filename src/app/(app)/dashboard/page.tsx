@@ -7,9 +7,13 @@ import { DashboardStats } from '@/components/dashboard/dashboard-stats';
 import { ProjectList } from '@/components/dashboard/project-list';
 import { getCurrentWorkspace } from '@/lib/data/workspace';
 import { listProjects } from '@/lib/data/projects';
+import { getDictionary } from '@/lib/i18n/get-dictionary';
 import type { ProjectStatus } from '@/lib/types/database';
 
-export const metadata: Metadata = { title: 'Panel' };
+export async function generateMetadata(): Promise<Metadata> {
+  const { dictionary } = await getDictionary();
+  return { title: dictionary.dashboard.title };
+}
 
 interface DashboardPageProps {
   searchParams: Promise<{ q?: string; status?: string }>;
@@ -18,6 +22,7 @@ interface DashboardPageProps {
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const params = await searchParams;
   const workspace = await getCurrentWorkspace();
+  const { dictionary: t } = await getDictionary();
 
   if (!workspace) {
     return null;
@@ -33,15 +38,13 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Tus proyectos</h1>
-          <p className="text-sm text-muted-foreground">
-            Gestiona tus artículos generados a partir de transcripciones
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">{t.dashboard.title}</h1>
+          <p className="text-sm text-muted-foreground">{t.dashboard.subtitle}</p>
         </div>
         <Button asChild>
           <Link href="/projects/new">
             <FolderPlus className="h-4 w-4" />
-            Nuevo proyecto
+            {t.dashboard.newProject}
           </Link>
         </Button>
       </div>

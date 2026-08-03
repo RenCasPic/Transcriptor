@@ -15,9 +15,11 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { deleteProjectAction } from '@/lib/actions/projects';
+import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
 export function DeleteProjectDialog({ projectId, projectName }: { projectId: string; projectName: string }) {
   const router = useRouter();
+  const t = useDictionary();
   const [open, setOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -31,7 +33,7 @@ export function DeleteProjectDialog({ projectId, projectName }: { projectId: str
       return;
     }
 
-    toast.success('Proyecto eliminado');
+    toast.success(t.projects.detail.deleteSuccess);
     router.push('/dashboard');
     router.refresh();
   }
@@ -41,24 +43,23 @@ export function DeleteProjectDialog({ projectId, projectName }: { projectId: str
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
           <Trash2 className="h-4 w-4" />
-          Eliminar
+          {t.projects.detail.delete}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>¿Eliminar &quot;{projectName}&quot;?</DialogTitle>
-          <DialogDescription>
-            Esta acción no se puede deshacer. Se eliminará el proyecto junto con su transcripción,
-            el artículo generado, el historial de versiones y todas las alertas asociadas.
-          </DialogDescription>
+          <DialogTitle>
+            {t.projects.detail.deleteTitle} &quot;{projectName}&quot;?
+          </DialogTitle>
+          <DialogDescription>{t.projects.detail.deleteDescription}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)} disabled={isDeleting}>
-            Cancelar
+            {t.common.cancel}
           </Button>
           <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
             {isDeleting && <Loader2 className="h-4 w-4 animate-spin" />}
-            Sí, eliminar
+            {t.projects.detail.deleteConfirm}
           </Button>
         </DialogFooter>
       </DialogContent>

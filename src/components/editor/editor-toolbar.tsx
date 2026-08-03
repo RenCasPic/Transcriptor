@@ -16,11 +16,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
 export function EditorToolbar({ editor }: { editor: Editor }) {
+  const t = useDictionary();
+
   function toggleLink() {
     const previousUrl = editor.getAttributes('link').href as string | undefined;
-    const url = window.prompt('URL del enlace', previousUrl ?? 'https://');
+    const url = window.prompt(t.editor.toolbar.linkPrompt, previousUrl ?? 'https://');
     if (url === null) return;
     if (url === '') {
       editor.chain().focus().extendMarkRange('link').unsetLink().run();
@@ -32,49 +35,49 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
   const buttons = [
     {
       icon: Heading2,
-      label: 'Encabezado H2',
+      label: t.editor.toolbar.heading2,
       isActive: editor.isActive('heading', { level: 2 }),
       onClick: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
     },
     {
       icon: Heading3,
-      label: 'Encabezado H3',
+      label: t.editor.toolbar.heading3,
       isActive: editor.isActive('heading', { level: 3 }),
       onClick: () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
     },
     {
       icon: Bold,
-      label: 'Negrita',
+      label: t.editor.toolbar.bold,
       isActive: editor.isActive('bold'),
       onClick: () => editor.chain().focus().toggleBold().run(),
     },
     {
       icon: Italic,
-      label: 'Cursiva',
+      label: t.editor.toolbar.italic,
       isActive: editor.isActive('italic'),
       onClick: () => editor.chain().focus().toggleItalic().run(),
     },
     {
       icon: List,
-      label: 'Lista con viñetas',
+      label: t.editor.toolbar.bulletList,
       isActive: editor.isActive('bulletList'),
       onClick: () => editor.chain().focus().toggleBulletList().run(),
     },
     {
       icon: ListOrdered,
-      label: 'Lista numerada',
+      label: t.editor.toolbar.orderedList,
       isActive: editor.isActive('orderedList'),
       onClick: () => editor.chain().focus().toggleOrderedList().run(),
     },
     {
       icon: Quote,
-      label: 'Cita',
+      label: t.editor.toolbar.quote,
       isActive: editor.isActive('blockquote'),
       onClick: () => editor.chain().focus().toggleBlockquote().run(),
     },
     {
       icon: LinkIcon,
-      label: 'Enlace',
+      label: t.editor.toolbar.link,
       isActive: editor.isActive('link'),
       onClick: toggleLink,
     },
@@ -101,7 +104,7 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
         variant="ghost"
         size="icon"
         className="h-8 w-8"
-        title="Deshacer"
+        title={t.editor.toolbar.undo}
         onClick={() => editor.chain().focus().undo().run()}
         disabled={!editor.can().undo()}
       >
@@ -112,7 +115,7 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
         variant="ghost"
         size="icon"
         className="h-8 w-8"
-        title="Rehacer"
+        title={t.editor.toolbar.redo}
         onClick={() => editor.chain().focus().redo().run()}
         disabled={!editor.can().redo()}
       >

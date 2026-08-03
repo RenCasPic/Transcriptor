@@ -11,6 +11,7 @@ import { restoreVersionAction } from '@/lib/actions/versions';
 import type { DocumentVersionItem } from '@/lib/data/versions';
 import { VersionCompareDialog } from './version-compare-dialog';
 import { CreateVersionDialog } from './create-version-dialog';
+import { useDictionary, useLocale } from '@/lib/i18n/dictionary-provider';
 
 export function HistoryPanel({
   documentId,
@@ -28,12 +29,14 @@ export function HistoryPanel({
   currentUserId: string | null;
 }) {
   const router = useRouter();
+  const t = useDictionary();
+  const locale = useLocale();
   const [compareVersion, setCompareVersion] = useState<DocumentVersionItem | null>(null);
   const [restoringId, setRestoringId] = useState<string | null>(null);
 
   async function handleRestore(version: DocumentVersionItem) {
     const confirmed = window.confirm(
-      `¿Restaurar la versión ${version.versionNumber}? Se creará una nueva versión con este contenido.`,
+      `${t.editor.history.restoreConfirm} ${version.versionNumber}${t.editor.history.restoreConfirmSuffix}`,
     );
     if (!confirmed) return;
 
@@ -46,7 +49,7 @@ export function HistoryPanel({
       return;
     }
 
-    toast.success('Versión restaurada');
+    toast.success(t.editor.history.restoreSuccess);
     router.refresh();
   }
 
@@ -55,7 +58,7 @@ export function HistoryPanel({
       <div className="flex items-center justify-between">
         <h3 className="flex items-center gap-1.5 text-sm font-semibold">
           <History className="h-4 w-4" />
-          Historial de versiones
+          {t.editor.history.title}
         </h3>
       </div>
 
@@ -65,17 +68,24 @@ export function HistoryPanel({
         {versions.map((version) => (
           <div key={version.id} className="space-y-1.5 rounded-md border p-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Versión {version.versionNumber}</span>
+              <span className="text-sm font-medium">
+                {t.editor.history.version} {version.versionNumber}
+              </span>
               <span className="text-xs text-muted-foreground">{formatDate(version.createdAt)}</span>
             </div>
-            <p className="text-xs text-muted-foreground">{formatVersionReason(version.reason)}</p>
+            <p className="text-xs text-muted-foreground">{formatVersionReason(version.reason, locale)}</p>
             <p className="text-xs text-muted-foreground">
-              Autor: {version.createdBy === currentUserId ? 'Tú' : version.createdBy ? 'Colaborador' : 'Sistema'}
+              {t.editor.history.author}:{' '}
+              {version.createdBy === currentUserId
+                ? t.editor.history.you
+                : version.createdBy
+                  ? t.editor.history.collaborator
+                  : t.editor.history.system}
             </p>
             <div className="flex gap-1.5 pt-1">
               <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setCompareVersion(version)}>
                 <Eye className="h-3 w-3" />
-                Ver
+                {t.editor.history.view}
               </Button>
               <Button
                 size="sm"
@@ -85,12 +95,12 @@ export function HistoryPanel({
                 onClick={() => handleRestore(version)}
               >
                 <RotateCcw className="h-3 w-3" />
-                Restaurar
+                {t.editor.history.restore}
               </Button>
             </div>
           </div>
         ))}
-        {versions.length === 0 && <p className="text-xs text-muted-foreground">Aún no hay versiones registradas.</p>}
+        {versions.length === 0 && <p className="text-xs text-muted-foreground">{t.editor.history.empty}</p>}
       </div>
 
       {compareVersion && (

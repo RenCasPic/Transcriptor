@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useDictionary } from '@/lib/i18n/dictionary-provider';
 import { SETTINGS_NAV_ITEMS } from './nav-items';
 
 export function SettingsTabs() {
   const pathname = usePathname();
+  const dictionary = useDictionary();
 
   return (
     <div className="flex gap-1 border-b">
@@ -24,7 +26,7 @@ export function SettingsTabs() {
             )}
           >
             <item.icon className="h-4 w-4" />
-            {item.label}
+            {dictionary.nav[item.key]}
           </Link>
         );
       })}

@@ -10,8 +10,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { UpdatePasswordSchema, type UpdatePasswordInput } from '@/lib/validations/auth';
 import { updatePasswordAction } from '@/lib/actions/auth';
+import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
 export function UpdatePasswordForm() {
+  const t = useDictionary();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const {
     register,
@@ -29,19 +31,19 @@ export function UpdatePasswordForm() {
       toast.error(result.error.message);
       return;
     }
-    toast.success('Contraseña actualizada');
+    toast.success(t.settings.profile.updateSuccess);
     reset();
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
       <div className="space-y-1.5">
-        <Label htmlFor="password">Nueva contraseña</Label>
+        <Label htmlFor="password">{t.settings.profile.newPassword}</Label>
         <Input id="password" type="password" autoComplete="new-password" {...register('password')} />
         {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="confirmPassword">Confirmar nueva contraseña</Label>
+        <Label htmlFor="confirmPassword">{t.settings.profile.confirmPassword}</Label>
         <Input id="confirmPassword" type="password" autoComplete="new-password" {...register('confirmPassword')} />
         {errors.confirmPassword && (
           <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>
@@ -49,7 +51,7 @@ export function UpdatePasswordForm() {
       </div>
       <Button type="submit" disabled={isSubmitting}>
         {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-        Actualizar contraseña
+        {t.settings.profile.updatePassword}
       </Button>
     </form>
   );

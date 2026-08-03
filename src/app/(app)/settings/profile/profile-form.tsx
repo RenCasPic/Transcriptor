@@ -10,8 +10,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { UpdateProfileSchema, type UpdateProfileInput } from '@/lib/validations/auth';
 import { updateProfileAction } from '@/lib/actions/auth';
+import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
 export function ProfileForm({ defaultFullName, email }: { defaultFullName: string; email: string }) {
+  const t = useDictionary();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const {
     register,
@@ -31,23 +33,23 @@ export function ProfileForm({ defaultFullName, email }: { defaultFullName: strin
       toast.error(result.error.message);
       return;
     }
-    toast.success('Perfil actualizado');
+    toast.success(t.settings.profile.saveSuccess);
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
       <div className="space-y-1.5">
-        <Label htmlFor="email">Correo electrónico</Label>
+        <Label htmlFor="email">{t.settings.profile.email}</Label>
         <Input id="email" value={email} disabled />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="fullName">Nombre completo</Label>
+        <Label htmlFor="fullName">{t.settings.profile.fullName}</Label>
         <Input id="fullName" {...register('fullName')} />
         {errors.fullName && <p className="text-xs text-destructive">{errors.fullName.message}</p>}
       </div>
       <Button type="submit" disabled={isSubmitting}>
         {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-        Guardar cambios
+        {t.settings.profile.save}
       </Button>
     </form>
   );

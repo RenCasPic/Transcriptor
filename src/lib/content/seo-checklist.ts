@@ -8,9 +8,19 @@ export interface SeoChecklistInput {
   wordCount: number;
 }
 
+export type SeoChecklistItemId =
+  | 'keywordInTitle'
+  | 'keywordInIntro'
+  | 'keywordInHeading'
+  | 'titleLength'
+  | 'metaDescription'
+  | 'slug'
+  | 'wordCount'
+  | 'links'
+  | 'faq';
+
 export interface SeoChecklistItem {
-  id: string;
-  label: string;
+  id: SeoChecklistItemId;
   passed: boolean;
 }
 
@@ -31,49 +41,40 @@ export function computeSeoChecklist(input: SeoChecklistInput): SeoChecklistItem[
 
   return [
     {
-      id: 'keyword_in_title',
-      label: 'Palabra clave en el título',
+      id: 'keywordInTitle',
       passed: !keyword || input.title.toLowerCase().includes(keyword) || input.seoTitle.toLowerCase().includes(keyword),
     },
     {
-      id: 'keyword_in_intro',
-      label: 'Palabra clave en la introducción',
+      id: 'keywordInIntro',
       passed: !keyword || intro.includes(keyword),
     },
     {
-      id: 'keyword_in_heading',
-      label: 'Palabra clave en al menos un encabezado',
+      id: 'keywordInHeading',
       passed: !keyword || headings.includes(keyword),
     },
     {
-      id: 'title_length',
-      label: 'Título con longitud adecuada (40-60 caracteres)',
+      id: 'titleLength',
       passed: input.seoTitle.length >= 40 && input.seoTitle.length <= 60,
     },
     {
-      id: 'meta_description',
-      label: 'Meta description completada',
+      id: 'metaDescription',
       passed: input.metaDescription.trim().length > 0,
     },
     {
       id: 'slug',
-      label: 'Slug completado',
       passed: input.slug.trim().length > 0,
     },
     {
-      id: 'word_count',
-      label: 'Artículo con más de 600 palabras',
+      id: 'wordCount',
       passed: input.wordCount > 600,
     },
     {
       id: 'links',
-      label: 'Presencia de enlaces',
       passed: /<a\s/i.test(input.html),
     },
     {
       id: 'faq',
-      label: 'Presencia de preguntas frecuentes',
-      passed: /preguntas frecuentes/i.test(input.html),
+      passed: /preguntas frecuentes|frequently asked questions/i.test(input.html),
     },
   ];
 }

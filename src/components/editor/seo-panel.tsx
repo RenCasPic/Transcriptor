@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { updateSeoMetadataAction, updateDocumentExcerptAction, regenerateSeoAction } from '@/lib/actions/editor';
 import { computeSeoChecklist } from '@/lib/content/seo-checklist';
 import { cn } from '@/lib/utils';
+import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
 export interface SeoPanelData {
   seoTitle: string;
@@ -34,6 +35,7 @@ export function SeoPanel({
   wordCount: number;
   html: string;
 }) {
+  const t = useDictionary();
   const [seoTitle, setSeoTitle] = useState(initialSeo.seoTitle);
   const [slug, setSlug] = useState(initialSeo.slug);
   const [metaDescription, setMetaDescription] = useState(initialSeo.metaDescription);
@@ -67,7 +69,7 @@ export function SeoPanel({
       toast.error(result.error.message);
       return;
     }
-    toast.success('Metadata SEO regenerada. Recarga para ver los cambios.');
+    toast.success(t.editor.seoPanel.regenerateSuccess);
   }
 
   const checklist = computeSeoChecklist({
@@ -83,31 +85,33 @@ export function SeoPanel({
   return (
     <div className="space-y-5 p-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">SEO</h3>
+        <h3 className="text-sm font-semibold">{t.editor.seoPanel.title}</h3>
         <Button size="sm" variant="outline" onClick={handleRegenerate} disabled={isRegenerating}>
           {isRegenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-          Regenerar
+          {t.editor.seoPanel.regenerate}
         </Button>
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="seo-title">Título SEO</Label>
+        <Label htmlFor="seo-title">{t.editor.seoPanel.seoTitleLabel}</Label>
         <Input
           id="seo-title"
           value={seoTitle}
           onChange={(e) => setSeoTitle(e.target.value)}
           onBlur={() => persistSeo()}
         />
-        <p className="text-xs text-muted-foreground">{seoTitle.length} caracteres (recomendado 40-60)</p>
+        <p className="text-xs text-muted-foreground">
+          {seoTitle.length} {t.editor.seoPanel.charactersRecommended}
+        </p>
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="seo-slug">Slug</Label>
+        <Label htmlFor="seo-slug">{t.editor.seoPanel.slugLabel}</Label>
         <Input id="seo-slug" value={slug} onChange={(e) => setSlug(e.target.value)} onBlur={() => persistSeo()} />
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="seo-meta">Meta description</Label>
+        <Label htmlFor="seo-meta">{t.editor.seoPanel.metaDescriptionLabel}</Label>
         <Textarea
           id="seo-meta"
           rows={3}
@@ -115,11 +119,13 @@ export function SeoPanel({
           onChange={(e) => setMetaDescription(e.target.value)}
           onBlur={() => persistSeo()}
         />
-        <p className="text-xs text-muted-foreground">{metaDescription.length} caracteres (recomendado ≤ 155)</p>
+        <p className="text-xs text-muted-foreground">
+          {metaDescription.length} {t.editor.seoPanel.charactersMax}
+        </p>
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="seo-keyword">Palabra clave principal</Label>
+        <Label htmlFor="seo-keyword">{t.editor.seoPanel.keywordLabel}</Label>
         <Input
           id="seo-keyword"
           value={primaryKeyword}
@@ -129,10 +135,10 @@ export function SeoPanel({
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="seo-secondary">Palabras clave secundarias</Label>
+        <Label htmlFor="seo-secondary">{t.editor.seoPanel.secondaryKeywordsLabel}</Label>
         <Input
           id="seo-secondary"
-          placeholder="separadas por comas"
+          placeholder={t.editor.seoPanel.secondaryKeywordsPlaceholder}
           value={secondaryKeywords}
           onChange={(e) => setSecondaryKeywords(e.target.value)}
           onBlur={() => persistSeo()}
@@ -140,7 +146,7 @@ export function SeoPanel({
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="seo-excerpt">Extracto</Label>
+        <Label htmlFor="seo-excerpt">{t.editor.seoPanel.excerptLabel}</Label>
         <Textarea
           id="seo-excerpt"
           rows={3}
@@ -154,7 +160,7 @@ export function SeoPanel({
       </div>
 
       <div className="space-y-1.5">
-        <Label>Vista previa aproximada</Label>
+        <Label>{t.editor.seoPanel.previewLabel}</Label>
         <div className="rounded-md border p-3">
           <p className="truncate text-sm text-primary">{seoTitle || documentTitle}</p>
           <p className="truncate text-xs text-success">tuartículo.com/{slug}</p>
@@ -163,7 +169,7 @@ export function SeoPanel({
       </div>
 
       <div className="space-y-2">
-        <Label>Checklist SEO</Label>
+        <Label>{t.editor.seoPanel.checklistLabel}</Label>
         <ul className="space-y-1.5">
           {checklist.map((item) => (
             <li key={item.id} className="flex items-start gap-2 text-xs">
@@ -172,13 +178,13 @@ export function SeoPanel({
               ) : (
                 <X className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
               )}
-              <span className={cn(!item.passed && 'text-muted-foreground')}>{item.label}</span>
+              <span className={cn(!item.passed && 'text-muted-foreground')}>
+                {t.editor.seoPanel.checklist[item.id]}
+              </span>
             </li>
           ))}
         </ul>
-        <p className="pt-1 text-xs text-muted-foreground">
-          Este checklist es una guía orientativa: no garantiza posicionamiento en buscadores.
-        </p>
+        <p className="pt-1 text-xs text-muted-foreground">{t.editor.seoPanel.checklistDisclaimer}</p>
       </div>
     </div>
   );

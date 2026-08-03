@@ -7,6 +7,7 @@ import { Sparkles, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useDictionary } from '@/lib/i18n/dictionary-provider';
 import { MAIN_NAV_ITEMS, SETTINGS_ROOT } from './nav-items';
 
 const STORAGE_KEY = 'sidebar-collapsed';
@@ -20,6 +21,7 @@ export function SidebarNav({
   inSheet?: boolean;
 }) {
   const pathname = usePathname();
+  const dictionary = useDictionary();
   const [collapsedState, setCollapsedState] = useState(false);
   const collapsed = inSheet ? false : collapsedState;
 
@@ -62,7 +64,7 @@ export function SidebarNav({
                 onClick={toggleCollapsed}
               >
                 <ChevronsLeft className="h-4 w-4" />
-                <span className="sr-only">Colapsar menú</span>
+                <span className="sr-only">{dictionary.nav.collapseMenu}</span>
               </Button>
             )}
           </div>
@@ -77,14 +79,14 @@ export function SidebarNav({
                   onClick={toggleCollapsed}
                 >
                   <ChevronsRight className="h-4 w-4" />
-                  <span className="sr-only">Expandir menú</span>
+                  <span className="sr-only">{dictionary.nav.expandMenu}</span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="right">Expandir menú</TooltipContent>
+              <TooltipContent side="right">{dictionary.nav.expandMenu}</TooltipContent>
             </Tooltip>
           ) : (
             <div className="rounded-lg border-l-2 border-white/50 bg-white/10 px-3 py-2">
-              <p className="truncate text-xs font-medium text-violet-100">Espacio de trabajo</p>
+              <p className="truncate text-xs font-medium text-violet-100">{dictionary.nav.workspaceLabel}</p>
               <p className="truncate text-sm font-semibold text-white">{workspaceName}</p>
             </div>
           )}
@@ -92,6 +94,7 @@ export function SidebarNav({
           <nav className="flex flex-1 flex-col gap-1">
             {MAIN_NAV_ITEMS.map((item) => {
               const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
+              const label = dictionary.nav[item.key];
               const link = (
                 <Link
                   key={item.href}
@@ -103,7 +106,7 @@ export function SidebarNav({
                   )}
                 >
                   <item.icon className="h-4 w-4 shrink-0" />
-                  {!collapsed && item.label}
+                  {!collapsed && label}
                 </Link>
               );
 
@@ -112,7 +115,7 @@ export function SidebarNav({
               return (
                 <Tooltip key={item.href}>
                   <TooltipTrigger asChild>{link}</TooltipTrigger>
-                  <TooltipContent side="right">{item.label}</TooltipContent>
+                  <TooltipContent side="right">{label}</TooltipContent>
                 </Tooltip>
               );
             })}
@@ -120,6 +123,7 @@ export function SidebarNav({
 
           {(() => {
             const isSettingsActive = pathname.startsWith('/settings');
+            const settingsLabel = dictionary.nav[SETTINGS_ROOT.key];
             const settingsLink = (
               <Link
                 href={SETTINGS_ROOT.href}
@@ -130,7 +134,7 @@ export function SidebarNav({
                 )}
               >
                 <SETTINGS_ROOT.icon className="h-4 w-4 shrink-0" />
-                {!collapsed && SETTINGS_ROOT.label}
+                {!collapsed && settingsLabel}
               </Link>
             );
 
@@ -139,7 +143,7 @@ export function SidebarNav({
             return (
               <Tooltip>
                 <TooltipTrigger asChild>{settingsLink}</TooltipTrigger>
-                <TooltipContent side="right">{SETTINGS_ROOT.label}</TooltipContent>
+                <TooltipContent side="right">{settingsLabel}</TooltipContent>
               </Tooltip>
             );
           })()}

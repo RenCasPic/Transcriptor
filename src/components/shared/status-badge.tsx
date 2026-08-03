@@ -1,5 +1,9 @@
+'use client';
+
 import { Badge } from '@/components/ui/badge';
-import { PROJECT_STATUS_LABELS, type ProjectStatus } from '@/lib/types/domain';
+import type { ProjectStatus } from '@/lib/types/domain';
+import { useLocale } from '@/lib/i18n/dictionary-provider';
+import { getDomainLabels } from '@/lib/i18n/domain-labels';
 
 const STATUS_VARIANT: Record<ProjectStatus, 'secondary' | 'warning' | 'success' | 'destructive' | 'outline'> = {
   draft: 'outline',
@@ -11,5 +15,6 @@ const STATUS_VARIANT: Record<ProjectStatus, 'secondary' | 'warning' | 'success' 
 };
 
 export function ProjectStatusBadge({ status }: { status: ProjectStatus }) {
-  return <Badge variant={STATUS_VARIANT[status]}>{PROJECT_STATUS_LABELS[status]}</Badge>;
+  const locale = useLocale();
+  return <Badge variant={STATUS_VARIANT[status]}>{getDomainLabels(locale).projectStatus[status]}</Badge>;
 }

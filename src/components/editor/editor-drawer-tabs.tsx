@@ -5,6 +5,7 @@ import { SeoPanel, type SeoPanelData } from './seo-panel';
 import { WarningsPanel, type WarningItem } from './warnings-panel';
 import { HistoryPanel } from './history-panel';
 import { ProjectInfoPanel } from './project-info-panel';
+import { useDictionary } from '@/lib/i18n/dictionary-provider';
 import type { DocumentVersionItem } from '@/lib/data/versions';
 import type { Database } from '@/lib/types/database';
 
@@ -39,20 +40,21 @@ export function EditorDrawerTabs({
   versions: DocumentVersionItem[];
   currentUserId: string | null;
 }) {
+  const t = useDictionary();
   return (
     <Tabs defaultValue="seo" className="flex h-full flex-col">
       <TabsList className="mx-4 mt-3 grid grid-cols-4">
-        <TabsTrigger value="seo">SEO</TabsTrigger>
+        <TabsTrigger value="seo">{t.editor.tabs.seo}</TabsTrigger>
         <TabsTrigger value="alerts">
-          Alertas
+          {t.editor.tabs.alerts}
           {warnings.filter((w) => w.status === 'open').length > 0 && (
             <span className="ml-1 rounded-full bg-warning px-1.5 text-[10px] text-warning-foreground">
               {warnings.filter((w) => w.status === 'open').length}
             </span>
           )}
         </TabsTrigger>
-        <TabsTrigger value="history">Historial</TabsTrigger>
-        <TabsTrigger value="project">Proyecto</TabsTrigger>
+        <TabsTrigger value="history">{t.editor.tabs.history}</TabsTrigger>
+        <TabsTrigger value="project">{t.editor.tabs.project}</TabsTrigger>
       </TabsList>
       <div className="flex-1 overflow-y-auto">
         <TabsContent value="seo" className="mt-0">

@@ -1,8 +1,13 @@
+'use client';
+
 import { FolderKanban, FileText, Sparkles, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { useDictionary, useLocale } from '@/lib/i18n/dictionary-provider';
 import type { ProjectListItem } from '@/lib/data/projects';
 
 export function DashboardStats({ projects }: { projects: ProjectListItem[] }) {
+  const t = useDictionary();
+  const locale = useLocale();
   const totalProjects = projects.length;
   const totalWords = projects.reduce((sum, p) => sum + p.wordCount, 0);
   const inProgress = projects.filter((p) => p.status === 'review' || p.status === 'processing').length;
@@ -11,26 +16,26 @@ export function DashboardStats({ projects }: { projects: ProjectListItem[] }) {
   const stats = [
     {
       icon: FolderKanban,
-      label: 'Proyectos',
-      value: totalProjects.toLocaleString('es'),
+      label: t.dashboard.stats.projects,
+      value: totalProjects.toLocaleString(locale),
       color: 'bg-indigo-500/10 text-indigo-600',
     },
     {
       icon: FileText,
-      label: 'Palabras generadas',
-      value: totalWords.toLocaleString('es'),
+      label: t.dashboard.stats.wordsGenerated,
+      value: totalWords.toLocaleString(locale),
       color: 'bg-violet-500/10 text-violet-600',
     },
     {
       icon: Sparkles,
-      label: 'En proceso',
-      value: inProgress.toLocaleString('es'),
+      label: t.dashboard.stats.inProgress,
+      value: inProgress.toLocaleString(locale),
       color: 'bg-amber-500/10 text-amber-600',
     },
     {
       icon: CheckCircle2,
-      label: 'Publicados',
-      value: published.toLocaleString('es'),
+      label: t.dashboard.stats.published,
+      value: published.toLocaleString(locale),
       color: 'bg-emerald-500/10 text-emerald-600',
     },
   ];

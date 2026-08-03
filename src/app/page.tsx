@@ -15,62 +15,27 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { StepPreviews } from '@/components/landing/step-previews';
 import { FadeIn } from '@/components/landing/fade-in';
+import { getDictionary } from '@/lib/i18n/get-dictionary';
 
-const STEPS = [
-  {
-    icon: Mic,
-    title: '1. Sube tu transcripción',
-    description: 'Pega el texto, sube un archivo TXT, SRT, VTT, o formatos de video como MP4 o MOV, o prueba con un ejemplo ya listo.',
-    color: 'bg-indigo-500/10 text-indigo-600',
-  },
-  {
-    icon: Sparkles,
-    title: '2. La IA arma tu artículo',
-    description: 'En segundos tienes un artículo con título, secciones y preguntas frecuentes.',
-    color: 'bg-violet-500/10 text-violet-600',
-  },
-  {
-    icon: FileText,
-    title: '3. Edítalo a tu gusto',
-    description: 'Cambia lo que quieras, ajusta el tono o pídele a la IA que reescriba una parte.',
-    color: 'bg-amber-500/10 text-amber-600',
-  },
-  {
-    icon: ShieldCheck,
-    title: '4. Revisa y publícalo',
-    description: 'Verifica que todo esté correcto y exporta tu artículo en el formato que necesites.',
-    color: 'bg-emerald-500/10 text-emerald-600',
-  },
-];
+export default async function LandingPage() {
+  const { dictionary: t } = await getDictionary();
 
-const BENEFITS = [
-  {
-    icon: Quote,
-    title: 'Fiel a lo que dijiste',
-    description: 'El artículo se arma con tu contenido real, sin inventar cifras, nombres ni datos.',
-    color: 'bg-rose-500/10 text-rose-600',
-  },
-  {
-    icon: SearchCheck,
-    title: 'Todo tiene su fuente',
-    description: 'Puedes rastrear cualquier parte del artículo hasta el fragmento original.',
-    color: 'bg-sky-500/10 text-sky-600',
-  },
-  {
-    icon: History,
-    title: 'Nunca pierdes nada',
-    description: 'Guardamos cada versión para que puedas volver atrás cuando quieras.',
-    color: 'bg-emerald-500/10 text-emerald-600',
-  },
-  {
-    icon: ListChecks,
-    title: 'Listo para buscadores',
-    description: 'Título, resumen y palabras clave se generan junto con tu artículo.',
-    color: 'bg-violet-500/10 text-violet-600',
-  },
-];
+  const STEPS = [
+    { icon: Mic, title: t.landing.steps.step1Title, description: t.landing.steps.step1Description, color: 'bg-indigo-500/10 text-indigo-600' },
+    { icon: Sparkles, title: t.landing.steps.step2Title, description: t.landing.steps.step2Description, color: 'bg-violet-500/10 text-violet-600' },
+    { icon: FileText, title: t.landing.steps.step3Title, description: t.landing.steps.step3Description, color: 'bg-amber-500/10 text-amber-600' },
+    { icon: ShieldCheck, title: t.landing.steps.step4Title, description: t.landing.steps.step4Description, color: 'bg-emerald-500/10 text-emerald-600' },
+  ];
 
-export default function LandingPage() {
+  const BENEFITS = [
+    { icon: Quote, title: t.landing.benefits.benefit1Title, description: t.landing.benefits.benefit1Description, color: 'bg-rose-500/10 text-rose-600' },
+    { icon: SearchCheck, title: t.landing.benefits.benefit2Title, description: t.landing.benefits.benefit2Description, color: 'bg-sky-500/10 text-sky-600' },
+    { icon: History, title: t.landing.benefits.benefit3Title, description: t.landing.benefits.benefit3Description, color: 'bg-emerald-500/10 text-emerald-600' },
+    { icon: ListChecks, title: t.landing.benefits.benefit4Title, description: t.landing.benefits.benefit4Description, color: 'bg-violet-500/10 text-violet-600' },
+  ];
+
+  const previewSteps = [t.landing.steps.step1Title, t.landing.steps.step2Title, t.landing.steps.step3Title, t.landing.steps.step4Title];
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
@@ -79,15 +44,15 @@ export default function LandingPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Sparkles className="h-4 w-4" />
             </div>
-            TalkToPost
+            {t.common.appName}
           </Link>
           <nav className="flex items-center gap-2">
             <Button variant="ghost" asChild>
-              <Link href="/login">Iniciar sesión</Link>
+              <Link href="/login">{t.landing.signIn}</Link>
             </Button>
             <Button asChild>
               <Link href="/register">
-                Crear cuenta gratis
+                {t.landing.createFreeAccount}
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
@@ -106,24 +71,21 @@ export default function LandingPage() {
           <FadeIn className="container flex flex-col items-center gap-6 text-center">
             <Badge variant="secondary" className="gap-1.5">
               <Sparkles className="h-3 w-3 animate-pulse" />
-              Listo en minutos, sin complicaciones
+              {t.landing.heroBadge}
             </Badge>
             <h1 className="max-w-3xl text-4xl font-bold tracking-tight md:text-6xl">
-              Convierte tus videos y podcasts en <span className="text-primary">artículos</span>
+              {t.landing.heroTitle} <span className="text-primary">{t.landing.heroTitleHighlight}</span>
             </h1>
-            <p className="max-w-2xl text-lg text-muted-foreground">
-              Transforma una transcripción en un artículo bien organizado en pocos minutos. Edita el
-              resultado, ajusta el tono y publícalo cuando esté listo.
-            </p>
+            <p className="max-w-2xl text-lg text-muted-foreground">{t.landing.heroSubtitle}</p>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Button size="lg" asChild>
                 <Link href="/register" className="group">
-                  Empezar gratis
+                  {t.landing.startFree}
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href="/login">Ya tengo cuenta</Link>
+                <Link href="/login">{t.landing.alreadyHaveAccount}</Link>
               </Button>
             </div>
           </FadeIn>
@@ -132,8 +94,8 @@ export default function LandingPage() {
         <section className="border-y bg-muted/40 py-20">
           <div className="container">
             <FadeIn className="mx-auto mb-12 max-w-2xl text-center">
-              <h2 className="text-3xl font-bold tracking-tight">Cómo funciona</h2>
-              <p className="mt-3 text-muted-foreground">Del video a la página web, en cuatro pasos.</p>
+              <h2 className="text-3xl font-bold tracking-tight">{t.landing.howItWorksTitle}</h2>
+              <p className="mt-3 text-muted-foreground">{t.landing.howItWorksSubtitle}</p>
             </FadeIn>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {STEPS.map((step, index) => (
@@ -155,15 +117,13 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <StepPreviews />
+        <StepPreviews title={t.landing.previewsTitle} subtitle={t.landing.previewsSubtitle} steps={previewSteps} />
 
         <section className="py-20">
           <div className="container">
             <FadeIn className="mx-auto mb-12 max-w-2xl text-center">
-              <h2 className="text-3xl font-bold tracking-tight">Por qué TalkToPost</h2>
-              <p className="mt-3 text-muted-foreground">
-                Rápido no tiene por qué significar perder el control de lo que publicas.
-              </p>
+              <h2 className="text-3xl font-bold tracking-tight">{t.landing.benefitsTitle}</h2>
+              <p className="mt-3 text-muted-foreground">{t.landing.benefitsSubtitle}</p>
             </FadeIn>
             <div className="grid gap-6 sm:grid-cols-2">
               {BENEFITS.map((benefit, index) => (
@@ -185,13 +145,11 @@ export default function LandingPage() {
 
         <section className="border-t bg-primary text-primary-foreground">
           <FadeIn className="container flex flex-col items-center gap-6 py-16 text-center">
-            <h2 className="text-3xl font-bold tracking-tight">Prueba tu primer artículo hoy</h2>
-            <p className="max-w-xl text-primary-foreground/80">
-              Crea tu cuenta y pruébalo gratis con un ejemplo, sin configurar nada.
-            </p>
+            <h2 className="text-3xl font-bold tracking-tight">{t.landing.ctaTitle}</h2>
+            <p className="max-w-xl text-primary-foreground/80">{t.landing.ctaSubtitle}</p>
             <Button size="lg" variant="secondary" asChild>
               <Link href="/register" className="group">
-                Crear cuenta gratis
+                {t.landing.createFreeAccount}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
             </Button>
@@ -201,13 +159,15 @@ export default function LandingPage() {
 
       <footer className="border-t py-8">
         <div className="container flex flex-col items-center justify-between gap-4 text-sm text-muted-foreground sm:flex-row">
-          <p>© {new Date().getFullYear()} TalkToPost. Todos los derechos reservados.</p>
+          <p>
+            © {new Date().getFullYear()} {t.common.appName}. {t.landing.footerRights}
+          </p>
           <div className="flex gap-4">
             <Link href="/login" className="hover:text-foreground">
-              Iniciar sesión
+              {t.landing.signIn}
             </Link>
             <Link href="/register" className="hover:text-foreground">
-              Registrarse
+              {t.auth.register.submit}
             </Link>
           </div>
         </div>

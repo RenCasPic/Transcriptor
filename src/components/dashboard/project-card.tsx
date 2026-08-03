@@ -18,10 +18,13 @@ import {
 import { ProjectStatusBadge } from '@/components/shared/status-badge';
 import { formatRelativeDate } from '@/lib/content/format';
 import { deleteProjectAction } from '@/lib/actions/projects';
+import { useDictionary, useLocale } from '@/lib/i18n/dictionary-provider';
 import type { ProjectListItem } from '@/lib/data/projects';
 
 export function ProjectCard({ project }: { project: ProjectListItem }) {
   const router = useRouter();
+  const t = useDictionary();
+  const locale = useLocale();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -35,7 +38,7 @@ export function ProjectCard({ project }: { project: ProjectListItem }) {
       return;
     }
 
-    toast.success('Proyecto eliminado');
+    toast.success(t.dashboard.deleteProject.success);
     setConfirmOpen(false);
     router.refresh();
   }
@@ -57,22 +60,24 @@ export function ProjectCard({ project }: { project: ProjectListItem }) {
                 onClick={() => setConfirmOpen(true)}
               >
                 <Trash2 className="h-4 w-4" />
-                <span className="sr-only">Eliminar proyecto</span>
+                <span className="sr-only">{t.dashboard.deleteProject.title}</span>
               </Button>
             </div>
           </div>
           <div>
             <h3 className="line-clamp-2 font-semibold">{project.provisionalTitle || project.name}</h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Modificado {formatRelativeDate(project.updatedAt)}
+              {t.dashboard.modifiedAgo} {formatRelativeDate(project.updatedAt)}
             </p>
           </div>
           <div className="mt-auto flex items-center justify-between text-xs text-muted-foreground">
-            <span>{project.wordCount.toLocaleString('es')} palabras</span>
+            <span>
+              {project.wordCount.toLocaleString(locale)} {t.common.words}
+            </span>
           </div>
 
           <Link href={`/projects/${project.id}`} className="absolute inset-0" aria-label={project.name}>
-            <span className="sr-only">Abrir proyecto {project.name}</span>
+            <span className="sr-only">{project.name}</span>
           </Link>
         </CardContent>
       </Card>
@@ -80,19 +85,18 @@ export function ProjectCard({ project }: { project: ProjectListItem }) {
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>¿Eliminar &quot;{project.name}&quot;?</DialogTitle>
-            <DialogDescription>
-              Esta acción no se puede deshacer. Se eliminará el proyecto junto con su transcripción,
-              el artículo generado, el historial de versiones y todas las alertas asociadas.
-            </DialogDescription>
+            <DialogTitle>
+              {t.dashboard.deleteProject.title} &quot;{project.name}&quot;?
+            </DialogTitle>
+            <DialogDescription>{t.dashboard.deleteProject.description}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={isDeleting}>
-              Cancelar
+              {t.common.cancel}
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
               {isDeleting && <Loader2 className="h-4 w-4 animate-spin" />}
-              Sí, eliminar
+              {t.dashboard.deleteProject.confirm}
             </Button>
           </DialogFooter>
         </DialogContent>

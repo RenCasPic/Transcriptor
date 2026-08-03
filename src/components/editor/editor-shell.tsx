@@ -13,6 +13,7 @@ import type { TranscriptSegmentItem } from '@/lib/data/transcripts';
 import type { ContentDocumentRecord } from '@/lib/data/documents';
 import type { DocumentVersionItem } from '@/lib/data/versions';
 import type { WarningItem } from './warnings-panel';
+import { useDictionary } from '@/lib/i18n/dictionary-provider';
 import type { Database } from '@/lib/types/database';
 
 type ProjectRow = Database['public']['Tables']['projects']['Row'];
@@ -49,6 +50,7 @@ export function EditorShell({
   versions: DocumentVersionItem[];
   currentUserId: string | null;
 }) {
+  const t = useDictionary();
   const [selectedSegmentId, setSelectedSegmentId] = useState<string | null>(null);
   const [transcriptSheetOpen, setTranscriptSheetOpen] = useState(false);
   const [drawerSheetOpen, setDrawerSheetOpen] = useState(false);
@@ -104,7 +106,7 @@ export function EditorShell({
       <div className="grid flex-1 gap-4 overflow-hidden p-4 lg:grid-cols-[300px_1fr_360px]">
         <div className="hidden flex-col overflow-hidden rounded-xl border border-primary bg-background lg:flex">
           <div className="shrink-0 border-b border-primary px-4 py-3 text-center text-base font-semibold">
-            Transcripción
+            {t.editor.columns.transcript}
           </div>
           <div className="flex-1 overflow-hidden">
             <TranscriptPanel
@@ -118,7 +120,7 @@ export function EditorShell({
 
         <div className="flex flex-col overflow-hidden rounded-xl border border-primary bg-background">
           <div className="shrink-0 border-b border-primary px-4 py-3 text-center text-base font-semibold">
-            Publicación
+            {t.editor.columns.publication}
           </div>
           <div className="flex-1 overflow-hidden">
             <ArticleEditor
@@ -134,7 +136,9 @@ export function EditorShell({
         </div>
 
         <div className="hidden flex-col overflow-hidden rounded-xl border border-primary bg-background lg:flex">
-          <div className="shrink-0 border-b border-primary px-4 py-3 text-center text-base font-semibold">SEO</div>
+          <div className="shrink-0 border-b border-primary px-4 py-3 text-center text-base font-semibold">
+            {t.editor.columns.seo}
+          </div>
           <div className="flex-1 overflow-hidden">
             <EditorDrawerTabs
               documentId={document.id}
@@ -157,7 +161,7 @@ export function EditorShell({
 
       <Sheet open={transcriptSheetOpen} onOpenChange={setTranscriptSheetOpen}>
         <SheetContent side="left" className="w-[85vw] max-w-sm p-0">
-          <SheetTitle className="sr-only">Transcripción</SheetTitle>
+          <SheetTitle className="sr-only">{t.editor.columns.transcript}</SheetTitle>
           <TranscriptPanel
             segments={segments}
             usedSegmentIds={usedSegmentIds}
@@ -171,7 +175,7 @@ export function EditorShell({
 
       <Sheet open={drawerSheetOpen} onOpenChange={setDrawerSheetOpen}>
         <SheetContent side="right" className="w-[85vw] max-w-sm p-0">
-          <SheetTitle className="sr-only">Panel del artículo</SheetTitle>
+          <SheetTitle className="sr-only">{t.editor.articlePanelTitle}</SheetTitle>
           <EditorDrawerTabs
             documentId={document.id}
             projectId={project.id}

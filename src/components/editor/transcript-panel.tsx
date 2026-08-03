@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { secondsToTimestamp } from '@/lib/content/metrics';
+import { useDictionary } from '@/lib/i18n/dictionary-provider';
 import type { TranscriptSegmentItem } from '@/lib/data/transcripts';
 
 export function segmentDomId(segmentId: string) {
@@ -24,6 +25,7 @@ export function TranscriptPanel({
   selectedSegmentId: string | null;
   onSelectSegment: (segmentId: string) => void;
 }) {
+  const t = useDictionary();
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
@@ -35,9 +37,9 @@ export function TranscriptPanel({
   async function handleCopy(text: string) {
     try {
       await navigator.clipboard.writeText(text);
-      toast.success('Fragmento copiado');
+      toast.success(t.editor.transcript.copyFragment);
     } catch {
-      toast.error('No se pudo copiar el fragmento');
+      toast.error(t.editor.transcript.copyError);
     }
   }
 
@@ -47,7 +49,7 @@ export function TranscriptPanel({
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar en la transcripción..."
+            placeholder={t.editor.transcript.searchPlaceholder}
             className="h-8 pl-8 text-xs"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -74,7 +76,7 @@ export function TranscriptPanel({
                 {isUsed && (
                   <span className="ml-auto flex items-center gap-1 text-success">
                     <CheckCircle2 className="h-3 w-3" />
-                    Usado
+                    {t.editor.transcript.used}
                   </span>
                 )}
                 <Button
@@ -98,7 +100,7 @@ export function TranscriptPanel({
         })}
         {filtered.length === 0 && (
           <p className="p-4 text-center text-xs text-muted-foreground">
-            Sin resultados para &quot;{search}&quot;
+            {t.editor.transcript.noResultsFor} &quot;{search}&quot;
           </p>
         )}
       </div>

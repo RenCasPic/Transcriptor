@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { updateWorkspaceNameAction } from '@/lib/actions/workspace';
+import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
 export function WorkspaceNameForm({
   workspaceId,
@@ -17,6 +18,7 @@ export function WorkspaceNameForm({
   defaultName: string;
   disabled: boolean;
 }) {
+  const t = useDictionary();
   const [name, setName] = useState(defaultName);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -30,13 +32,13 @@ export function WorkspaceNameForm({
       toast.error(result.error.message);
       return;
     }
-    toast.success('Espacio de trabajo actualizado');
+    toast.success(t.settings.workspace.saveSuccess);
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1.5">
-        <Label htmlFor="workspaceName">Nombre</Label>
+        <Label htmlFor="workspaceName">{t.settings.workspace.nameLabel}</Label>
         <Input
           id="workspaceName"
           value={name}
@@ -47,7 +49,7 @@ export function WorkspaceNameForm({
       {!disabled && (
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-          Guardar cambios
+          {t.settings.workspace.save}
         </Button>
       )}
     </form>

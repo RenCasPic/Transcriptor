@@ -11,9 +11,13 @@ import { getProjectById } from '@/lib/data/projects';
 import { getLatestTranscript } from '@/lib/data/transcripts';
 import { getDocumentByProject } from '@/lib/data/documents';
 import { getCurrentWorkspace } from '@/lib/data/workspace';
-import { CONTENT_TYPE_LABELS, ARTICLE_TONE_LABELS } from '@/lib/types/domain';
+import { getDictionary } from '@/lib/i18n/get-dictionary';
+import { getDomainLabels } from '@/lib/i18n/domain-labels';
 
-export const metadata: Metadata = { title: 'Proyecto' };
+export async function generateMetadata(): Promise<Metadata> {
+  const { dictionary } = await getDictionary();
+  return { title: dictionary.projects.detail.configTitle };
+}
 
 interface ProjectPageProps {
   params: Promise<{ projectId: string }>;
@@ -28,10 +32,12 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
     notFound();
   }
 
-  const [transcript, document] = await Promise.all([
+  const [transcript, document, { dictionary: t, locale }] = await Promise.all([
     getLatestTranscript(projectId),
     getDocumentByProject(projectId),
+    getDictionary(),
   ]);
+  const domainLabels = getDomainLabels(locale);
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -53,25 +59,31 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Configuración del artículo</CardTitle>
+          <CardTitle className="text-base">{t.projects.detail.configTitle}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
-          <InfoItem label="Tipo de contenido" value={CONTENT_TYPE_LABELS[project.content_type]} />
-          <InfoItem label="Tono" value={ARTICLE_TONE_LABELS[project.tone]} />
-          <InfoItem label="Audiencia" value={project.audience ?? 'No especificada'} />
-          <InfoItem label="Palabra clave principal" value={project.primary_keyword ?? 'Ninguna'} />
-          <InfoItem label="Objetivo" value={project.objective ?? 'No especificado'} className="sm:col-span-2" />
-          <InfoItem label="Llamada a la acción" value={project.call_to_action ?? 'Ninguna'} className="sm:col-span-2" />
+          <InfoItem label={t.projects.detail.contentType} value={domainLabels.contentType[project.content_type]} />
+          <InfoItem label={t.projects.detail.tone} value={domainLabels.articleTone[project.tone]} />
+          <InfoItem label={t.projects.detail.audience} value={project.audience ?? t.projects.detail.audienceEmpty} />
+          <InfoItem label={t.projects.detail.keyword} value={project.primary_keyword ?? t.projects.detail.keywordEmpty} />
+          <InfoItem
+            label={t.projects.detail.objective}
+            value={project.objective ?? t.projects.detail.objectiveEmpty}
+            className="sm:col-span-2"
+          />
+          <InfoItem
+            label={t.projects.detail.cta}
+            value={project.call_to_action ?? t.projects.detail.ctaEmpty}
+            className="sm:col-span-2"
+          />
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Fuente de contenido</CardTitle>
+          <CardTitle className="text-base">{t.projects.detail.sourceTitle}</CardTitle>
           <CardDescription>
-            {transcript
-              ? 'Ya tienes una transcripción cargada. Puedes reemplazarla importando una nueva.'
-              : 'Añade una transcripción para poder generar el artículo.'}
+            {transcript ? t.projects.detail.sourceDescriptionHasTranscript : t.projects.detail.sourceDescriptionEmpty}
           </CardDescription>
         </CardHeader>
         <CardContent>

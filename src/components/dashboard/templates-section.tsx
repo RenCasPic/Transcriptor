@@ -17,11 +17,15 @@ import {
 } from '@/components/ui/dialog';
 import { CreateTemplateDialog } from './create-template-dialog';
 import { deleteTemplateAction } from '@/lib/actions/templates';
-import { CONTENT_TYPE_LABELS, ARTICLE_TONE_LABELS } from '@/lib/types/domain';
+import { useDictionary, useLocale } from '@/lib/i18n/dictionary-provider';
+import { getDomainLabels } from '@/lib/i18n/domain-labels';
 import type { ProjectTemplateItem } from '@/lib/data/templates';
 
 export function TemplatesSection({ templates }: { templates: ProjectTemplateItem[] }) {
   const router = useRouter();
+  const t = useDictionary();
+  const locale = useLocale();
+  const domainLabels = getDomainLabels(locale);
   const [templateToDelete, setTemplateToDelete] = useState<ProjectTemplateItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -36,7 +40,7 @@ export function TemplatesSection({ templates }: { templates: ProjectTemplateItem
       return;
     }
 
-    toast.success('Plantilla eliminada');
+    toast.success(t.templates.deleteSuccess);
     setTemplateToDelete(null);
     router.refresh();
   }
@@ -47,20 +51,16 @@ export function TemplatesSection({ templates }: { templates: ProjectTemplateItem
         <div>
           <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
             <LayoutTemplate className="h-4 w-4 text-violet-600" />
-            Plantillas
+            {t.templates.sectionTitle}
           </h2>
-          <p className="text-xs text-muted-foreground">
-            Guarda audiencia, tono y objetivo para no volver a escribirlos en cada proyecto.
-          </p>
+          <p className="text-xs text-muted-foreground">{t.templates.sectionDescription}</p>
         </div>
         <CreateTemplateDialog />
       </div>
 
       {templates.length === 0 ? (
         <Card className="border-dashed">
-          <CardContent className="p-4 text-sm text-muted-foreground">
-            Todavía no tienes plantillas guardadas.
-          </CardContent>
+          <CardContent className="p-4 text-sm text-muted-foreground">{t.templates.empty}</CardContent>
         </Card>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -79,13 +79,15 @@ export function TemplatesSection({ templates }: { templates: ProjectTemplateItem
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {CONTENT_TYPE_LABELS[template.contentType]} · {ARTICLE_TONE_LABELS[template.tone]}
+                  {domainLabels.contentType[template.contentType]} · {domainLabels.articleTone[template.tone]}
                 </p>
                 {template.audience && (
-                  <p className="line-clamp-1 text-xs text-muted-foreground">Audiencia: {template.audience}</p>
+                  <p className="line-clamp-1 text-xs text-muted-foreground">
+                    {t.templates.audienceLabel}: {template.audience}
+                  </p>
                 )}
                 <Button size="sm" variant="outline" className="w-full" asChild>
-                  <Link href={`/projects/new?template=${template.id}`}>Usar plantilla</Link>
+                  <Link href={`/projects/new?template=${template.id}`}>{t.templates.useTemplate}</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -96,18 +98,18 @@ export function TemplatesSection({ templates }: { templates: ProjectTemplateItem
       <Dialog open={!!templateToDelete} onOpenChange={(open) => !open && setTemplateToDelete(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>¿Eliminar &quot;{templateToDelete?.name}&quot;?</DialogTitle>
-            <DialogDescription>
-              Esta acción no se puede deshacer. Los proyectos ya creados con esta plantilla no se ven afectados.
-            </DialogDescription>
+            <DialogTitle>
+              {t.templates.deleteTitle} &quot;{templateToDelete?.name}&quot;?
+            </DialogTitle>
+            <DialogDescription>{t.templates.deleteDescription}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setTemplateToDelete(null)} disabled={isDeleting}>
-              Cancelar
+              {t.common.cancel}
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
               {isDeleting && <Loader2 className="h-4 w-4 animate-spin" />}
-              Sí, eliminar
+              {t.templates.deleteConfirm}
             </Button>
           </DialogFooter>
         </DialogContent>

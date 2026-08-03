@@ -22,11 +22,15 @@ import {
 } from '@/components/ui/dialog';
 import { CreateTemplateSchema, type CreateTemplateInput } from '@/lib/validations/template';
 import { CONTENT_TYPES, ARTICLE_TONES } from '@/lib/validations/project';
-import { CONTENT_TYPE_LABELS, ARTICLE_TONE_LABELS } from '@/lib/types/domain';
 import { createTemplateAction } from '@/lib/actions/templates';
+import { useDictionary, useLocale } from '@/lib/i18n/dictionary-provider';
+import { getDomainLabels } from '@/lib/i18n/domain-labels';
 
 export function CreateTemplateDialog() {
   const router = useRouter();
+  const t = useDictionary();
+  const locale = useLocale();
+  const domainLabels = getDomainLabels(locale);
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -51,7 +55,7 @@ export function CreateTemplateDialog() {
       return;
     }
 
-    toast.success('Plantilla guardada');
+    toast.success(t.templates.dialog.success);
     reset({ tone: 'professional', contentType: 'guide', language: 'es' });
     setOpen(false);
     router.refresh();
@@ -62,26 +66,24 @@ export function CreateTemplateDialog() {
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <Plus className="h-4 w-4" />
-          Nueva plantilla
+          {t.templates.newTemplate}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nueva plantilla</DialogTitle>
-          <DialogDescription>
-            Guarda una configuración para reutilizarla al crear proyectos nuevos.
-          </DialogDescription>
+          <DialogTitle>{t.templates.dialog.title}</DialogTitle>
+          <DialogDescription>{t.templates.dialog.description}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
           <div className="space-y-1.5">
-            <Label htmlFor="template-name">Nombre de la plantilla</Label>
-            <Input id="template-name" placeholder="Ej. Podcast semanal B2B" {...register('name')} />
+            <Label htmlFor="template-name">{t.templates.dialog.nameLabel}</Label>
+            <Input id="template-name" placeholder={t.templates.dialog.namePlaceholder} {...register('name')} />
             {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>Tipo de contenido</Label>
+              <Label>{t.templates.dialog.contentTypeLabel}</Label>
               <Controller
                 control={control}
                 name="contentType"
@@ -93,7 +95,7 @@ export function CreateTemplateDialog() {
                     <SelectContent>
                       {CONTENT_TYPES.map((type) => (
                         <SelectItem key={type} value={type}>
-                          {CONTENT_TYPE_LABELS[type]}
+                          {domainLabels.contentType[type]}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -102,7 +104,7 @@ export function CreateTemplateDialog() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Tono</Label>
+              <Label>{t.templates.dialog.toneLabel}</Label>
               <Controller
                 control={control}
                 name="tone"
@@ -114,7 +116,7 @@ export function CreateTemplateDialog() {
                     <SelectContent>
                       {ARTICLE_TONES.map((tone) => (
                         <SelectItem key={tone} value={tone}>
-                          {ARTICLE_TONE_LABELS[tone]}
+                          {domainLabels.articleTone[tone]}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -125,29 +127,29 @@ export function CreateTemplateDialog() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="template-audience">Audiencia</Label>
-            <Input id="template-audience" placeholder="Ej. Founders de startups B2B" {...register('audience')} />
+            <Label htmlFor="template-audience">{t.templates.dialog.audienceLabel}</Label>
+            <Input id="template-audience" placeholder={t.templates.dialog.audiencePlaceholder} {...register('audience')} />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="template-keyword">Palabra clave principal (opcional)</Label>
+            <Label htmlFor="template-keyword">{t.templates.dialog.keywordLabel}</Label>
             <Input id="template-keyword" {...register('primaryKeyword')} />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="template-objective">Objetivo del artículo</Label>
+            <Label htmlFor="template-objective">{t.templates.dialog.objectiveLabel}</Label>
             <Textarea id="template-objective" {...register('objective')} />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="template-cta">Llamada a la acción (opcional)</Label>
+            <Label htmlFor="template-cta">{t.templates.dialog.ctaLabel}</Label>
             <Input id="template-cta" {...register('callToAction')} />
           </div>
 
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              Guardar plantilla
+              {t.templates.dialog.submit}
             </Button>
           </DialogFooter>
         </form>

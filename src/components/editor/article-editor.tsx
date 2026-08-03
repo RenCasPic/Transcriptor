@@ -18,6 +18,7 @@ import { AiActionMenu } from './ai-action-menu';
 import { RewritePreviewDialog } from './rewrite-preview-dialog';
 import { SaveStatusIndicator } from './save-status-indicator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useDictionary, useLocale } from '@/lib/i18n/dictionary-provider';
 
 interface RewriteState {
   from: number;
@@ -27,19 +28,6 @@ interface RewriteState {
   proposedText: string | null;
   isLoading: boolean;
 }
-
-const INSTRUCTION_LABELS: Record<RewriteInstruction, string> = {
-  rewrite: 'reescribir',
-  shorten: 'acortar',
-  expand: 'expandir',
-  simplify: 'simplificar',
-  more_professional: 'hacer más profesional',
-  more_conversational: 'hacer más conversacional',
-  improve_seo: 'mejorar para SEO',
-  convert_to_list: 'convertir en lista',
-  fix_grammar: 'corregir gramática',
-  regenerate: 'regenerar',
-};
 
 export function ArticleEditor({
   documentId,
@@ -58,6 +46,20 @@ export function ArticleEditor({
   initialWordCount: number;
   onContentSnapshot?: (snapshot: { plainText: string; html: string; json: Json; wordCount: number }) => void;
 }) {
+  const t = useDictionary();
+  const locale = useLocale();
+  const INSTRUCTION_LABELS: Record<RewriteInstruction, string> = {
+    rewrite: t.editor.aiMenu.rewrite,
+    shorten: t.editor.aiMenu.shorten,
+    expand: t.editor.aiMenu.expand,
+    simplify: t.editor.aiMenu.simplify,
+    more_professional: t.editor.aiMenu.moreProfessional,
+    more_conversational: t.editor.aiMenu.moreConversational,
+    improve_seo: t.editor.aiMenu.improveSeo,
+    convert_to_list: t.editor.aiMenu.convertToList,
+    fix_grammar: t.editor.aiMenu.fixGrammar,
+    regenerate: t.editor.aiMenu.regenerate,
+  };
   const [title, setTitle] = useState(initialTitle);
   const [liveWordCount, setLiveWordCount] = useState(initialWordCount);
   const [rewriteState, setRewriteState] = useState<RewriteState | null>(null);
@@ -67,7 +69,7 @@ export function ArticleEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [2, 3] } }),
       Link.configure({ openOnClick: false, autolink: true }),
-      Placeholder.configure({ placeholder: 'Empieza a escribir tu artículo...' }),
+      Placeholder.configure({ placeholder: t.editor.contentPlaceholder }),
       BlockId,
     ],
     content: initialContentJson as object,
@@ -134,7 +136,7 @@ export function ArticleEditor({
 
     void createVersionAction({
       documentId,
-      reason: `Acción de IA: ${INSTRUCTION_LABELS[rewriteState.instruction]}`,
+      reason: `${t.editor.aiMenu.heading}: ${INSTRUCTION_LABELS[rewriteState.instruction]}`,
     });
 
     setRewriteState(null);
@@ -161,7 +163,7 @@ export function ArticleEditor({
         <input
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
-          placeholder="Título del artículo"
+          placeholder={t.editor.titlePlaceholder}
           className="w-full bg-transparent text-2xl font-bold tracking-tight outline-none placeholder:text-muted-foreground"
         />
       </div>
@@ -172,8 +174,12 @@ export function ArticleEditor({
       </div>
       <div className="flex items-center justify-between border-t px-4 py-2 text-xs text-muted-foreground">
         <div className="flex gap-3">
-          <span>{liveWordCount.toLocaleString('es')} palabras</span>
-          <span>{estimateReadingTimeMinutes(liveWordCount)} min de lectura</span>
+          <span>
+            {liveWordCount.toLocaleString(locale)} {t.common.words}
+          </span>
+          <span>
+            {estimateReadingTimeMinutes(liveWordCount)} {t.common.minutesReading}
+          </span>
         </div>
         <SaveStatusIndicator status={status} />
       </div>

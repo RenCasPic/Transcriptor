@@ -2,16 +2,21 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { secondsToTimestamp } from '@/lib/content/metrics';
 import type { TranscriptWithSegments } from '@/lib/data/transcripts';
 import { OriginalFileLink } from './original-file-link';
+import { getDictionary } from '@/lib/i18n/get-dictionary';
 
-export function TranscriptPreview({ transcript }: { transcript: TranscriptWithSegments }) {
+export async function TranscriptPreview({ transcript }: { transcript: TranscriptWithSegments }) {
   const preview = transcript.segments.slice(0, 4);
+  const { dictionary: t } = await getDictionary();
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
         <div>
-          <CardTitle className="text-base">Transcripción cargada</CardTitle>
-          <CardDescription>{transcript.segments.length} segmentos · idioma {transcript.language}</CardDescription>
+          <CardTitle className="text-base">{t.projects.detail.transcriptLoadedTitle}</CardTitle>
+          <CardDescription>
+            {transcript.segments.length} {t.projects.detail.segments} · {t.projects.detail.languageInline}{' '}
+            {transcript.language}
+          </CardDescription>
         </div>
         {transcript.hasOriginalFile && transcript.sourceId && (
           <OriginalFileLink mediaSourceId={transcript.sourceId} />
@@ -33,7 +38,7 @@ export function TranscriptPreview({ transcript }: { transcript: TranscriptWithSe
         ))}
         {transcript.segments.length > preview.length && (
           <p className="text-xs text-muted-foreground">
-            + {transcript.segments.length - preview.length} segmentos más. Podrás verlos completos en el editor.
+            + {transcript.segments.length - preview.length} {t.projects.detail.moreSegments}
           </p>
         )}
       </CardContent>

@@ -6,7 +6,8 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { resolveWarningAction } from '@/lib/actions/editor';
-import { WARNING_TYPE_LABELS, WARNING_STATUS_LABELS } from '@/lib/types/domain';
+import { useDictionary, useLocale } from '@/lib/i18n/dictionary-provider';
+import { getDomainLabels } from '@/lib/i18n/domain-labels';
 import type { WarningStatus, WarningType } from '@/lib/types/database';
 import { segmentDomId } from './transcript-panel';
 
@@ -34,6 +35,9 @@ export function WarningsPanel({
   sourceLinksByBlock: Map<string, string[]>;
   onNavigateToSegment: (segmentId: string) => void;
 }) {
+  const t = useDictionary();
+  const locale = useLocale();
+  const domainLabels = getDomainLabels(locale);
   const [items, setItems] = useState(warnings);
 
   async function updateStatus(id: string, status: WarningStatus) {
@@ -60,30 +64,26 @@ export function WarningsPanel({
   }
 
   if (items.length === 0) {
-    return (
-      <div className="p-4 text-sm text-muted-foreground">
-        No hay alertas de fidelidad para este artículo.
-      </div>
-    );
+    return <div className="p-4 text-sm text-muted-foreground">{t.editor.warnings.empty}</div>;
   }
 
   return (
     <div className="space-y-3 p-4">
-      <h3 className="text-sm font-semibold">Alertas de fidelidad</h3>
+      <h3 className="text-sm font-semibold">{t.editor.warnings.title}</h3>
       {items.map((warning) => (
         <div key={warning.id} className="space-y-2 rounded-md border p-3">
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-1.5 text-xs font-medium">
               <AlertTriangle className="h-3.5 w-3.5 text-warning" />
-              {WARNING_TYPE_LABELS[warning.type]}
+              {domainLabels.warningType[warning.type]}
             </div>
-            <Badge variant={STATUS_VARIANT[warning.status]}>{WARNING_STATUS_LABELS[warning.status]}</Badge>
+            <Badge variant={STATUS_VARIANT[warning.status]}>{domainLabels.warningStatus[warning.status]}</Badge>
           </div>
           <p className="text-xs text-muted-foreground">{warning.message}</p>
           <div className="flex flex-wrap gap-1.5">
             <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleViewSource(warning.blockId)}>
               <Eye className="h-3 w-3" />
-              Ver fuente
+              {t.editor.warnings.viewSource}
             </Button>
             {warning.status !== 'resolved' && (
               <Button
@@ -93,7 +93,7 @@ export function WarningsPanel({
                 onClick={() => updateStatus(warning.id, 'resolved')}
               >
                 <Check className="h-3 w-3" />
-                Resolver
+                {t.editor.warnings.resolve}
               </Button>
             )}
             {warning.status !== 'dismissed' && (
@@ -104,7 +104,7 @@ export function WarningsPanel({
                 onClick={() => updateStatus(warning.id, 'dismissed')}
               >
                 <X className="h-3 w-3" />
-                Descartar
+                {t.editor.warnings.dismiss}
               </Button>
             )}
           </div>

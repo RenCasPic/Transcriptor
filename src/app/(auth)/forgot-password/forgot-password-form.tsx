@@ -10,8 +10,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RequestPasswordResetSchema, type RequestPasswordResetInput } from '@/lib/validations/auth';
 import { requestPasswordResetAction } from '@/lib/actions/auth';
+import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
 export function ForgotPasswordForm() {
+  const t = useDictionary();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
 
@@ -37,7 +39,7 @@ export function ForgotPasswordForm() {
   if (sent) {
     return (
       <div className="rounded-lg border bg-muted/40 p-4 text-sm">
-        Si existe una cuenta con ese correo, te enviamos un enlace para restablecer tu contraseña.
+        {t.auth.forgotPassword.sentMessage}
       </div>
     );
   }
@@ -45,13 +47,13 @@ export function ForgotPasswordForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
       <div className="space-y-1.5">
-        <Label htmlFor="email">Correo electrónico</Label>
-        <Input id="email" type="email" autoComplete="email" placeholder="tu@correo.com" {...register('email')} />
+        <Label htmlFor="email">{t.auth.forgotPassword.email}</Label>
+        <Input id="email" type="email" autoComplete="email" placeholder={t.common.emailPlaceholder} {...register('email')} />
         {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
       </div>
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-        Enviar enlace de recuperación
+        {t.auth.forgotPassword.submit}
       </Button>
     </form>
   );

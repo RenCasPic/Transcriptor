@@ -11,9 +11,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SignUpSchema, type SignUpInput } from '@/lib/validations/auth';
 import { signUpAction } from '@/lib/actions/auth';
+import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
 export function RegisterForm() {
   const router = useRouter();
+  const t = useDictionary();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmationSent, setConfirmationSent] = useState(false);
 
@@ -38,7 +40,7 @@ export function RegisterForm() {
       return;
     }
 
-    toast.success('Cuenta creada correctamente');
+    toast.success(t.auth.register.accountCreated);
     router.push('/dashboard');
     router.refresh();
   }
@@ -46,7 +48,7 @@ export function RegisterForm() {
   if (confirmationSent) {
     return (
       <div className="rounded-lg border bg-muted/40 p-4 text-sm">
-        Te enviamos un correo de confirmación. Revisa tu bandeja de entrada para activar tu cuenta.
+        {t.auth.register.confirmationSent}
       </div>
     );
   }
@@ -54,23 +56,23 @@ export function RegisterForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
       <div className="space-y-1.5">
-        <Label htmlFor="fullName">Nombre completo</Label>
+        <Label htmlFor="fullName">{t.auth.register.fullName}</Label>
         <Input id="fullName" autoComplete="name" placeholder="Ana Gómez" {...register('fullName')} />
         {errors.fullName && <p className="text-xs text-destructive">{errors.fullName.message}</p>}
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="email">Correo electrónico</Label>
-        <Input id="email" type="email" autoComplete="email" placeholder="tu@correo.com" {...register('email')} />
+        <Label htmlFor="email">{t.auth.register.email}</Label>
+        <Input id="email" type="email" autoComplete="email" placeholder={t.common.emailPlaceholder} {...register('email')} />
         {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="password">Contraseña</Label>
+        <Label htmlFor="password">{t.auth.register.password}</Label>
         <Input id="password" type="password" autoComplete="new-password" {...register('password')} />
         {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
       </div>
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-        Crear cuenta
+        {t.auth.register.submit}
       </Button>
     </form>
   );

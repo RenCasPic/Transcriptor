@@ -5,21 +5,24 @@ import { useState, useTransition } from 'react';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PROJECT_STATUS_LABELS } from '@/lib/types/domain';
+import { useDictionary, useLocale } from '@/lib/i18n/dictionary-provider';
+import { getDomainLabels } from '@/lib/i18n/domain-labels';
 import type { ProjectStatus } from '@/lib/types/database';
-
-const STATUS_OPTIONS: Array<{ value: ProjectStatus | 'all'; label: string }> = [
-  { value: 'all', label: 'Todos los estados' },
-  ...(Object.keys(PROJECT_STATUS_LABELS) as ProjectStatus[]).map((status) => ({
-    value: status,
-    label: PROJECT_STATUS_LABELS[status],
-  })),
-];
 
 export function DashboardFilters({ initialSearch, initialStatus }: { initialSearch: string; initialStatus: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const t = useDictionary();
+  const locale = useLocale();
+  const projectStatusLabels = getDomainLabels(locale).projectStatus;
+  const STATUS_OPTIONS: Array<{ value: ProjectStatus | 'all'; label: string }> = [
+    { value: 'all', label: t.dashboard.allStatuses },
+    ...(Object.keys(projectStatusLabels) as ProjectStatus[]).map((status) => ({
+      value: status,
+      label: projectStatusLabels[status],
+    })),
+  ];
   const [search, setSearch] = useState(initialSearch);
   const [, startTransition] = useTransition();
 
@@ -41,7 +44,7 @@ export function DashboardFilters({ initialSearch, initialStatus }: { initialSear
       <div className="relative flex-1 sm:max-w-xs">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Buscar proyectos..."
+          placeholder={t.dashboard.searchPlaceholder}
           className="pl-9"
           value={search}
           onChange={(e) => {
@@ -52,7 +55,7 @@ export function DashboardFilters({ initialSearch, initialStatus }: { initialSear
       </div>
       <Select defaultValue={initialStatus} onValueChange={(value) => updateParams({ status: value })}>
         <SelectTrigger className="sm:w-56">
-          <SelectValue placeholder="Filtrar por estado" />
+          <SelectValue placeholder={t.dashboard.filterByStatus} />
         </SelectTrigger>
         <SelectContent>
           {STATUS_OPTIONS.map((option) => (

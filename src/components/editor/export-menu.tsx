@@ -15,9 +15,11 @@ import {
 import { proseMirrorJsonToMarkdown, proseMirrorJsonToPlainText } from '@/lib/content/article-transform';
 import { downloadTextFile } from '@/lib/content/download';
 import { slugify } from '@/lib/content/slug';
+import { useDictionary } from '@/lib/i18n/dictionary-provider';
 import type { Json } from '@/lib/types/database';
 
 export function ExportMenu({ title, html, json }: { title: string; html: string; json: Json }) {
+  const t = useDictionary();
   const filenameBase = slugify(title) || 'articulo';
 
   function handleExportMarkdown() {
@@ -35,9 +37,9 @@ export function ExportMenu({ title, html, json }: { title: string; html: string;
   async function handleCopy() {
     try {
       await navigator.clipboard.writeText(proseMirrorJsonToPlainText(json));
-      toast.success('Artículo copiado al portapapeles');
+      toast.success(t.editor.export.copySuccess);
     } catch {
-      toast.error('No se pudo copiar el artículo');
+      toast.error(t.editor.export.copyError);
     }
   }
 
@@ -46,30 +48,32 @@ export function ExportMenu({ title, html, json }: { title: string; html: string;
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm">
           <Download className="h-4 w-4" />
-          Exportar
+          {t.editor.export.button}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem onClick={handleExportMarkdown}>Markdown (.md)</DropdownMenuItem>
-        <DropdownMenuItem onClick={handleExportHtml}>HTML (.html)</DropdownMenuItem>
-        <DropdownMenuItem onClick={handleExportPlainText}>Texto plano (.txt)</DropdownMenuItem>
+        <DropdownMenuItem onClick={handleExportMarkdown}>{t.editor.export.markdown}</DropdownMenuItem>
+        <DropdownMenuItem onClick={handleExportHtml}>{t.editor.export.html}</DropdownMenuItem>
+        <DropdownMenuItem onClick={handleExportPlainText}>{t.editor.export.plainText}</DropdownMenuItem>
         <DropdownMenuItem onClick={handleCopy}>
           <Copy className="h-4 w-4" />
-          Copiar al portapapeles
+          {t.editor.export.copyToClipboard}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuLabel className="text-xs text-muted-foreground">Publicar (próximamente)</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-xs text-muted-foreground">
+          {t.editor.export.publishComingSoon}
+        </DropdownMenuLabel>
         <DropdownMenuItem disabled className="justify-between">
           WordPress
-          <Badge variant="outline">Próximamente</Badge>
+          <Badge variant="outline">{t.editor.export.comingSoon}</Badge>
         </DropdownMenuItem>
         <DropdownMenuItem disabled className="justify-between">
           Webflow
-          <Badge variant="outline">Próximamente</Badge>
+          <Badge variant="outline">{t.editor.export.comingSoon}</Badge>
         </DropdownMenuItem>
         <DropdownMenuItem disabled className="justify-between">
           Ghost
-          <Badge variant="outline">Próximamente</Badge>
+          <Badge variant="outline">{t.editor.export.comingSoon}</Badge>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

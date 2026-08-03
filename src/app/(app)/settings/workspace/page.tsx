@@ -4,11 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { getCurrentWorkspace, listWorkspaceMembers } from '@/lib/data/workspace';
-import { WORKSPACE_ROLE_LABELS } from '@/lib/types/domain';
 import { canManageWorkspace } from '@/lib/permissions';
 import { WorkspaceNameForm } from './workspace-name-form';
+import { getDictionary } from '@/lib/i18n/get-dictionary';
+import { getDomainLabels } from '@/lib/i18n/domain-labels';
 
-export const metadata: Metadata = { title: 'Espacio de trabajo' };
+export async function generateMetadata(): Promise<Metadata> {
+  const { dictionary } = await getDictionary();
+  return { title: dictionary.nav.workspace };
+}
 
 export default async function WorkspaceSettingsPage() {
   const workspace = await getCurrentWorkspace();
@@ -16,14 +20,16 @@ export default async function WorkspaceSettingsPage() {
 
   const members = await listWorkspaceMembers(workspace.id);
   const canEdit = canManageWorkspace(workspace.role);
+  const { dictionary: t, locale } = await getDictionary();
+  const domainLabels = getDomainLabels(locale);
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Datos del espacio de trabajo</CardTitle>
+          <CardTitle>{t.settings.workspace.dataTitle}</CardTitle>
           <CardDescription>
-            Slug: <code className="rounded bg-muted px-1 py-0.5">{workspace.slug}</code>
+            {t.settings.workspace.slugLabel}: <code className="rounded bg-muted px-1 py-0.5">{workspace.slug}</code>
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -33,8 +39,8 @@ export default async function WorkspaceSettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Miembros</CardTitle>
-          <CardDescription>Personas con acceso a este espacio de trabajo.</CardDescription>
+          <CardTitle>{t.settings.workspace.membersTitle}</CardTitle>
+          <CardDescription>{t.settings.workspace.membersDescription}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {members.map((member) => (
@@ -47,16 +53,14 @@ export default async function WorkspaceSettingsPage() {
                 </Avatar>
                 <div>
                   <p className="text-sm font-medium">
-                    {member.fullName ?? 'Usuario'} {member.isCurrentUser && '(tú)'}
+                    {member.fullName ?? t.settings.workspace.unnamedUser} {member.isCurrentUser && t.settings.workspace.you}
                   </p>
                 </div>
               </div>
-              <Badge variant="secondary">{WORKSPACE_ROLE_LABELS[member.role]}</Badge>
+              <Badge variant="secondary">{domainLabels.workspaceRole[member.role]}</Badge>
             </div>
           ))}
-          <p className="pt-2 text-xs text-muted-foreground">
-            Próximamente: invitar nuevos miembros por correo electrónico.
-          </p>
+          <p className="pt-2 text-xs text-muted-foreground">{t.settings.workspace.inviteComingSoon}</p>
         </CardContent>
       </Card>
     </div>

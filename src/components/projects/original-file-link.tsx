@@ -5,8 +5,10 @@ import { Loader2, FileDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { getMediaSourceSignedUrlAction } from '@/lib/actions/storage';
+import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
 export function OriginalFileLink({ mediaSourceId }: { mediaSourceId: string }) {
+  const t = useDictionary();
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleClick() {
@@ -25,7 +27,7 @@ export function OriginalFileLink({ mediaSourceId }: { mediaSourceId: string }) {
   return (
     <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={handleClick} disabled={isLoading}>
       {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileDown className="h-3 w-3" />}
-      Ver archivo original
+      {t.projects.detail.viewOriginalFile}
     </Button>
   );
 }

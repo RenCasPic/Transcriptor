@@ -25,14 +25,18 @@ import {
   ARTICLE_TONES,
   type CreateProjectInput,
 } from '@/lib/validations/project';
-import { CONTENT_TYPE_LABELS, ARTICLE_TONE_LABELS } from '@/lib/types/domain';
 import { updateProjectAction } from '@/lib/actions/projects';
+import { useDictionary, useLocale } from '@/lib/i18n/dictionary-provider';
+import { getDomainLabels } from '@/lib/i18n/domain-labels';
 import type { Database } from '@/lib/types/database';
 
 type ProjectRow = Database['public']['Tables']['projects']['Row'];
 
 export function EditProjectDialog({ project }: { project: ProjectRow }) {
   const router = useRouter();
+  const t = useDictionary();
+  const locale = useLocale();
+  const domainLabels = getDomainLabels(locale);
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -66,7 +70,7 @@ export function EditProjectDialog({ project }: { project: ProjectRow }) {
       return;
     }
 
-    toast.success('Proyecto actualizado');
+    toast.success(t.projects.detail.updateSuccess);
     setOpen(false);
     router.refresh();
   }
@@ -76,26 +80,26 @@ export function EditProjectDialog({ project }: { project: ProjectRow }) {
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <Pencil className="h-4 w-4" />
-          Editar detalles
+          {t.projects.detail.editDetails}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] max-w-xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Editar proyecto</DialogTitle>
+          <DialogTitle>{t.projects.detail.editDialogTitle}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
           <div className="space-y-1.5">
-            <Label htmlFor="edit-name">Nombre del proyecto</Label>
+            <Label htmlFor="edit-name">{t.projects.new.nameLabel}</Label>
             <Input id="edit-name" {...register('name')} />
             {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="edit-provisionalTitle">Título provisional</Label>
+            <Label htmlFor="edit-provisionalTitle">{t.projects.new.provisionalTitleLabel}</Label>
             <Input id="edit-provisionalTitle" {...register('provisionalTitle')} />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>Tipo de contenido</Label>
+              <Label>{t.projects.new.contentTypeLabel}</Label>
               <Controller
                 control={control}
                 name="contentType"
@@ -107,7 +111,7 @@ export function EditProjectDialog({ project }: { project: ProjectRow }) {
                     <SelectContent>
                       {CONTENT_TYPES.map((type) => (
                         <SelectItem key={type} value={type}>
-                          {CONTENT_TYPE_LABELS[type]}
+                          {domainLabels.contentType[type]}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -116,7 +120,7 @@ export function EditProjectDialog({ project }: { project: ProjectRow }) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Tono</Label>
+              <Label>{t.projects.new.toneLabel}</Label>
               <Controller
                 control={control}
                 name="tone"
@@ -128,7 +132,7 @@ export function EditProjectDialog({ project }: { project: ProjectRow }) {
                     <SelectContent>
                       {ARTICLE_TONES.map((tone) => (
                         <SelectItem key={tone} value={tone}>
-                          {ARTICLE_TONE_LABELS[tone]}
+                          {domainLabels.articleTone[tone]}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -138,25 +142,25 @@ export function EditProjectDialog({ project }: { project: ProjectRow }) {
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="edit-audience">Audiencia</Label>
+            <Label htmlFor="edit-audience">{t.projects.new.audienceLabel}</Label>
             <Input id="edit-audience" {...register('audience')} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="edit-primaryKeyword">Palabra clave principal</Label>
+            <Label htmlFor="edit-primaryKeyword">{t.projects.new.keywordLabel}</Label>
             <Input id="edit-primaryKeyword" {...register('primaryKeyword')} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="edit-objective">Objetivo del artículo</Label>
+            <Label htmlFor="edit-objective">{t.projects.new.objectiveLabel}</Label>
             <Textarea id="edit-objective" {...register('objective')} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="edit-callToAction">Llamada a la acción</Label>
+            <Label htmlFor="edit-callToAction">{t.projects.new.ctaLabel}</Label>
             <Input id="edit-callToAction" {...register('callToAction')} />
           </div>
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              Guardar cambios
+              {t.common.save}
             </Button>
           </DialogFooter>
         </form>

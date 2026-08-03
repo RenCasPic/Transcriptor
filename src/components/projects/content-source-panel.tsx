@@ -2,17 +2,19 @@
 
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Upload, Sparkles, Youtube, Film } from 'lucide-react';
+import { Loader2, Upload, Sparkles, Youtube, Film, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { importTranscriptAction } from '@/lib/actions/projects';
-import { transcribeMediaAction } from '@/lib/actions/transcription';
+import { transcribeMediaAction, importMediaFromUrlAction } from '@/lib/actions/transcription';
 import { createClient } from '@/lib/supabase/client';
 import { DEMO_TRANSCRIPT_TEXT } from '@/lib/content/demo-transcript';
+import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
 const MAX_TEXT_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_MEDIA_FILE_SIZE_BYTES = 25 * 1024 * 1024;
@@ -42,11 +44,14 @@ export function ContentSourcePanel({
   language: string;
 }) {
   const router = useRouter();
+  const t = useDictionary();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaInputRef = useRef<HTMLInputElement>(null);
   const [pastedText, setPastedText] = useState('');
+  const [mediaUrl, setMediaUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isImportingUrl, setIsImportingUrl] = useState(false);
 
   async function handleImport(params: {
     sourceType: 'manual' | 'txt' | 'srt' | 'vtt';
@@ -70,7 +75,7 @@ export function ContentSourcePanel({
       return;
     }
 
-    toast.success('Transcripción importada correctamente');
+    toast.success(t.projects.source.importSuccess);
     router.refresh();
   }
 
@@ -86,11 +91,11 @@ export function ContentSourcePanel({
     const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
     const sourceType = EXTENSION_TO_SOURCE[extension];
     if (!sourceType) {
-      toast.error('Formato no soportado. Usa un archivo .txt, .srt o .vtt');
+      toast.error(t.projects.source.unsupportedTextFormat);
       return;
     }
     if (file.size > MAX_TEXT_FILE_SIZE_BYTES) {
-      toast.error('El archivo supera el tamaño máximo permitido (5 MB)');
+      toast.error(t.projects.source.textFileTooLarge);
       return;
     }
 
@@ -104,7 +109,7 @@ export function ContentSourcePanel({
         .upload(storagePath, file, { contentType: file.type || 'text/plain' });
 
       if (uploadError) {
-        toast.error('No se pudo guardar el archivo original, pero se procesará su contenido.');
+        toast.error(t.projects.source.originalFileSaveError);
       }
 
       await handleImport({
@@ -114,7 +119,7 @@ export function ContentSourcePanel({
         storagePath: uploadError ? undefined : storagePath,
       });
     } catch {
-      toast.error('No se pudo leer el archivo.');
+      toast.error(t.projects.source.fileReadError);
     } finally {
       setIsSubmitting(false);
     }
@@ -128,11 +133,11 @@ export function ContentSourcePanel({
     const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
     const mediaType = MEDIA_EXTENSION_TO_TYPE[extension];
     if (!mediaType) {
-      toast.error('Formato no soportado. Usa .mp4, .mov, .webm, .mp3, .wav o .m4a');
+      toast.error(t.projects.source.unsupportedMediaFormat);
       return;
     }
     if (file.size > MAX_MEDIA_FILE_SIZE_BYTES) {
-      toast.error('El archivo supera el tamaño máximo permitido para transcribir (25 MB)');
+      toast.error(t.projects.source.mediaFileTooLarge);
       return;
     }
 
@@ -145,7 +150,7 @@ export function ContentSourcePanel({
         .upload(storagePath, file, { contentType: file.type || 'application/octet-stream' });
 
       if (uploadError) {
-        toast.error('No se pudo subir el archivo. Inténtalo de nuevo.');
+        toast.error(t.projects.source.mediaUploadError);
         return;
       }
 
@@ -162,10 +167,10 @@ export function ContentSourcePanel({
         return;
       }
 
-      toast.success('Transcripción completada');
+      toast.success(t.projects.source.transcribeSuccess);
       router.refresh();
     } catch {
-      toast.error('No se pudo procesar el archivo.');
+      toast.error(t.projects.source.mediaProcessError);
     } finally {
       setIsTranscribing(false);
     }
@@ -175,31 +180,48 @@ export function ContentSourcePanel({
     await handleImport({ sourceType: 'manual', text: DEMO_TRANSCRIPT_TEXT });
   }
 
+  async function handleImportFromUrl() {
+    if (!mediaUrl.trim()) return;
+
+    setIsImportingUrl(true);
+    const result = await importMediaFromUrlAction({ projectId, sourceUrl: mediaUrl.trim(), language });
+    setIsImportingUrl(false);
+
+    if (!result.success) {
+      toast.error(result.error.message);
+      return;
+    }
+
+    toast.success(t.projects.source.transcribeSuccess);
+    setMediaUrl('');
+    router.refresh();
+  }
+
   return (
     <div className="space-y-4">
       <Tabs defaultValue="paste">
         <TabsList>
-          <TabsTrigger value="paste">Pegar texto</TabsTrigger>
-          <TabsTrigger value="upload">Subir archivo</TabsTrigger>
-          <TabsTrigger value="media">Video o audio</TabsTrigger>
-          <TabsTrigger value="demo">Usar demo</TabsTrigger>
+          <TabsTrigger value="paste">{t.projects.source.pasteTab}</TabsTrigger>
+          <TabsTrigger value="upload">{t.projects.source.uploadTab}</TabsTrigger>
+          <TabsTrigger value="media">{t.projects.source.mediaTab}</TabsTrigger>
+          <TabsTrigger value="demo">{t.projects.source.demoTab}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="paste" className="space-y-3">
           <Textarea
             rows={8}
-            placeholder="Pega aquí la transcripción de tu video, podcast o entrevista..."
+            placeholder={t.projects.source.pastePlaceholder}
             value={pastedText}
             onChange={(e) => setPastedText(e.target.value)}
           />
           <Button onClick={handlePasteSubmit} disabled={isSubmitting || pastedText.trim().length < 20}>
             {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-            Usar esta transcripción
+            {t.projects.source.useThisTranscript}
           </Button>
         </TabsContent>
 
         <TabsContent value="upload" className="space-y-3">
-          <p className="text-sm text-muted-foreground">Formatos soportados: .txt, .srt, .vtt (máx. 5 MB)</p>
+          <p className="text-sm text-muted-foreground">{t.projects.source.uploadFormats}</p>
           <input
             ref={fileInputRef}
             type="file"
@@ -209,15 +231,12 @@ export function ContentSourcePanel({
           />
           <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isSubmitting}>
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-            Seleccionar archivo
+            {t.projects.source.selectFile}
           </Button>
         </TabsContent>
 
         <TabsContent value="media" className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Formatos soportados: .mp4, .mov, .webm, .mp3, .wav, .m4a (máx. 25 MB). La transcripción puede
-            tardar uno o dos minutos según la duración del archivo.
-          </p>
+          <p className="text-sm text-muted-foreground">{t.projects.source.mediaFormats}</p>
           <input
             ref={mediaInputRef}
             type="file"
@@ -231,33 +250,54 @@ export function ContentSourcePanel({
             disabled={isTranscribing}
           >
             {isTranscribing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Film className="h-4 w-4" />}
-            {isTranscribing ? 'Transcribiendo...' : 'Seleccionar video o audio'}
+            {isTranscribing ? t.projects.source.transcribing : t.projects.source.selectMedia}
           </Button>
+
+          <div className="flex items-center gap-3 pt-1 text-xs text-muted-foreground">
+            <div className="h-px flex-1 bg-border" />
+            {t.projects.source.orPasteLink}
+            <div className="h-px flex-1 bg-border" />
+          </div>
+          <p className="text-xs text-muted-foreground">{t.projects.source.linkHint}</p>
+          <div className="flex gap-2">
+            <Input
+              placeholder={t.projects.source.linkPlaceholder}
+              value={mediaUrl}
+              onChange={(e) => setMediaUrl(e.target.value)}
+              disabled={isImportingUrl}
+            />
+            <Button
+              variant="outline"
+              onClick={handleImportFromUrl}
+              disabled={isImportingUrl || !mediaUrl.trim()}
+            >
+              {isImportingUrl ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+              {t.projects.source.useLink}
+            </Button>
+          </div>
         </TabsContent>
 
         <TabsContent value="demo" className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Prueba el flujo completo con una transcripción de ejemplo, sin necesidad de subir nada.
-          </p>
+          <p className="text-sm text-muted-foreground">{t.projects.source.demoDescription}</p>
           <Button onClick={handleUseDemo} disabled={isSubmitting}>
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            Usar transcripción de demostración
+            {t.projects.source.useDemoTranscript}
           </Button>
         </TabsContent>
       </Tabs>
 
       <div>
         <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Próximamente
+          {t.projects.source.comingSoonLabel}
         </p>
         <div className="grid gap-3 sm:grid-cols-3">
-          {[{ icon: Youtube, label: 'Conectar YouTube' }].map((item) => (
+          {[{ icon: Youtube, label: t.projects.source.connectYoutube }].map((item) => (
             <Card key={item.label} className="opacity-60">
               <CardContent className="flex items-center gap-3 p-4">
                 <item.icon className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">{item.label}</span>
                 <Badge variant="outline" className="ml-auto">
-                  Próximamente
+                  {t.projects.source.comingSoonLabel}
                 </Badge>
               </CardContent>
             </Card>

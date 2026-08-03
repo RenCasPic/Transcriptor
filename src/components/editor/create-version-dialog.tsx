@@ -16,9 +16,11 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { createVersionAction } from '@/lib/actions/versions';
+import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
 export function CreateVersionDialog({ documentId }: { documentId: string }) {
   const router = useRouter();
+  const t = useDictionary();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,7 +36,7 @@ export function CreateVersionDialog({ documentId }: { documentId: string }) {
       return;
     }
 
-    toast.success('Versión creada');
+    toast.success(t.editor.history.createSuccess);
     setReason('');
     setOpen(false);
     router.refresh();
@@ -45,18 +47,18 @@ export function CreateVersionDialog({ documentId }: { documentId: string }) {
       <DialogTrigger asChild>
         <Button size="sm" variant="outline" className="w-full">
           <Plus className="h-3.5 w-3.5" />
-          Crear versión manual
+          {t.editor.history.createManual}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Crear versión manual</DialogTitle>
+          <DialogTitle>{t.editor.history.createDialogTitle}</DialogTitle>
         </DialogHeader>
         <div className="space-y-1.5">
-          <Label htmlFor="version-reason">Motivo</Label>
+          <Label htmlFor="version-reason">{t.editor.history.reasonLabel}</Label>
           <Input
             id="version-reason"
-            placeholder="Ej. Revisión editorial antes de publicar"
+            placeholder={t.editor.history.reasonPlaceholder}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
           />
@@ -64,7 +66,7 @@ export function CreateVersionDialog({ documentId }: { documentId: string }) {
         <DialogFooter>
           <Button onClick={handleSubmit} disabled={isSubmitting || !reason.trim()}>
             {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-            Guardar versión
+            {t.editor.history.createSubmit}
           </Button>
         </DialogFooter>
       </DialogContent>

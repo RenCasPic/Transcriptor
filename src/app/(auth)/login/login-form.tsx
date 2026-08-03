@@ -11,10 +11,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SignInSchema, type SignInInput } from '@/lib/validations/auth';
 import { signInAction } from '@/lib/actions/auth';
+import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useDictionary();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -41,18 +43,18 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
       <div className="space-y-1.5">
-        <Label htmlFor="email">Correo electrónico</Label>
-        <Input id="email" type="email" autoComplete="email" placeholder="tu@correo.com" {...register('email')} />
+        <Label htmlFor="email">{t.auth.login.email}</Label>
+        <Input id="email" type="email" autoComplete="email" placeholder={t.common.emailPlaceholder} {...register('email')} />
         {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="password">Contraseña</Label>
+        <Label htmlFor="password">{t.auth.login.password}</Label>
         <Input id="password" type="password" autoComplete="current-password" {...register('password')} />
         {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
       </div>
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-        Iniciar sesión
+        {t.auth.login.submit}
       </Button>
     </form>
   );
