@@ -41,21 +41,26 @@ export function SidebarNav({
     <TooltipProvider delayDuration={200}>
       <aside
         className={cn(
-          'shrink-0 border-r transition-[width] duration-200',
-          inSheet ? 'block w-full border-none' : 'hidden lg:block',
+          'shrink-0 bg-violet-700 text-white transition-[width] duration-200',
+          inSheet ? 'block w-full' : 'hidden lg:block',
           !inSheet && (collapsed ? 'w-16' : 'w-64'),
         )}
       >
         <div className="flex h-full flex-col gap-6 p-4">
           <div className={cn('flex items-center', collapsed ? 'justify-center' : 'justify-between')}>
-            <Link href="/" className="flex items-center gap-2 font-semibold">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Link href="/" className="flex items-center gap-2 font-semibold text-white">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-violet-600">
                 <Sparkles className="h-4 w-4" />
               </div>
               {!collapsed && 'TalkToPost'}
             </Link>
             {!collapsed && !inSheet && (
-              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={toggleCollapsed}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 shrink-0 text-violet-100 hover:bg-white/10 hover:text-white"
+                onClick={toggleCollapsed}
+              >
                 <ChevronsLeft className="h-4 w-4" />
                 <span className="sr-only">Colapsar menú</span>
               </Button>
@@ -65,7 +70,12 @@ export function SidebarNav({
           {collapsed ? (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 self-center" onClick={toggleCollapsed}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 self-center text-violet-100 hover:bg-white/10 hover:text-white"
+                  onClick={toggleCollapsed}
+                >
                   <ChevronsRight className="h-4 w-4" />
                   <span className="sr-only">Expandir menú</span>
                 </Button>
@@ -73,9 +83,9 @@ export function SidebarNav({
               <TooltipContent side="right">Expandir menú</TooltipContent>
             </Tooltip>
           ) : (
-            <div className="rounded-lg border-l-2 border-primary bg-gradient-to-br from-indigo-500/10 to-violet-500/10 px-3 py-2">
-              <p className="truncate text-xs font-medium text-muted-foreground">Espacio de trabajo</p>
-              <p className="truncate text-sm font-semibold">{workspaceName}</p>
+            <div className="rounded-lg border-l-2 border-white/50 bg-white/10 px-3 py-2">
+              <p className="truncate text-xs font-medium text-violet-100">Espacio de trabajo</p>
+              <p className="truncate text-sm font-semibold text-white">{workspaceName}</p>
             </div>
           )}
 
@@ -89,9 +99,7 @@ export function SidebarNav({
                   className={cn(
                     'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                     collapsed && 'justify-center px-0',
-                    isActive
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                    isActive ? 'bg-white/15 text-white' : 'text-violet-100 hover:bg-white/10 hover:text-white',
                   )}
                 >
                   <item.icon className="h-4 w-4 shrink-0" />
@@ -118,9 +126,7 @@ export function SidebarNav({
                 className={cn(
                   'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                   collapsed && 'justify-center px-0',
-                  isSettingsActive
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                  isSettingsActive ? 'bg-white/15 text-white' : 'text-violet-100 hover:bg-white/10 hover:text-white',
                 )}
               >
                 <SETTINGS_ROOT.icon className="h-4 w-4 shrink-0" />
