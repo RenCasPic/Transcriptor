@@ -168,7 +168,7 @@ export default function LandingPage() {
             <div className="grid gap-6 sm:grid-cols-2">
               {BENEFITS.map((benefit, index) => (
                 <FadeIn key={benefit.title} delayMs={index * 100}>
-                  <div className="flex gap-4 rounded-xl border bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                  <div className="flex gap-4 rounded-xl border border-primary bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                     <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${benefit.color}`}>
                       <benefit.icon className="h-5 w-5" />
                     </div>
