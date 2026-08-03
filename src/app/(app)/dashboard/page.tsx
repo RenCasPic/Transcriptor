@@ -5,10 +5,8 @@ import { Button } from '@/components/ui/button';
 import { DashboardFilters } from '@/components/dashboard/dashboard-filters';
 import { DashboardStats } from '@/components/dashboard/dashboard-stats';
 import { ProjectList } from '@/components/dashboard/project-list';
-import { TemplatesSection } from '@/components/dashboard/templates-section';
 import { getCurrentWorkspace } from '@/lib/data/workspace';
 import { listProjects } from '@/lib/data/projects';
-import { listTemplates } from '@/lib/data/templates';
 import type { ProjectStatus } from '@/lib/types/database';
 
 export const metadata: Metadata = { title: 'Panel' };
@@ -26,10 +24,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   }
 
   const status = (params.status as ProjectStatus | undefined) ?? 'all';
-  const [projects, allProjects, templates] = await Promise.all([
+  const [projects, allProjects] = await Promise.all([
     listProjects(workspace.id, { search: params.q, status }),
     listProjects(workspace.id, {}),
-    listTemplates(workspace.id),
   ]);
 
   return (
@@ -50,8 +47,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       </div>
 
       <DashboardStats projects={allProjects} />
-
-      <TemplatesSection templates={templates} />
 
       <DashboardFilters initialSearch={params.q ?? ''} initialStatus={status} />
 

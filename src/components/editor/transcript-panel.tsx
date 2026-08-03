@@ -44,7 +44,6 @@ export function TranscriptPanel({
   return (
     <div className="flex h-full flex-col">
       <div className="border-b p-3">
-        <h2 className="mb-2 text-sm font-semibold">Transcripción</h2>
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input

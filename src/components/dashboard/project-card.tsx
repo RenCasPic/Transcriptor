@@ -3,16 +3,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FileText, MoreVertical, Trash2, Loader2 } from 'lucide-react';
+import { FileText, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
@@ -56,23 +50,15 @@ export function ProjectCard({ project }: { project: ProjectListItem }) {
             </div>
             <div className="flex items-center gap-1.5">
               <ProjectStatusBadge status={project.status} />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="relative z-10 h-7 w-7 shrink-0">
-                    <MoreVertical className="h-4 w-4" />
-                    <span className="sr-only">Opciones del proyecto</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onSelect={() => setConfirmOpen(true)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Eliminar
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative z-10 h-7 w-7 shrink-0 text-destructive hover:text-destructive"
+                onClick={() => setConfirmOpen(true)}
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">Eliminar proyecto</span>
+              </Button>
             </div>
           </div>
           <div>

@@ -101,44 +101,57 @@ export function EditorShell({
         </div>
       </div>
 
-      <div className="grid flex-1 overflow-hidden lg:grid-cols-[300px_1fr_360px]">
-        <div className="hidden overflow-hidden border-r lg:block">
-          <TranscriptPanel
-            segments={segments}
-            usedSegmentIds={usedSegmentIds}
-            selectedSegmentId={selectedSegmentId}
-            onSelectSegment={setSelectedSegmentId}
-          />
+      <div className="grid flex-1 gap-4 overflow-hidden p-4 lg:grid-cols-[300px_1fr_360px]">
+        <div className="hidden flex-col overflow-hidden rounded-xl border border-primary bg-background lg:flex">
+          <div className="shrink-0 border-b border-primary px-4 py-3 text-center text-base font-semibold">
+            Transcripción
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <TranscriptPanel
+              segments={segments}
+              usedSegmentIds={usedSegmentIds}
+              selectedSegmentId={selectedSegmentId}
+              onSelectSegment={setSelectedSegmentId}
+            />
+          </div>
         </div>
 
-        <div className="overflow-hidden">
-          <ArticleEditor
-            documentId={document.id}
-            projectId={project.id}
-            initialTitle={document.title}
-            initialContentJson={document.contentJson}
-            initialVersion={document.version}
-            initialWordCount={document.wordCount}
-            onContentSnapshot={(next) => setSnapshot(next)}
-          />
+        <div className="flex flex-col overflow-hidden rounded-xl border border-primary bg-background">
+          <div className="shrink-0 border-b border-primary px-4 py-3 text-center text-base font-semibold">
+            Publicación
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <ArticleEditor
+              documentId={document.id}
+              projectId={project.id}
+              initialTitle={document.title}
+              initialContentJson={document.contentJson}
+              initialVersion={document.version}
+              initialWordCount={document.wordCount}
+              onContentSnapshot={(next) => setSnapshot(next)}
+            />
+          </div>
         </div>
 
-        <div className="hidden overflow-hidden border-l lg:block">
-          <EditorDrawerTabs
-            documentId={document.id}
-            projectId={project.id}
-            project={project}
-            documentTitle={document.title}
-            excerpt={document.excerpt ?? ''}
-            seo={seoData}
-            wordCount={snapshot.wordCount}
-            html={snapshot.html}
-            warnings={warnings}
-            sourceLinksByBlock={sourceLinksByBlock}
-            onNavigateToSegment={setSelectedSegmentId}
-            versions={versions}
-            currentUserId={currentUserId}
-          />
+        <div className="hidden flex-col overflow-hidden rounded-xl border border-primary bg-background lg:flex">
+          <div className="shrink-0 border-b border-primary px-4 py-3 text-center text-base font-semibold">SEO</div>
+          <div className="flex-1 overflow-hidden">
+            <EditorDrawerTabs
+              documentId={document.id}
+              projectId={project.id}
+              project={project}
+              documentTitle={document.title}
+              excerpt={document.excerpt ?? ''}
+              seo={seoData}
+              wordCount={snapshot.wordCount}
+              html={snapshot.html}
+              warnings={warnings}
+              sourceLinksByBlock={sourceLinksByBlock}
+              onNavigateToSegment={setSelectedSegmentId}
+              versions={versions}
+              currentUserId={currentUserId}
+            />
+          </div>
         </div>
       </div>
 
