@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { StepPreviews } from '@/components/landing/step-previews';
 
 const STEPS = [
   {
@@ -150,6 +151,8 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
+
+        <StepPreviews />
 
         <section className="py-20">
           <div className="container">
