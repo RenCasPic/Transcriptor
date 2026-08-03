@@ -19,7 +19,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </aside>
       <div className="flex min-h-screen flex-1 flex-col">
         <Header workspaceName={workspace.name} userName={userName} />
-        <main className="flex-1 bg-gradient-to-br from-indigo-50/50 via-background to-violet-50/40 p-4 dark:from-indigo-950/10 dark:to-violet-950/10 lg:p-8">
+        <main className="flex-1 bg-gradient-to-br from-indigo-100 via-violet-50 to-amber-50 p-4 dark:from-indigo-950/30 dark:via-violet-950/20 dark:to-amber-950/20 lg:p-8">
           {children}
         </main>
       </div>
