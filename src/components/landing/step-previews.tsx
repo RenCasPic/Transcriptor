@@ -1,5 +1,6 @@
 import { Upload, Sparkles, PenLine, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { FadeIn } from './fade-in';
 
 /**
  * Mini animaciones ilustrativas (CSS puro) de cada paso del flujo. No son
@@ -61,23 +62,25 @@ export function StepPreviews() {
   return (
     <section className="py-20">
       <div className="container">
-        <div className="mx-auto mb-12 max-w-2xl text-center">
+        <FadeIn className="mx-auto mb-12 max-w-2xl text-center">
           <h2 className="text-3xl font-bold tracking-tight">Míralo en acción</h2>
           <p className="mt-3 text-muted-foreground">Una vista rápida de cada paso del proceso.</p>
-        </div>
+        </FadeIn>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {PREVIEWS.map((preview) => (
-            <Card key={preview.step} className="overflow-hidden">
-              <div className="flex items-center gap-1.5 border-b bg-muted/40 px-3 py-2">
-                <span className="h-2 w-2 rounded-full bg-rose-300" />
-                <span className="h-2 w-2 rounded-full bg-amber-300" />
-                <span className="h-2 w-2 rounded-full bg-emerald-300" />
-              </div>
-              {preview.frame}
-              <CardContent className="p-3">
-                <p className="text-center text-xs font-medium text-muted-foreground">{preview.step}</p>
-              </CardContent>
-            </Card>
+          {PREVIEWS.map((preview, index) => (
+            <FadeIn key={preview.step} delayMs={index * 100}>
+              <Card className="overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                <div className="flex items-center gap-1.5 border-b bg-muted/40 px-3 py-2">
+                  <span className="h-2 w-2 rounded-full bg-rose-300" />
+                  <span className="h-2 w-2 rounded-full bg-amber-300" />
+                  <span className="h-2 w-2 rounded-full bg-emerald-300" />
+                </div>
+                {preview.frame}
+                <CardContent className="p-3">
+                  <p className="text-center text-xs font-medium text-muted-foreground">{preview.step}</p>
+                </CardContent>
+              </Card>
+            </FadeIn>
           ))}
         </div>
       </div>

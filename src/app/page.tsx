@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { StepPreviews } from '@/components/landing/step-previews';
+import { FadeIn } from '@/components/landing/fade-in';
 
 const STEPS = [
   {
@@ -100,11 +101,11 @@ export default function LandingPage() {
             aria-hidden
             className="pointer-events-none absolute inset-x-0 top-[-10rem] -z-10 flex justify-center blur-3xl"
           >
-            <div className="h-[36rem] w-[64rem] rounded-full bg-gradient-to-tr from-indigo-400/30 via-violet-300/30 to-amber-300/30" />
+            <div className="animate-blob h-[36rem] w-[64rem] rounded-full bg-gradient-to-tr from-indigo-400/30 via-violet-300/30 to-amber-300/30" />
           </div>
-          <div className="container flex flex-col items-center gap-6 text-center">
+          <FadeIn className="container flex flex-col items-center gap-6 text-center">
             <Badge variant="secondary" className="gap-1.5">
-              <Sparkles className="h-3 w-3" />
+              <Sparkles className="h-3 w-3 animate-pulse" />
               Listo en minutos, sin complicaciones
             </Badge>
             <h1 className="max-w-3xl text-4xl font-bold tracking-tight md:text-6xl">
@@ -116,37 +117,39 @@ export default function LandingPage() {
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Button size="lg" asChild>
-                <Link href="/register">
+                <Link href="/register" className="group">
                   Empezar gratis
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
                 <Link href="/login">Ya tengo cuenta</Link>
               </Button>
             </div>
-          </div>
+          </FadeIn>
         </section>
 
         <section className="border-y bg-muted/40 py-20">
           <div className="container">
-            <div className="mx-auto mb-12 max-w-2xl text-center">
+            <FadeIn className="mx-auto mb-12 max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight">Cómo funciona</h2>
               <p className="mt-3 text-muted-foreground">Del video a la página web, en cuatro pasos.</p>
-            </div>
+            </FadeIn>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {STEPS.map((step) => (
-                <Card key={step.title}>
-                  <CardHeader>
-                    <div className={`mb-2 flex h-10 w-10 items-center justify-center rounded-lg ${step.color}`}>
-                      <step.icon className="h-5 w-5" />
-                    </div>
-                    <CardTitle className="text-base">{step.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription>{step.description}</CardDescription>
-                  </CardContent>
-                </Card>
+              {STEPS.map((step, index) => (
+                <FadeIn key={step.title} delayMs={index * 100}>
+                  <Card className="h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                    <CardHeader>
+                      <div className={`mb-2 flex h-10 w-10 items-center justify-center rounded-lg ${step.color}`}>
+                        <step.icon className="h-5 w-5" />
+                      </div>
+                      <CardTitle className="text-base">{step.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <CardDescription>{step.description}</CardDescription>
+                    </CardContent>
+                  </Card>
+                </FadeIn>
               ))}
             </div>
           </div>
@@ -156,41 +159,43 @@ export default function LandingPage() {
 
         <section className="py-20">
           <div className="container">
-            <div className="mx-auto mb-12 max-w-2xl text-center">
+            <FadeIn className="mx-auto mb-12 max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight">Por qué TalkToPost</h2>
               <p className="mt-3 text-muted-foreground">
                 Rápido no tiene por qué significar perder el control de lo que publicas.
               </p>
-            </div>
+            </FadeIn>
             <div className="grid gap-6 sm:grid-cols-2">
-              {BENEFITS.map((benefit) => (
-                <div key={benefit.title} className="flex gap-4 rounded-xl border bg-card p-6">
-                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${benefit.color}`}>
-                    <benefit.icon className="h-5 w-5" />
+              {BENEFITS.map((benefit, index) => (
+                <FadeIn key={benefit.title} delayMs={index * 100}>
+                  <div className="flex gap-4 rounded-xl border bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${benefit.color}`}>
+                      <benefit.icon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">{benefit.title}</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">{benefit.description}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold">{benefit.title}</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">{benefit.description}</p>
-                  </div>
-                </div>
+                </FadeIn>
               ))}
             </div>
           </div>
         </section>
 
         <section className="border-t bg-primary text-primary-foreground">
-          <div className="container flex flex-col items-center gap-6 py-16 text-center">
+          <FadeIn className="container flex flex-col items-center gap-6 py-16 text-center">
             <h2 className="text-3xl font-bold tracking-tight">Prueba tu primer artículo hoy</h2>
             <p className="max-w-xl text-primary-foreground/80">
               Crea tu cuenta y pruébalo gratis con un ejemplo, sin configurar nada.
             </p>
             <Button size="lg" variant="secondary" asChild>
-              <Link href="/register">
+              <Link href="/register" className="group">
                 Crear cuenta gratis
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
             </Button>
-          </div>
+          </FadeIn>
         </section>
       </main>
 
