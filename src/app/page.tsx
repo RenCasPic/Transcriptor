@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { StepPreviews } from '@/components/landing/step-previews';
 import { FadeIn } from '@/components/landing/fade-in';
+import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import { getDictionary } from '@/lib/i18n/get-dictionary';
 
 export default async function LandingPage() {
@@ -47,6 +48,7 @@ export default async function LandingPage() {
             {t.common.appName}
           </Link>
           <nav className="flex items-center gap-2">
+            <LanguageSwitcher />
             <Button variant="ghost" asChild>
               <Link href="/login">{t.landing.signIn}</Link>
             </Button>

@@ -14,7 +14,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { SidebarNav } from './sidebar-nav';
-import { LanguageSwitcher } from './language-switcher';
 import { signOutAction } from '@/lib/actions/auth';
 import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
@@ -49,7 +48,6 @@ export function Header({ workspaceName, userName }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-1">
-        <LanguageSwitcher />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="gap-2 px-2">
