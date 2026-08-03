@@ -52,6 +52,7 @@ export function EditorShell({
   const [selectedSegmentId, setSelectedSegmentId] = useState<string | null>(null);
   const [transcriptSheetOpen, setTranscriptSheetOpen] = useState(false);
   const [drawerSheetOpen, setDrawerSheetOpen] = useState(false);
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   const [snapshot, setSnapshot] = useState({
     plainText: '',
     html: document.contentHtml,
@@ -101,7 +102,13 @@ export function EditorShell({
         </div>
       </div>
 
-      <div className="grid flex-1 overflow-hidden lg:grid-cols-[300px_1fr_360px]">
+      <div
+        className={
+          rightPanelCollapsed
+            ? 'grid flex-1 overflow-hidden lg:grid-cols-[300px_1fr_56px]'
+            : 'grid flex-1 overflow-hidden lg:grid-cols-[300px_1fr_360px]'
+        }
+      >
         <div className="hidden overflow-hidden border-r lg:block">
           <TranscriptPanel
             segments={segments}
@@ -138,6 +145,8 @@ export function EditorShell({
             onNavigateToSegment={setSelectedSegmentId}
             versions={versions}
             currentUserId={currentUserId}
+            collapsed={rightPanelCollapsed}
+            onToggleCollapsed={() => setRightPanelCollapsed((v) => !v)}
           />
         </div>
       </div>
@@ -173,6 +182,8 @@ export function EditorShell({
             onNavigateToSegment={setSelectedSegmentId}
             versions={versions}
             currentUserId={currentUserId}
+            collapsed={false}
+            onToggleCollapsed={() => setDrawerSheetOpen(false)}
           />
         </SheetContent>
       </Sheet>
