@@ -1,12 +1,11 @@
-import Link from 'next/link';
 import type { Metadata } from 'next';
-import { FolderPlus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { DashboardFilters } from '@/components/dashboard/dashboard-filters';
 import { DashboardStats } from '@/components/dashboard/dashboard-stats';
 import { ProjectList } from '@/components/dashboard/project-list';
+import { QuickStartActions } from '@/components/dashboard/quick-start-actions';
 import { getCurrentWorkspace } from '@/lib/data/workspace';
 import { listProjects } from '@/lib/data/projects';
+import { getIntegration } from '@/lib/data/integrations';
 import { getDictionary } from '@/lib/i18n/get-dictionary';
 import type { ProjectStatus } from '@/lib/types/database';
 
@@ -29,10 +28,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   }
 
   const status = (params.status as ProjectStatus | undefined) ?? 'all';
-  const [projects, allProjects] = await Promise.all([
+  const [projects, allProjects, youtube] = await Promise.all([
     listProjects(workspace.id, { search: params.q, status }),
     listProjects(workspace.id, {}),
+    getIntegration(workspace.id, 'youtube'),
   ]);
+  const youtubeConnected = youtube.status === 'connected';
 
   return (
     <div className="space-y-6">
@@ -41,19 +42,14 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           <h1 className="text-2xl font-semibold tracking-tight">{t.dashboard.title}</h1>
           <p className="text-sm text-muted-foreground">{t.dashboard.subtitle}</p>
         </div>
-        <Button asChild>
-          <Link href="/projects/new">
-            <FolderPlus className="h-4 w-4" />
-            {t.dashboard.newProject}
-          </Link>
-        </Button>
+        <QuickStartActions youtubeConnected={youtubeConnected} />
       </div>
 
       <DashboardStats projects={allProjects} />
 
       <DashboardFilters initialSearch={params.q ?? ''} initialStatus={status} />
 
-      <ProjectList projects={projects} />
+      <ProjectList projects={projects} youtubeConnected={youtubeConnected} />
     </div>
   );
 }

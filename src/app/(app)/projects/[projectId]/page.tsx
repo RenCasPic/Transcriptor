@@ -22,10 +22,12 @@ export async function generateMetadata(): Promise<Metadata> {
 
 interface ProjectPageProps {
   params: Promise<{ projectId: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }
 
-export default async function ProjectPage({ params }: ProjectPageProps) {
+export default async function ProjectPage({ params, searchParams }: ProjectPageProps) {
   const { projectId } = await params;
+  const { tab } = await searchParams;
 
   const [project, workspace] = await Promise.all([getProjectById(projectId), getCurrentWorkspace()]);
 
@@ -94,6 +96,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
             workspaceId={workspace.id}
             language={project.language}
             youtubeConnected={youtube.status === 'connected'}
+            initialTab={tab}
           />
         </CardContent>
       </Card>

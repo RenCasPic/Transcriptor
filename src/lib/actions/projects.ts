@@ -1,5 +1,6 @@
 'use server';
 
+import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
@@ -51,6 +52,81 @@ export async function createProjectAction(input: CreateProjectInput): Promise<Ac
       primary_keyword: parsed.data.primaryKeyword || null,
       objective: parsed.data.objective || null,
       call_to_action: parsed.data.callToAction || null,
+    })
+    .select('id')
+    .single();
+
+  if (error || !data) {
+    return err('CREATE_PROJECT_ERROR', 'No se pudo crear el proyecto.');
+  }
+
+  revalidatePath('/dashboard');
+  return ok({ id: data.id });
+}
+
+const QUICK_PROJECT_DEFAULTS = {
+  upload: { namePrefix: 'Video subido' },
+  youtube: { namePrefix: 'Video de YouTube' },
+} as const;
+
+const QuickCreateProjectSchema = z.object({
+  source: z.enum(['upload', 'youtube']),
+});
+
+export type QuickCreateProjectInput = z.infer<typeof QuickCreateProjectSchema>;
+
+/**
+ * Crea un proyecto con configuración por defecto (editable después desde
+ * `EditProjectDialog`) para los accesos directos del Dashboard ("Subir
+ * video" / "Conectar YouTube"), que van directo a importar la fuente sin
+ * pasar por el formulario de `/projects/new`.
+ */
+export async function createQuickProjectAction(
+  input: QuickCreateProjectInput,
+): Promise<ActionResult<{ id: string }>> {
+  const parsed = QuickCreateProjectSchema.safeParse(input);
+  if (!parsed.success) {
+    return err('VALIDATION_ERROR', parsed.error.issues[0]?.message ?? 'Datos inválidos');
+  }
+
+  const workspace = await getCurrentWorkspace();
+  if (!workspace) {
+    return err('UNAUTHENTICATED', 'Debes iniciar sesión.');
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return err('UNAUTHENTICATED', 'Debes iniciar sesión.');
+  }
+
+  if (parsed.data.source === 'youtube') {
+    const { data: integration } = await supabase
+      .from('integrations')
+      .select('status')
+      .eq('workspace_id', workspace.id)
+      .eq('provider', 'youtube')
+      .maybeSingle();
+
+    if (!integration || integration.status !== 'connected') {
+      return err('YOUTUBE_NOT_CONNECTED', 'Conecta tu canal de YouTube en Configuración → Integraciones.');
+    }
+  }
+
+  const { namePrefix } = QUICK_PROJECT_DEFAULTS[parsed.data.source];
+  const name = `${namePrefix} — ${new Date().toLocaleString('es', { dateStyle: 'medium', timeStyle: 'short' })}`;
+
+  const { data, error } = await supabase
+    .from('projects')
+    .insert({
+      workspace_id: workspace.id,
+      created_by: user.id,
+      name,
+      content_type: 'guide',
+      tone: 'professional',
+      language: 'es',
     })
     .select('id')
     .single();

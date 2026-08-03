@@ -1,14 +1,19 @@
 'use client';
 
-import Link from 'next/link';
 import { Sparkles } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { ProjectCard } from '@/components/dashboard/project-card';
+import { QuickStartActions } from '@/components/dashboard/quick-start-actions';
 import { useDictionary } from '@/lib/i18n/dictionary-provider';
 import type { ProjectListItem } from '@/lib/data/projects';
 
-export function ProjectList({ projects }: { projects: ProjectListItem[] }) {
+export function ProjectList({
+  projects,
+  youtubeConnected,
+}: {
+  projects: ProjectListItem[];
+  youtubeConnected: boolean;
+}) {
   const t = useDictionary();
 
   if (projects.length === 0) {
@@ -22,9 +27,7 @@ export function ProjectList({ projects }: { projects: ProjectListItem[] }) {
             <h3 className="text-lg font-semibold">{t.dashboard.emptyTitle}</h3>
             <p className="mt-1 max-w-sm text-sm text-muted-foreground">{t.dashboard.emptyDescription}</p>
           </div>
-          <Button asChild>
-            <Link href="/projects/new">{t.dashboard.emptyCta}</Link>
-          </Button>
+          <QuickStartActions youtubeConnected={youtubeConnected} />
         </CardContent>
       </Card>
     );

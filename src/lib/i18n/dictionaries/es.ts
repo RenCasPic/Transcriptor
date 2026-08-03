@@ -125,6 +125,8 @@ export const es = {
     title: 'Tus proyectos',
     subtitle: 'Gestiona tus artículos generados a partir de transcripciones',
     newProject: 'Nuevo proyecto',
+    uploadVideo: 'Subir video',
+    connectYoutube: 'Conectar YouTube',
     searchPlaceholder: 'Buscar proyectos...',
     allStatuses: 'Todos los estados',
     filterByStatus: 'Filtrar por estado',

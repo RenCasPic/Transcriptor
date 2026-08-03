@@ -34,16 +34,21 @@ const MEDIA_EXTENSION_TO_TYPE: Record<string, 'video' | 'audio'> = {
   m4a: 'audio',
 };
 
+const VALID_TABS = ['paste', 'upload', 'media', 'youtube', 'demo'] as const;
+type SourceTab = (typeof VALID_TABS)[number];
+
 export function ContentSourcePanel({
   projectId,
   workspaceId,
   language,
   youtubeConnected,
+  initialTab,
 }: {
   projectId: string;
   workspaceId: string;
   language: string;
   youtubeConnected: boolean;
+  initialTab?: string;
 }) {
   const router = useRouter();
   const t = useDictionary();
@@ -201,7 +206,7 @@ export function ContentSourcePanel({
 
   return (
     <div className="space-y-4">
-      <Tabs defaultValue="paste">
+      <Tabs defaultValue={VALID_TABS.includes(initialTab as SourceTab) ? (initialTab as SourceTab) : 'paste'}>
         <TabsList>
           <TabsTrigger value="paste">{t.projects.source.pasteTab}</TabsTrigger>
           <TabsTrigger value="upload">{t.projects.source.uploadTab}</TabsTrigger>

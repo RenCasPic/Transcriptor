@@ -123,6 +123,8 @@ export const en: Dictionary = {
     title: 'Your projects',
     subtitle: 'Manage your articles generated from transcripts',
     newProject: 'New project',
+    uploadVideo: 'Upload video',
+    connectYoutube: 'Connect YouTube',
     searchPlaceholder: 'Search projects...',
     allStatuses: 'All statuses',
     filterByStatus: 'Filter by status',
