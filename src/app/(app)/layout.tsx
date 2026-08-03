@@ -14,9 +14,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen">
-      <aside className="hidden w-64 shrink-0 border-r lg:block">
-        <SidebarNav workspaceName={workspace.name} />
-      </aside>
+      <SidebarNav workspaceName={workspace.name} />
       <div className="flex min-h-screen flex-1 flex-col">
         <Header workspaceName={workspace.name} userName={userName} />
         <main className="flex-1 bg-gradient-to-br from-indigo-100 via-violet-50 to-amber-50 p-4 dark:from-indigo-950/30 dark:via-violet-950/20 dark:to-amber-950/20 lg:p-8">

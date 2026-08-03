@@ -30,14 +30,6 @@ export interface SourceLinkRow {
   transcript_segment_id: string;
 }
 
-/** Las 4 combinaciones deben escribirse literalmente para que Tailwind las detecte. */
-function getGridColsClassName(leftCollapsed: boolean, rightCollapsed: boolean): string {
-  if (leftCollapsed && rightCollapsed) return 'grid flex-1 overflow-hidden lg:grid-cols-[56px_1fr_56px]';
-  if (leftCollapsed) return 'grid flex-1 overflow-hidden lg:grid-cols-[56px_1fr_360px]';
-  if (rightCollapsed) return 'grid flex-1 overflow-hidden lg:grid-cols-[300px_1fr_56px]';
-  return 'grid flex-1 overflow-hidden lg:grid-cols-[300px_1fr_360px]';
-}
-
 export function EditorShell({
   project,
   document,
@@ -60,8 +52,6 @@ export function EditorShell({
   const [selectedSegmentId, setSelectedSegmentId] = useState<string | null>(null);
   const [transcriptSheetOpen, setTranscriptSheetOpen] = useState(false);
   const [drawerSheetOpen, setDrawerSheetOpen] = useState(false);
-  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
-  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
   const [snapshot, setSnapshot] = useState({
     plainText: '',
     html: document.contentHtml,
@@ -111,15 +101,13 @@ export function EditorShell({
         </div>
       </div>
 
-      <div className={getGridColsClassName(leftPanelCollapsed, rightPanelCollapsed)}>
+      <div className="grid flex-1 overflow-hidden lg:grid-cols-[300px_1fr_360px]">
         <div className="hidden overflow-hidden border-r lg:block">
           <TranscriptPanel
             segments={segments}
             usedSegmentIds={usedSegmentIds}
             selectedSegmentId={selectedSegmentId}
             onSelectSegment={setSelectedSegmentId}
-            collapsed={leftPanelCollapsed}
-            onToggleCollapsed={() => setLeftPanelCollapsed((v) => !v)}
           />
         </div>
 
@@ -150,8 +138,6 @@ export function EditorShell({
             onNavigateToSegment={setSelectedSegmentId}
             versions={versions}
             currentUserId={currentUserId}
-            collapsed={rightPanelCollapsed}
-            onToggleCollapsed={() => setRightPanelCollapsed((v) => !v)}
           />
         </div>
       </div>
@@ -187,8 +173,6 @@ export function EditorShell({
             onNavigateToSegment={setSelectedSegmentId}
             versions={versions}
             currentUserId={currentUserId}
-            collapsed={false}
-            onToggleCollapsed={() => setDrawerSheetOpen(false)}
           />
         </SheetContent>
       </Sheet>

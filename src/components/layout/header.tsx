@@ -40,7 +40,7 @@ export function Header({ workspaceName, userName }: HeaderProps) {
           </Button>
           <SheetContent side="left" className="w-72 p-0">
             <SheetTitle className="sr-only">Menú de navegación</SheetTitle>
-            <SidebarNav workspaceName={workspaceName} />
+            <SidebarNav workspaceName={workspaceName} inSheet />
           </SheetContent>
         </Sheet>
       </div>

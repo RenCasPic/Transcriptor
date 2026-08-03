@@ -1,11 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Copy, Search, CheckCircle2, PanelLeftClose, FileText } from 'lucide-react';
+import { Copy, Search, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { secondsToTimestamp } from '@/lib/content/metrics';
 import type { TranscriptSegmentItem } from '@/lib/data/transcripts';
@@ -19,15 +18,11 @@ export function TranscriptPanel({
   usedSegmentIds,
   selectedSegmentId,
   onSelectSegment,
-  collapsed = false,
-  onToggleCollapsed,
 }: {
   segments: TranscriptSegmentItem[];
   usedSegmentIds: Set<string>;
   selectedSegmentId: string | null;
   onSelectSegment: (segmentId: string) => void;
-  collapsed?: boolean;
-  onToggleCollapsed?: () => void;
 }) {
   const [search, setSearch] = useState('');
 
@@ -46,36 +41,10 @@ export function TranscriptPanel({
     }
   }
 
-  if (collapsed) {
-    return (
-      <TooltipProvider delayDuration={200}>
-        <div className="flex h-full flex-col items-center gap-1 py-3">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={onToggleCollapsed}>
-                <FileText className="h-4 w-4" />
-                <span className="sr-only">Mostrar transcripción</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">Transcripción ({segments.length})</TooltipContent>
-          </Tooltip>
-        </div>
-      </TooltipProvider>
-    );
-  }
-
   return (
     <div className="flex h-full flex-col">
       <div className="border-b p-3">
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold">Transcripción</h2>
-          {onToggleCollapsed && (
-            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={onToggleCollapsed}>
-              <PanelLeftClose className="h-4 w-4" />
-              <span className="sr-only">Colapsar panel</span>
-            </Button>
-          )}
-        </div>
+        <h2 className="mb-2 text-sm font-semibold">Transcripción</h2>
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
