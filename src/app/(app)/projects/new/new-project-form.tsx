@@ -19,6 +19,8 @@ import {
 } from '@/lib/validations/project';
 import { CONTENT_TYPE_LABELS, ARTICLE_TONE_LABELS } from '@/lib/types/domain';
 import { createProjectAction } from '@/lib/actions/projects';
+import { createTemplateAction } from '@/lib/actions/templates';
+import type { ProjectTemplateItem } from '@/lib/data/templates';
 
 const LANGUAGES = [
   { value: 'es', label: 'Español' },
@@ -27,9 +29,11 @@ const LANGUAGES = [
   { value: 'fr', label: 'Francés' },
 ];
 
-export function NewProjectForm() {
+export function NewProjectForm({ template }: { template?: ProjectTemplateItem | null }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState('');
 
   const {
     register,
@@ -38,20 +42,50 @@ export function NewProjectForm() {
     formState: { errors },
   } = useForm<CreateProjectInput>({
     resolver: zodResolver(CreateProjectSchema),
-    defaultValues: { tone: 'professional', contentType: 'guide', language: 'es' },
+    defaultValues: template
+      ? {
+          contentType: template.contentType,
+          tone: template.tone,
+          language: template.language,
+          audience: template.audience ?? '',
+          primaryKeyword: template.primaryKeyword ?? '',
+          objective: template.objective ?? '',
+          callToAction: template.callToAction ?? '',
+        }
+      : { tone: 'professional', contentType: 'guide', language: 'es' },
   });
 
   async function onSubmit(values: CreateProjectInput) {
     setIsSubmitting(true);
     const result = await createProjectAction(values);
-    setIsSubmitting(false);
 
     if (!result.success) {
+      setIsSubmitting(false);
       toast.error(result.error.message);
       return;
     }
 
-    toast.success('Proyecto creado');
+    if (saveAsTemplate && templateName.trim()) {
+      const templateResult = await createTemplateAction({
+        name: templateName.trim(),
+        contentType: values.contentType,
+        tone: values.tone,
+        language: values.language,
+        audience: values.audience,
+        primaryKeyword: values.primaryKeyword,
+        objective: values.objective,
+        callToAction: values.callToAction,
+      });
+      if (!templateResult.success) {
+        toast.error(`Proyecto creado, pero no se pudo guardar la plantilla: ${templateResult.error.message}`);
+      } else {
+        toast.success('Proyecto y plantilla guardados');
+      }
+    } else {
+      toast.success('Proyecto creado');
+    }
+
+    setIsSubmitting(false);
     router.push(`/projects/${result.data.id}`);
   }
 
@@ -158,6 +192,25 @@ export function NewProjectForm() {
           <Label htmlFor="callToAction">Llamada a la acción (opcional)</Label>
           <Input id="callToAction" placeholder="Ej. Agenda una consultoría gratuita" {...register('callToAction')} />
         </div>
+      </div>
+
+      <div className="space-y-2 rounded-lg border border-dashed p-3">
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded border-input accent-primary"
+            checked={saveAsTemplate}
+            onChange={(e) => setSaveAsTemplate(e.target.checked)}
+          />
+          Guardar esta configuración como plantilla
+        </label>
+        {saveAsTemplate && (
+          <Input
+            placeholder="Nombre de la plantilla (ej. Podcast semanal B2B)"
+            value={templateName}
+            onChange={(e) => setTemplateName(e.target.value)}
+          />
+        )}
       </div>
 
       <Button type="submit" disabled={isSubmitting}>

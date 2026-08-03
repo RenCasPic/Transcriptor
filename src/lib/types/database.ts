@@ -425,6 +425,40 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['integrations']['Insert']>;
         Relationships: [];
       };
+      project_templates: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          created_by: string;
+          name: string;
+          content_type: ContentType;
+          audience: string | null;
+          tone: ArticleTone;
+          language: string;
+          primary_keyword: string | null;
+          objective: string | null;
+          call_to_action: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          created_by: string;
+          name: string;
+          content_type: ContentType;
+          audience?: string | null;
+          tone?: ArticleTone;
+          language?: string;
+          primary_keyword?: string | null;
+          objective?: string | null;
+          call_to_action?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['project_templates']['Insert']>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

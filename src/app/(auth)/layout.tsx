@@ -10,7 +10,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </div>
         TalkToPost
       </Link>
-      <div className="w-full max-w-md rounded-xl border bg-background p-8 shadow-sm">{children}</div>
+      <div className="w-full max-w-md rounded-xl border border-primary bg-background p-8 shadow-sm">{children}</div>
     </div>
   );
 }

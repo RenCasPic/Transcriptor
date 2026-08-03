@@ -101,7 +101,7 @@ export default function LandingPage() {
             aria-hidden
             className="pointer-events-none absolute inset-x-0 top-[-10rem] -z-10 flex justify-center blur-3xl"
           >
-            <div className="animate-blob h-[36rem] w-[64rem] rounded-full bg-gradient-to-tr from-indigo-400/30 via-violet-300/30 to-amber-300/30" />
+            <div className="animate-blob h-[36rem] w-[64rem] rounded-full bg-gradient-to-tr from-indigo-400/70 via-violet-400/60 to-amber-300/60" />
           </div>
           <FadeIn className="container flex flex-col items-center gap-6 text-center">
             <Badge variant="secondary" className="gap-1.5">
