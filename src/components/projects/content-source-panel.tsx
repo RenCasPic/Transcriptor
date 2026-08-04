@@ -14,6 +14,7 @@ import { importYoutubeVideoAction } from '@/lib/actions/youtube';
 import { generateArticleAction } from '@/lib/actions/generation';
 import { createClient } from '@/lib/supabase/client';
 import { DEMO_TRANSCRIPT_TEXT } from '@/lib/content/demo-transcript';
+import { sanitizeFilename } from '@/lib/content/slug';
 import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
 const MAX_TEXT_FILE_SIZE_BYTES = 5 * 1024 * 1024;
@@ -129,7 +130,7 @@ export function ContentSourcePanel({
     setIsSubmitting(true);
     try {
       const text = await file.text();
-      const storagePath = `${workspaceId}/${projectId}/${Date.now()}-${file.name}`;
+      const storagePath = `${workspaceId}/${projectId}/${Date.now()}-${sanitizeFilename(file.name)}`;
       const supabase = createClient();
       const { error: uploadError } = await supabase.storage
         .from('project-sources')
@@ -170,7 +171,7 @@ export function ContentSourcePanel({
 
     setIsTranscribing(true);
     try {
-      const storagePath = `${workspaceId}/${projectId}/${Date.now()}-${file.name}`;
+      const storagePath = `${workspaceId}/${projectId}/${Date.now()}-${sanitizeFilename(file.name)}`;
       const supabase = createClient();
       const { error: uploadError } = await supabase.storage
         .from('project-sources')

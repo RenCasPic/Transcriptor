@@ -14,6 +14,7 @@ import { createQuickProjectAction } from '@/lib/actions/projects';
 import { transcribeMediaAction } from '@/lib/actions/transcription';
 import { generateArticleAction } from '@/lib/actions/generation';
 import { createClient } from '@/lib/supabase/client';
+import { sanitizeFilename } from '@/lib/content/slug';
 import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
 const MAX_MEDIA_FILE_SIZE_BYTES = 25 * 1024 * 1024;
@@ -68,7 +69,7 @@ export function UploadVideoCard({ workspaceId }: { workspaceId: string }) {
       }
       const projectId = projectResult.data.id;
 
-      const storagePath = `${workspaceId}/${projectId}/${Date.now()}-${file.name}`;
+      const storagePath = `${workspaceId}/${projectId}/${Date.now()}-${sanitizeFilename(file.name)}`;
       const supabase = createClient();
       const { error: uploadError } = await supabase.storage
         .from('project-sources')

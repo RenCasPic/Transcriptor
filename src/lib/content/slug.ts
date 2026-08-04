@@ -19,3 +19,20 @@ export function slugify(input: string): string {
     .slice(0, 80)
     .replace(/-$/g, '');
 }
+
+/**
+ * Convierte un nombre de archivo arbitrario (con tildes, espacios, mayúsculas,
+ * etc.) en uno seguro para usar como clave de Supabase Storage, que rechaza
+ * ("Invalid key") nombres con ciertos caracteres no ASCII. Conserva la
+ * extensión; el nombre original se guarda aparte (`original_filename`) para
+ * mostrarlo en la interfaz.
+ */
+export function sanitizeFilename(filename: string): string {
+  const lastDot = filename.lastIndexOf('.');
+  const hasExtension = lastDot > 0 && lastDot < filename.length - 1;
+  const base = hasExtension ? filename.slice(0, lastDot) : filename;
+  const extension = hasExtension ? slugify(filename.slice(lastDot + 1)) : '';
+
+  const safeBase = slugify(base) || 'archivo';
+  return extension ? `${safeBase}.${extension}` : safeBase;
+}
