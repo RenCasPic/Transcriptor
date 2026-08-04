@@ -13,6 +13,7 @@ export interface ContentDocumentRecord {
   wordCount: number;
   readingTimeMinutes: number;
   version: number;
+  isPublic: boolean;
   updatedAt: string;
 }
 
@@ -38,6 +39,7 @@ export async function getDocumentByProject(projectId: string): Promise<ContentDo
     wordCount: data.word_count,
     readingTimeMinutes: data.reading_time_minutes,
     version: data.version,
+    isPublic: data.is_public,
     updatedAt: data.updated_at,
   };
 }

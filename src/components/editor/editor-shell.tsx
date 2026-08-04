@@ -9,6 +9,7 @@ import { TranscriptPanel } from './transcript-panel';
 import { ArticleEditor } from './article-editor';
 import { EditorDrawerTabs } from './editor-drawer-tabs';
 import { ExportMenu } from './export-menu';
+import { EmbedButton } from './embed-button';
 import type { TranscriptSegmentItem } from '@/lib/data/transcripts';
 import type { ContentDocumentRecord } from '@/lib/data/documents';
 import type { DocumentVersionItem } from '@/lib/data/versions';
@@ -99,6 +100,7 @@ export function EditorShell({
           <Button variant="outline" size="sm" className="lg:hidden" onClick={() => setDrawerSheetOpen(true)}>
             <PanelRight className="h-4 w-4" />
           </Button>
+          <EmbedButton documentId={document.id} initialIsPublic={document.isPublic} />
           <ExportMenu title={document.title} html={snapshot.html} json={snapshot.json} />
         </div>
       </div>

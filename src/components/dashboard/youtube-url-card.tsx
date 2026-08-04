@@ -13,6 +13,7 @@ import { ArticleConfigFields } from './article-config-fields';
 import { ArticleConfigSchema, type ArticleConfigInput } from '@/lib/validations/project';
 import { createQuickProjectAction, updateProjectAction } from '@/lib/actions/projects';
 import { importYoutubeVideoAction } from '@/lib/actions/youtube';
+import { generateArticleAction } from '@/lib/actions/generation';
 import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
 export function YoutubeUrlCard() {
@@ -51,8 +52,16 @@ export function YoutubeUrlCard() {
       }
 
       await updateProjectAction(projectId, { name: result.data.title });
+
+      const generationResult = await generateArticleAction(projectId);
+      if (!generationResult.success) {
+        toast.error(generationResult.error.message);
+        router.push(`/projects/${projectId}`);
+        return;
+      }
+
       toast.success(t.projects.source.youtubeImportSuccess);
-      router.push(`/projects/${projectId}`);
+      router.push(`/projects/${projectId}/editor`);
     } finally {
       setIsSubmitting(false);
     }

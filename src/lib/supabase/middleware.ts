@@ -14,7 +14,7 @@ const PUBLIC_PATHS = [
 
 function isPublicPath(pathname: string) {
   if (PUBLIC_PATHS.includes(pathname)) return true;
-  return pathname.startsWith('/_next') || pathname.startsWith('/api/public');
+  return pathname.startsWith('/_next') || pathname.startsWith('/api/public') || pathname.startsWith('/embed/');
 }
 
 /**

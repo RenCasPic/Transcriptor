@@ -12,6 +12,7 @@ import { ArticleConfigFields } from './article-config-fields';
 import { ArticleConfigSchema, type ArticleConfigInput } from '@/lib/validations/project';
 import { createQuickProjectAction } from '@/lib/actions/projects';
 import { transcribeMediaAction } from '@/lib/actions/transcription';
+import { generateArticleAction } from '@/lib/actions/generation';
 import { createClient } from '@/lib/supabase/client';
 import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
@@ -93,8 +94,15 @@ export function UploadVideoCard({ workspaceId }: { workspaceId: string }) {
         return;
       }
 
+      const generationResult = await generateArticleAction(projectId);
+      if (!generationResult.success) {
+        toast.error(generationResult.error.message);
+        router.push(`/projects/${projectId}`);
+        return;
+      }
+
       toast.success(t.projects.source.transcribeSuccess);
-      router.push(`/projects/${projectId}`);
+      router.push(`/projects/${projectId}/editor`);
     } catch {
       toast.error(t.projects.source.mediaProcessError);
     } finally {

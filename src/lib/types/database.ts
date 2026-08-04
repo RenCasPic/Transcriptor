@@ -250,6 +250,8 @@ export interface Database {
           word_count: number;
           reading_time_minutes: number;
           version: number;
+          is_public: boolean;
+          published_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -265,6 +267,8 @@ export interface Database {
           word_count?: number;
           reading_time_minutes?: number;
           version?: number;
+          is_public?: boolean;
+          published_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
