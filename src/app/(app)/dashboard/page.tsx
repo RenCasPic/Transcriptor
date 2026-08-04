@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
+import { AlertTriangle } from 'lucide-react';
 import { UploadVideoCard } from '@/components/dashboard/upload-video-card';
 import { YoutubeUrlCard } from '@/components/dashboard/youtube-url-card';
 import { getCurrentWorkspace } from '@/lib/data/workspace';
 import { getDictionary } from '@/lib/i18n/get-dictionary';
+import { isRealTranscriptionConfigured } from '@/lib/ai/transcription';
 
 export async function generateMetadata(): Promise<Metadata> {
   const { dictionary } = await getDictionary();
@@ -23,6 +25,16 @@ export default async function DashboardPage() {
         <h1 className="text-2xl font-semibold tracking-tight">{t.dashboard.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t.dashboard.subtitle}</p>
       </div>
+
+      {!isRealTranscriptionConfigured() && (
+        <div className="flex gap-3 rounded-lg border border-warning/40 bg-warning/10 p-4">
+          <AlertTriangle className="h-5 w-5 shrink-0 text-warning" />
+          <div>
+            <p className="text-sm font-semibold text-foreground">{t.dashboard.demoModeWarningTitle}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{t.dashboard.demoModeWarningDescription}</p>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <UploadVideoCard workspaceId={workspace.id} />

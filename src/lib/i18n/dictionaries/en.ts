@@ -130,6 +130,9 @@ export const en: Dictionary = {
     emptyCta: 'Create my first project',
     modifiedAgo: 'Modified',
     noResultsFor: 'No results for',
+    demoModeWarningTitle: 'Demo mode: transcription is not real',
+    demoModeWarningDescription:
+      "No transcription provider is configured, so any video or audio you upload isn't actually transcribed: a generic sample text is used instead. Set a free Groq key (or OpenAI Whisper) via TRANSCRIPTION_PROVIDER / TRANSCRIPTION_API_KEY to transcribe your real content.",
     stats: {
       projects: 'Projects',
       wordsGenerated: 'Words generated',

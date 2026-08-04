@@ -26,3 +26,16 @@ export function getTranscriptionProvider(): TranscriptionProvider {
 
   return new DemoTranscriptionProvider();
 }
+
+/**
+ * Indica si hay un proveedor de transcripción REAL configurado (Groq o
+ * Whisper con su API key), en vez del modo demo (que ignora el audio/video
+ * subido y siempre devuelve el mismo texto de ejemplo). Se usa para avisar
+ * en la interfaz antes de que el usuario suba contenido y se lleve la
+ * sorpresa de un artículo que no tiene nada que ver con su video.
+ */
+export function isRealTranscriptionConfigured(): boolean {
+  const providerName = (process.env.TRANSCRIPTION_PROVIDER ?? 'demo').toLowerCase();
+  const apiKey = process.env.TRANSCRIPTION_API_KEY;
+  return (providerName === 'whisper' || providerName === 'groq') && !!apiKey;
+}

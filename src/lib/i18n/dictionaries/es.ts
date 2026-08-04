@@ -132,6 +132,9 @@ export const es = {
     emptyCta: 'Crear mi primer proyecto',
     modifiedAgo: 'Modificado',
     noResultsFor: 'Sin resultados para',
+    demoModeWarningTitle: 'Modo demo: la transcripción no es real',
+    demoModeWarningDescription:
+      'No hay ningún proveedor de transcripción configurado, así que el video o audio que subas no se transcribe de verdad: se usa un texto de ejemplo genérico. Configura una clave gratuita de Groq (o de OpenAI Whisper) en TRANSCRIPTION_PROVIDER / TRANSCRIPTION_API_KEY para transcribir tu contenido real.',
     stats: {
       projects: 'Proyectos',
       wordsGenerated: 'Palabras generadas',
