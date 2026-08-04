@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { importTranscriptAction } from '@/lib/actions/projects';
 import { transcribeMediaAction, importMediaFromUrlAction } from '@/lib/actions/transcription';
 import { importYoutubeVideoAction } from '@/lib/actions/youtube';
+import { generateArticleAction } from '@/lib/actions/generation';
 import { createClient } from '@/lib/supabase/client';
 import { DEMO_TRANSCRIPT_TEXT } from '@/lib/content/demo-transcript';
 import { useDictionary } from '@/lib/i18n/dictionary-provider';
@@ -59,6 +60,23 @@ export function ContentSourcePanel({
   const [isImportingUrl, setIsImportingUrl] = useState(false);
   const [isImportingYoutube, setIsImportingYoutube] = useState(false);
 
+  /**
+   * Encadena la generación del artículo (con su SEO) justo después de
+   * importar cualquier fuente, para que el usuario nunca tenga que pulsar
+   * "Generar artículo" a mano. Si la generación falla, se queda en esta
+   * página (con la transcripción ya importada) para reintentar desde
+   * `GenerateArticlePanel`.
+   */
+  async function generateAndRedirect() {
+    const generationResult = await generateArticleAction(projectId);
+    if (!generationResult.success) {
+      toast.error(generationResult.error.message);
+      router.refresh();
+      return;
+    }
+    router.push(`/projects/${projectId}/editor`);
+  }
+
   async function handleImport(params: {
     sourceType: 'manual' | 'txt' | 'srt' | 'vtt';
     text: string;
@@ -66,23 +84,26 @@ export function ContentSourcePanel({
     storagePath?: string;
   }) {
     setIsSubmitting(true);
-    const result = await importTranscriptAction({
-      projectId,
-      sourceType: params.sourceType,
-      text: params.text,
-      originalFilename: params.originalFilename,
-      storagePath: params.storagePath,
-      language,
-    });
-    setIsSubmitting(false);
+    try {
+      const result = await importTranscriptAction({
+        projectId,
+        sourceType: params.sourceType,
+        text: params.text,
+        originalFilename: params.originalFilename,
+        storagePath: params.storagePath,
+        language,
+      });
 
-    if (!result.success) {
-      toast.error(result.error.message);
-      return;
+      if (!result.success) {
+        toast.error(result.error.message);
+        return;
+      }
+
+      toast.success(t.projects.source.importSuccess);
+      await generateAndRedirect();
+    } finally {
+      setIsSubmitting(false);
     }
-
-    toast.success(t.projects.source.importSuccess);
-    router.refresh();
   }
 
   async function handlePasteSubmit() {
@@ -174,7 +195,7 @@ export function ContentSourcePanel({
       }
 
       toast.success(t.projects.source.transcribeSuccess);
-      router.refresh();
+      await generateAndRedirect();
     } catch {
       toast.error(t.projects.source.mediaProcessError);
     } finally {
@@ -190,34 +211,40 @@ export function ContentSourcePanel({
     if (!mediaUrl.trim()) return;
 
     setIsImportingUrl(true);
-    const result = await importMediaFromUrlAction({ projectId, sourceUrl: mediaUrl.trim(), language });
-    setIsImportingUrl(false);
+    try {
+      const result = await importMediaFromUrlAction({ projectId, sourceUrl: mediaUrl.trim(), language });
 
-    if (!result.success) {
-      toast.error(result.error.message);
-      return;
+      if (!result.success) {
+        toast.error(result.error.message);
+        return;
+      }
+
+      toast.success(t.projects.source.transcribeSuccess);
+      setMediaUrl('');
+      await generateAndRedirect();
+    } finally {
+      setIsImportingUrl(false);
     }
-
-    toast.success(t.projects.source.transcribeSuccess);
-    setMediaUrl('');
-    router.refresh();
   }
 
   async function handleYoutubeImport() {
     if (!youtubeUrl.trim()) return;
 
     setIsImportingYoutube(true);
-    const result = await importYoutubeVideoAction({ projectId, videoUrl: youtubeUrl.trim(), language });
-    setIsImportingYoutube(false);
+    try {
+      const result = await importYoutubeVideoAction({ projectId, videoUrl: youtubeUrl.trim(), language });
 
-    if (!result.success) {
-      toast.error(result.error.message);
-      return;
+      if (!result.success) {
+        toast.error(result.error.message);
+        return;
+      }
+
+      toast.success(t.projects.source.youtubeImportSuccess);
+      setYoutubeUrl('');
+      await generateAndRedirect();
+    } finally {
+      setIsImportingYoutube(false);
     }
-
-    toast.success(t.projects.source.youtubeImportSuccess);
-    setYoutubeUrl('');
-    router.refresh();
   }
 
   return (
