@@ -177,7 +177,8 @@ export function ContentSourcePanel({
         .upload(storagePath, file, { contentType: file.type || 'application/octet-stream' });
 
       if (uploadError) {
-        toast.error(t.projects.source.mediaUploadError);
+        console.error('Supabase storage upload error:', uploadError);
+        toast.error(`${t.projects.source.mediaUploadError} (${uploadError.message})`);
         return;
       }
 

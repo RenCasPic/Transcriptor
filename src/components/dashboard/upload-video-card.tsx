@@ -75,7 +75,8 @@ export function UploadVideoCard({ workspaceId }: { workspaceId: string }) {
         .upload(storagePath, file, { contentType: file.type || 'application/octet-stream' });
 
       if (uploadError) {
-        toast.error(t.projects.source.mediaUploadError);
+        console.error('Supabase storage upload error:', uploadError);
+        toast.error(`${t.projects.source.mediaUploadError} (${uploadError.message})`);
         router.push(`/projects/${projectId}?tab=media`);
         return;
       }
