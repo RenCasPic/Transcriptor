@@ -25,7 +25,7 @@ export function Header({ userName }: { userName: string }) {
 
   return (
     <header className="flex h-16 items-center justify-between border-b bg-background px-4 lg:px-6">
-      <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
+      <Link href="/" className="flex items-center gap-2 font-semibold">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
           <Sparkles className="h-4 w-4" />
         </div>
