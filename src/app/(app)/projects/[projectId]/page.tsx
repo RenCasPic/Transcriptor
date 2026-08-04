@@ -11,7 +11,6 @@ import { getProjectById } from '@/lib/data/projects';
 import { getLatestTranscript } from '@/lib/data/transcripts';
 import { getDocumentByProject } from '@/lib/data/documents';
 import { getCurrentWorkspace } from '@/lib/data/workspace';
-import { getIntegration } from '@/lib/data/integrations';
 import { getDictionary } from '@/lib/i18n/get-dictionary';
 import { getDomainLabels } from '@/lib/i18n/domain-labels';
 
@@ -35,10 +34,9 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
     notFound();
   }
 
-  const [transcript, document, youtube, { dictionary: t, locale }] = await Promise.all([
+  const [transcript, document, { dictionary: t, locale }] = await Promise.all([
     getLatestTranscript(projectId),
     getDocumentByProject(projectId),
-    getIntegration(workspace.id, 'youtube'),
     getDictionary(),
   ]);
   const domainLabels = getDomainLabels(locale);
@@ -95,7 +93,6 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
             projectId={projectId}
             workspaceId={workspace.id}
             language={project.language}
-            youtubeConnected={youtube.status === 'connected'}
             initialTab={tab}
           />
         </CardContent>

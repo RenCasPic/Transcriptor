@@ -5,97 +5,31 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { ok, err, type ActionResult } from '@/lib/types/domain';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { normalizeTranscript } from '@/lib/content/normalize';
 import { saveTranscript } from '@/lib/generation/save-transcript';
-import { getValidYoutubeAccessToken } from '@/lib/integrations/youtube-tokens';
-import {
-  downloadCaptionTrack,
-  fetchCaptionTracks,
-  fetchChannelVideos,
-  selectCaptionTrack,
-  type YoutubeVideo,
-} from '@/lib/integrations/youtube-client';
+import { extractYoutubeVideoId, fetchYoutubeTranscript } from '@/lib/integrations/youtube-transcript';
 
 const IMPORT_RATE_LIMIT = 5;
 const IMPORT_RATE_WINDOW_SECONDS = 60 * 60;
 
-interface YoutubeIntegrationMetadata {
-  uploadsPlaylistId?: string;
-}
-
-const ListYoutubeVideosSchema = z.object({
-  workspaceId: z.string().uuid(),
-  pageToken: z.string().optional(),
-});
-
-export type ListYoutubeVideosInput = z.infer<typeof ListYoutubeVideosSchema>;
-
-/** Lista los videos subidos al canal de YouTube conectado del workspace. */
-export async function listYoutubeVideosAction(
-  input: ListYoutubeVideosInput,
-): Promise<ActionResult<{ videos: YoutubeVideo[]; nextPageToken: string | null }>> {
-  const parsed = ListYoutubeVideosSchema.safeParse(input);
-  if (!parsed.success) {
-    return err('VALIDATION_ERROR', parsed.error.issues[0]?.message ?? 'Datos inválidos');
-  }
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return err('UNAUTHENTICATED', 'Debes iniciar sesión.');
-  }
-
-  const { data: integration } = await supabase
-    .from('integrations')
-    .select('status, metadata')
-    .eq('workspace_id', parsed.data.workspaceId)
-    .eq('provider', 'youtube')
-    .maybeSingle();
-
-  if (!integration || integration.status !== 'connected') {
-    return err('YOUTUBE_NOT_CONNECTED', 'Conecta tu canal de YouTube en Configuración → Integraciones.');
-  }
-
-  const uploadsPlaylistId = (integration.metadata as YoutubeIntegrationMetadata).uploadsPlaylistId;
-  if (!uploadsPlaylistId) {
-    return err('YOUTUBE_NOT_CONNECTED', 'Conecta tu canal de YouTube en Configuración → Integraciones.');
-  }
-
-  try {
-    const accessToken = await getValidYoutubeAccessToken(supabase, parsed.data.workspaceId);
-    if (!accessToken) {
-      return err('YOUTUBE_NOT_CONNECTED', 'Conecta tu canal de YouTube en Configuración → Integraciones.');
-    }
-
-    const page = await fetchChannelVideos(accessToken, uploadsPlaylistId, parsed.data.pageToken);
-    return ok(page);
-  } catch {
-    return err('YOUTUBE_API_ERROR', 'No se pudo obtener la lista de videos de YouTube.');
-  }
-}
-
-const ImportYoutubeCaptionsSchema = z.object({
+const ImportYoutubeVideoSchema = z.object({
   projectId: z.string().uuid(),
-  workspaceId: z.string().uuid(),
-  videoId: z.string().min(1),
-  videoTitle: z.string().min(1),
+  videoUrl: z.string().url('Ingresa una URL válida'),
   language: z.string().min(2).max(10).default('es'),
 });
 
-export type ImportYoutubeCaptionsInput = z.infer<typeof ImportYoutubeCaptionsSchema>;
+export type ImportYoutubeVideoInput = z.infer<typeof ImportYoutubeVideoSchema>;
 
 /**
- * Importa los subtítulos ya existentes de un video del canal propio (vía
- * `captions.download` de la Data API v3) como transcripción del proyecto.
+ * Importa los subtítulos de un video de YouTube (propio o ajeno, siempre que
+ * sea público y tenga subtítulos) a partir de su URL, usando
+ * `fetchYoutubeTranscript` (sin OAuth, ver ese módulo para el trade-off).
  * No descarga ni transcribe el audio/video real: si el video no tiene
  * subtítulos, se le pide al usuario que lo suba manualmente.
  */
-export async function importYoutubeCaptionsAction(
-  input: ImportYoutubeCaptionsInput,
-): Promise<ActionResult<{ transcriptId: string }>> {
-  const parsed = ImportYoutubeCaptionsSchema.safeParse(input);
+export async function importYoutubeVideoAction(
+  input: ImportYoutubeVideoInput,
+): Promise<ActionResult<{ transcriptId: string; title: string }>> {
+  const parsed = ImportYoutubeVideoSchema.safeParse(input);
   if (!parsed.success) {
     return err('VALIDATION_ERROR', parsed.error.issues[0]?.message ?? 'Datos inválidos');
   }
@@ -106,6 +40,11 @@ export async function importYoutubeCaptionsAction(
   } = await supabase.auth.getUser();
   if (!user) {
     return err('UNAUTHENTICATED', 'Debes iniciar sesión.');
+  }
+
+  const videoId = extractYoutubeVideoId(parsed.data.videoUrl);
+  if (!videoId) {
+    return err('INVALID_YOUTUBE_URL', 'Esa no parece ser una URL de YouTube válida.');
   }
 
   const rateLimit = checkRateLimit(
@@ -129,19 +68,14 @@ export async function importYoutubeCaptionsAction(
     return err('NOT_FOUND', 'Proyecto no encontrado.');
   }
 
-  const accessToken = await getValidYoutubeAccessToken(supabase, parsed.data.workspaceId);
-  if (!accessToken) {
-    return err('YOUTUBE_NOT_CONNECTED', 'Conecta tu canal de YouTube en Configuración → Integraciones.');
-  }
-
   const { data: source, error: sourceError } = await supabase
     .from('media_sources')
     .insert({
       project_id: parsed.data.projectId,
       source_type: 'youtube',
       original_filename: null,
-      source_url: `https://www.youtube.com/watch?v=${parsed.data.videoId}`,
-      metadata: { videoId: parsed.data.videoId, title: parsed.data.videoTitle },
+      source_url: `https://www.youtube.com/watch?v=${videoId}`,
+      metadata: { videoId },
     })
     .select('id')
     .single();
@@ -164,30 +98,21 @@ export async function importYoutubeCaptionsAction(
   await supabase.from('projects').update({ status: 'processing' }).eq('id', parsed.data.projectId);
 
   try {
-    const tracks = await fetchCaptionTracks(accessToken, parsed.data.videoId);
-    const track = selectCaptionTrack(tracks, parsed.data.language);
-    if (!track) {
-      throw new Error('NO_CAPTIONS');
-    }
-
-    const srtText = await downloadCaptionTrack(accessToken, track.captionId);
-    const normalized = normalizeTranscript(srtText, 'srt');
-
-    if (normalized.segments.length === 0) {
-      throw new Error('EMPTY_TRANSCRIPT');
-    }
+    const transcript = await fetchYoutubeTranscript(videoId, parsed.data.language);
 
     const saved = await saveTranscript(supabase, {
       projectId: parsed.data.projectId,
       sourceId: source.id,
       language: parsed.data.language,
-      fullText: normalized.fullText,
-      segments: normalized.segments,
+      fullText: transcript.fullText,
+      segments: transcript.segments,
     });
 
     if ('error' in saved) {
       throw new Error(saved.error);
     }
+
+    await supabase.from('media_sources').update({ metadata: { videoId, title: transcript.title } }).eq('id', source.id);
 
     if (job) {
       await supabase
@@ -198,7 +123,7 @@ export async function importYoutubeCaptionsAction(
     await supabase.from('projects').update({ status: 'draft' }).eq('id', parsed.data.projectId);
 
     revalidatePath(`/projects/${parsed.data.projectId}`);
-    return ok({ transcriptId: saved.transcriptId });
+    return ok({ transcriptId: saved.transcriptId, title: transcript.title });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'YOUTUBE_IMPORT_FAILED';
 
@@ -216,13 +141,13 @@ export async function importYoutubeCaptionsAction(
 
 function translateImportError(message: string): string {
   if (message === 'NO_CAPTIONS') {
-    return 'Este video no tiene subtítulos disponibles. Súbelo manualmente en la pestaña "Video o audio" u otro video.';
+    return 'Este video no tiene subtítulos disponibles. Prueba con otro video o sube el archivo manualmente.';
   }
   if (message === 'EMPTY_TRANSCRIPT') {
     return 'No se pudo extraer contenido de los subtítulos de ese video.';
   }
-  if (message.startsWith('YOUTUBE_API_ERROR')) {
-    return 'No se pudo acceder a YouTube. Inténtalo de nuevo.';
+  if (message.startsWith('YOUTUBE_PAGE_FETCH_ERROR') || message.startsWith('YOUTUBE_TRANSCRIPT_FETCH_ERROR')) {
+    return 'No se pudo acceder a ese video de YouTube. Verifica que sea público e inténtalo de nuevo.';
   }
   return 'No se pudo importar el video. Inténtalo de nuevo.';
 }

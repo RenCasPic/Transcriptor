@@ -2,7 +2,6 @@
 
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { Loader2, Upload, Sparkles, Youtube, Film, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -11,10 +10,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { importTranscriptAction } from '@/lib/actions/projects';
 import { transcribeMediaAction, importMediaFromUrlAction } from '@/lib/actions/transcription';
+import { importYoutubeVideoAction } from '@/lib/actions/youtube';
 import { createClient } from '@/lib/supabase/client';
 import { DEMO_TRANSCRIPT_TEXT } from '@/lib/content/demo-transcript';
 import { useDictionary } from '@/lib/i18n/dictionary-provider';
-import { YoutubeImportPanel } from './youtube-import-panel';
 
 const MAX_TEXT_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 const MAX_MEDIA_FILE_SIZE_BYTES = 25 * 1024 * 1024;
@@ -41,13 +40,11 @@ export function ContentSourcePanel({
   projectId,
   workspaceId,
   language,
-  youtubeConnected,
   initialTab,
 }: {
   projectId: string;
   workspaceId: string;
   language: string;
-  youtubeConnected: boolean;
   initialTab?: string;
 }) {
   const router = useRouter();
@@ -56,9 +53,11 @@ export function ContentSourcePanel({
   const mediaInputRef = useRef<HTMLInputElement>(null);
   const [pastedText, setPastedText] = useState('');
   const [mediaUrl, setMediaUrl] = useState('');
+  const [youtubeUrl, setYoutubeUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isImportingUrl, setIsImportingUrl] = useState(false);
+  const [isImportingYoutube, setIsImportingYoutube] = useState(false);
 
   async function handleImport(params: {
     sourceType: 'manual' | 'txt' | 'srt' | 'vtt';
@@ -204,6 +203,23 @@ export function ContentSourcePanel({
     router.refresh();
   }
 
+  async function handleYoutubeImport() {
+    if (!youtubeUrl.trim()) return;
+
+    setIsImportingYoutube(true);
+    const result = await importYoutubeVideoAction({ projectId, videoUrl: youtubeUrl.trim(), language });
+    setIsImportingYoutube(false);
+
+    if (!result.success) {
+      toast.error(result.error.message);
+      return;
+    }
+
+    toast.success(t.projects.source.youtubeImportSuccess);
+    setYoutubeUrl('');
+    router.refresh();
+  }
+
   return (
     <div className="space-y-4">
       <Tabs defaultValue={VALID_TABS.includes(initialTab as SourceTab) ? (initialTab as SourceTab) : 'paste'}>
@@ -286,19 +302,19 @@ export function ContentSourcePanel({
         </TabsContent>
 
         <TabsContent value="youtube" className="space-y-3">
-          {youtubeConnected ? (
-            <YoutubeImportPanel projectId={projectId} workspaceId={workspaceId} language={language} />
-          ) : (
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">{t.projects.source.youtubeNotConnected}</p>
-              <Button variant="outline" asChild>
-                <Link href="/settings/integrations">
-                  <Youtube className="h-4 w-4" />
-                  {t.projects.source.youtubeGoToSettings}
-                </Link>
-              </Button>
-            </div>
-          )}
+          <p className="text-xs text-muted-foreground">{t.projects.source.youtubeUrlHint}</p>
+          <div className="flex gap-2">
+            <Input
+              placeholder={t.projects.source.youtubeUrlPlaceholder}
+              value={youtubeUrl}
+              onChange={(e) => setYoutubeUrl(e.target.value)}
+              disabled={isImportingYoutube}
+            />
+            <Button onClick={handleYoutubeImport} disabled={isImportingYoutube || !youtubeUrl.trim()}>
+              {isImportingYoutube ? <Loader2 className="h-4 w-4 animate-spin" /> : <Youtube className="h-4 w-4" />}
+              {t.projects.source.useLink}
+            </Button>
+          </div>
         </TabsContent>
 
         <TabsContent value="demo" className="space-y-3">

@@ -11,16 +11,18 @@ Ya implementado: pestaña "Video o audio" en la página de proyecto, sube el arc
 - **Síncrono**: la Server Action espera la respuesta completa de Whisper antes de responder: en archivos largos puede acercarse al timeout de la función serverless (ver "Procesamiento en segundo plano" más abajo).
 - **Sin extracción de audio de video**: no se separa la pista de audio antes de enviarla (requeriría ffmpeg); Whisper procesa el contenedor de video completo.
 
-## Conexión OAuth con YouTube (implementado, solo subtítulos)
+## Importar desde YouTube (implementado, sin OAuth)
 
-Implementado: Configuración → Integraciones permite conectar el canal propio de YouTube por OAuth (`src/app/api/integrations/youtube/{connect,callback}/route.ts`); el refresh token se cifra (`src/lib/security/crypto.ts`) antes de guardarse en `integrations.encrypted_credentials`. Desde la pestaña "YouTube" de un proyecto (`src/components/projects/youtube-import-panel.tsx`) se listan los videos del canal y se pueden importar sus subtítulos ya existentes como transcripción (`importYoutubeCaptionsAction`, `src/lib/actions/youtube.ts`).
+Implementado: se pega la URL de cualquier video público de YouTube (propio o ajeno) y `importYoutubeVideoAction` (`src/lib/actions/youtube.ts`) importa sus subtítulos ya existentes como transcripción. Disponible tanto en el Dashboard (`src/components/dashboard/youtube-url-card.tsx`, crea el proyecto y lo importa en un solo paso) como en la pestaña "YouTube" de un proyecto ya creado (`src/components/projects/content-source-panel.tsx`).
 
-**Por qué no se transcribe el audio del video**: la YouTube Data API v3 no ofrece ningún endpoint oficial para descargar el video o el audio real de un video, ni siquiera del propio canal autenticado — solo metadata y las pistas de `captions` (manuales o generadas automáticamente por YouTube). Bajar el audio real requeriría una librería no oficial tipo yt-dlp/ytdl-core, lo cual viola los Términos de Servicio de YouTube (el mismo motivo por el que `importMediaFromUrlAction` en `src/lib/actions/transcription.ts` rechaza explícitamente enlaces de YouTube). Por eso, si un video no tiene subtítulos, hoy no hay forma de importarlo automáticamente: hay que subirlo manualmente en la pestaña "Video o audio" (Whisper) u otro video.
+**Historia de esta decisión**: la primera versión usaba OAuth (Google Cloud Console + YouTube Data API v3) para conectar el canal propio y descargar sus captions oficialmente — la vía 100% dentro de los Términos de Servicio, pero limitada al propio canal y con una fricción de configuración considerable (crear proyecto en Google Cloud, pantalla de consentimiento, credenciales). Por decisión explícita del usuario se reemplazó por completo por el enfoque actual, mucho más simple de usar.
 
-**Limitaciones conocidas de esta primera versión**:
-- Solo se opera sobre el canal propio autorizado (RLS + verificación de rol restringen conectar/desconectar a `owner`/`admin` del workspace).
-- No hay paginación en la UI de "videos del canal" (se trae la primera página de `playlistItems`, 25 videos).
-- Si el video no tiene subtítulos en absoluto, la importación falla con un mensaje explícito; no hay fallback automático a Whisper.
+**Cómo funciona ahora** (`src/lib/integrations/youtube-transcript.ts`): no usa la Data API oficial (que de todas formas no permite descargar video/audio, ni siquiera del propio canal). En su lugar, lee la página pública del video igual que lo hace el reproductor web de YouTube, extrae la lista de pistas de subtítulos embebida en el HTML, y descarga la pista elegida desde su `baseUrl` (`timedtext`). Es un endpoint interno/no documentado, no la API oficial — funciona con cualquier video público con subtítulos, es gratis, pero **YouTube puede cambiarlo o bloquearlo sin aviso** (mismo trade-off que herramientas como `youtube-transcript`/`youtube-transcript-api`). Trade-off aceptado explícitamente para evitar la fricción de OAuth.
+
+**Limitaciones conocidas**:
+- Si el video no tiene subtítulos en absoluto (ni manuales ni generados automáticamente), la importación falla con un mensaje explícito; no hay fallback automático a Whisper (no se descarga audio/video, ver arriba).
+- Sujeto a que YouTube no cambie el formato interno de la página o del endpoint `timedtext`; si eso ocurre, `fetchYoutubeTranscript` empezará a fallar hasta que se actualice el parseo.
+- No requiere autenticación del usuario ni límite por canal — el rate limit es por usuario de la app (`checkRateLimit`), no por canal de YouTube.
 
 ## Publicación en WordPress / Webflow / Ghost
 

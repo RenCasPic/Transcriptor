@@ -103,19 +103,6 @@ export async function createQuickProjectAction(
     return err('UNAUTHENTICATED', 'Debes iniciar sesión.');
   }
 
-  if (parsed.data.source === 'youtube') {
-    const { data: integration } = await supabase
-      .from('integrations')
-      .select('status')
-      .eq('workspace_id', workspace.id)
-      .eq('provider', 'youtube')
-      .maybeSingle();
-
-    if (!integration || integration.status !== 'connected') {
-      return err('YOUTUBE_NOT_CONNECTED', 'Conecta tu canal de YouTube en Configuración → Integraciones.');
-    }
-  }
-
   const { namePrefix } = QUICK_PROJECT_DEFAULTS[parsed.data.source];
   const name = `${namePrefix} — ${new Date().toLocaleString('es', { dateStyle: 'medium', timeStyle: 'short' })}`;
 

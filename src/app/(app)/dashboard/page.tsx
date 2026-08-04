@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import { UploadVideoCard } from '@/components/dashboard/upload-video-card';
-import { ConnectYoutubeCard } from '@/components/dashboard/connect-youtube-card';
+import { YoutubeUrlCard } from '@/components/dashboard/youtube-url-card';
 import { getCurrentWorkspace } from '@/lib/data/workspace';
-import { getIntegration } from '@/lib/data/integrations';
 import { getDictionary } from '@/lib/i18n/get-dictionary';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -18,8 +17,6 @@ export default async function DashboardPage() {
     return null;
   }
 
-  const youtube = await getIntegration(workspace.id, 'youtube');
-
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="text-center">
@@ -29,7 +26,7 @@ export default async function DashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <UploadVideoCard workspaceId={workspace.id} />
-        <ConnectYoutubeCard workspaceId={workspace.id} youtubeConnected={youtube.status === 'connected'} />
+        <YoutubeUrlCard />
       </div>
     </div>
   );

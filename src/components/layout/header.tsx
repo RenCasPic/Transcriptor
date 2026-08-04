@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Sparkles, LogOut, User, Building2, Youtube } from 'lucide-react';
+import { Sparkles, LogOut, User, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
@@ -52,12 +52,6 @@ export function Header({ userName }: { userName: string }) {
             <Link href="/settings/workspace" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               {dictionary.nav.workspace}
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/settings/integrations" className="flex items-center gap-2">
-              <Youtube className="h-4 w-4" />
-              {dictionary.nav.integrations}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
