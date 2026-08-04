@@ -252,6 +252,8 @@ export interface Database {
           version: number;
           is_public: boolean;
           published_at: string | null;
+          cover_image_url: string | null;
+          cover_image_alt: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -269,6 +271,8 @@ export interface Database {
           version?: number;
           is_public?: boolean;
           published_at?: string | null;
+          cover_image_url?: string | null;
+          cover_image_alt?: string | null;
           created_at?: string;
           updated_at?: string;
         };

@@ -88,6 +88,46 @@ class OpenAiCaller implements ModelCaller {
   }
 }
 
+/**
+ * Igual que OpenAiCaller (mismo formato de API), pero contra Groq: modelos
+ * open-weight (Llama, etc.) servidos gratis dentro de un límite de uso
+ * razonable, sin tarjeta de crédito. Pensado como alternativa sin costo a
+ * Anthropic/OpenAI mientras no se contrate un proveedor de pago.
+ */
+class GroqCaller implements ModelCaller {
+  constructor(
+    private readonly apiKey: string,
+    private readonly model: string,
+  ) {}
+
+  async call({ system, prompt, maxTokens }: { system: string; prompt: string; maxTokens: number }): Promise<string> {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${this.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: this.model,
+        max_tokens: maxTokens,
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: prompt },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`AI_PROVIDER_HTTP_ERROR:${response.status}`);
+    }
+
+    const data = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
+    const text = data.choices?.[0]?.message?.content;
+    if (!text) throw new Error('AI_PROVIDER_EMPTY_RESPONSE');
+    return text;
+  }
+}
+
 function extractJson(text: string): unknown {
   const trimmed = text.trim();
   const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
@@ -97,8 +137,9 @@ function extractJson(text: string): unknown {
 
 /**
  * Proveedor real configurable mediante variables de entorno (AI_PROVIDER,
- * AI_API_KEY, AI_MODEL). Soporta Anthropic y OpenAI; para agregar otro basta
- * con implementar `ModelCaller` y registrarlo en el switch del constructor.
+ * AI_API_KEY, AI_MODEL). Soporta Anthropic, OpenAI y Groq (este último gratis
+ * dentro de un límite de uso razonable); para agregar otro basta con
+ * implementar `ModelCaller` y registrarlo en el switch del constructor.
  */
 export class GenericContentGenerationProvider implements ContentGenerationProvider {
   private readonly caller: ModelCaller;
@@ -110,6 +151,9 @@ export class GenericContentGenerationProvider implements ContentGenerationProvid
         break;
       case 'openai':
         this.caller = new OpenAiCaller(apiKey, model || 'gpt-4o-mini');
+        break;
+      case 'groq':
+        this.caller = new GroqCaller(apiKey, model || 'llama-3.3-70b-versatile');
         break;
       default:
         throw new Error(`UNSUPPORTED_AI_PROVIDER:${providerName}`);

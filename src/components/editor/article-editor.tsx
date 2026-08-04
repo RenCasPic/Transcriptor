@@ -36,6 +36,8 @@ export function ArticleEditor({
   initialContentJson,
   initialVersion,
   initialWordCount,
+  coverImageUrl,
+  coverImageAlt,
   onContentSnapshot,
 }: {
   documentId: string;
@@ -44,6 +46,8 @@ export function ArticleEditor({
   initialContentJson: Json;
   initialVersion: number;
   initialWordCount: number;
+  coverImageUrl?: string | null;
+  coverImageAlt?: string | null;
   onContentSnapshot?: (snapshot: { plainText: string; html: string; json: Json; wordCount: number }) => void;
 }) {
   const t = useDictionary();
@@ -159,6 +163,10 @@ export function ArticleEditor({
 
   return (
     <div className="flex h-full flex-col">
+      {coverImageUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={coverImageUrl} alt={coverImageAlt ?? ''} className="aspect-[3/1] w-full shrink-0 object-cover" />
+      )}
       <div className="border-b p-4">
         <input
           value={title}

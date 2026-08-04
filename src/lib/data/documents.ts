@@ -14,6 +14,8 @@ export interface ContentDocumentRecord {
   readingTimeMinutes: number;
   version: number;
   isPublic: boolean;
+  coverImageUrl: string | null;
+  coverImageAlt: string | null;
   updatedAt: string;
 }
 
@@ -40,6 +42,8 @@ export async function getDocumentByProject(projectId: string): Promise<ContentDo
     readingTimeMinutes: data.reading_time_minutes,
     version: data.version,
     isPublic: data.is_public,
+    coverImageUrl: data.cover_image_url,
+    coverImageAlt: data.cover_image_alt,
     updatedAt: data.updated_at,
   };
 }

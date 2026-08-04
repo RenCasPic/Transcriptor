@@ -132,6 +132,8 @@ export function EditorShell({
               initialContentJson={document.contentJson}
               initialVersion={document.version}
               initialWordCount={document.wordCount}
+              coverImageUrl={document.coverImageUrl}
+              coverImageAlt={document.coverImageAlt}
               onContentSnapshot={(next) => setSnapshot(next)}
             />
           </div>

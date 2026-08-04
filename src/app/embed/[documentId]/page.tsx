@@ -39,7 +39,19 @@ export default async function EmbedPage({ params }: EmbedPageProps) {
   return (
     <div className="min-h-screen bg-background">
       <article className="mx-auto max-w-2xl px-6 py-10">
+        {document.coverImageUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={document.coverImageUrl}
+            alt={document.coverImageAlt ?? document.title}
+            className="mb-8 aspect-video w-full rounded-xl object-cover"
+          />
+        )}
         <h1 className="text-3xl font-bold tracking-tight">{document.title}</h1>
+        <p className="mt-3 text-sm text-muted-foreground">
+          {document.readingTimeMinutes} {t.common.minutesReading} · {document.wordCount.toLocaleString()}{' '}
+          {t.common.words}
+        </p>
         {document.excerpt && <p className="mt-3 text-lg text-muted-foreground">{document.excerpt}</p>}
         <div
           className="prose prose-neutral mt-8 max-w-none"

@@ -10,6 +10,8 @@ export interface PublicDocument {
   updatedAt: string;
   seoTitle: string | null;
   metaDescription: string | null;
+  coverImageUrl: string | null;
+  coverImageAlt: string | null;
 }
 
 /**
@@ -23,7 +25,9 @@ export async function getPublicDocument(documentId: string): Promise<PublicDocum
 
   const { data: document } = await supabase
     .from('content_documents')
-    .select('id, title, excerpt, content_html, word_count, reading_time_minutes, updated_at, is_public')
+    .select(
+      'id, title, excerpt, content_html, word_count, reading_time_minutes, updated_at, is_public, cover_image_url, cover_image_alt',
+    )
     .eq('id', documentId)
     .eq('is_public', true)
     .maybeSingle();
@@ -46,5 +50,7 @@ export async function getPublicDocument(documentId: string): Promise<PublicDocum
     updatedAt: document.updated_at,
     seoTitle: seo?.seo_title ?? null,
     metaDescription: seo?.meta_description ?? null,
+    coverImageUrl: document.cover_image_url,
+    coverImageAlt: document.cover_image_alt,
   };
 }

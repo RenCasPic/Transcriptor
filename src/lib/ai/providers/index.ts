@@ -4,7 +4,9 @@ import { GenericContentGenerationProvider } from './generic-provider';
 
 /**
  * Fábrica del proveedor de generación de contenido. El proveedor activo se
- * controla con la variable de entorno AI_PROVIDER ("mock" | "anthropic" | "openai").
+ * controla con la variable de entorno AI_PROVIDER ("mock" | "groq" | "anthropic" | "openai").
+ * "groq" es gratis (sin tarjeta) dentro de un límite de uso razonable, y usa
+ * la misma API key que TRANSCRIPTION_PROVIDER=groq si también la configuraste.
  * Nunca se debe instanciar un proveedor real desde código de cliente.
  */
 export function getContentGenerationProvider(): ContentGenerationProvider {

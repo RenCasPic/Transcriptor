@@ -8,6 +8,7 @@ import {
   proseMirrorJsonToPlainText,
 } from '@/lib/content/article-transform';
 import { countWords, estimateReadingTimeMinutes } from '@/lib/content/metrics';
+import { searchCoverImage } from '@/lib/integrations/pexels';
 
 export interface RunGenerationParams {
   projectId: string;
@@ -81,6 +82,8 @@ export async function runArticleGenerationPipeline(
   const wordCount = countWords(plainText);
   const readingTimeMinutes = estimateReadingTimeMinutes(wordCount);
 
+  const coverImage = await searchCoverImage(generated.seo.primaryKeyword || generated.title);
+
   const { data: document, error: documentError } = await supabase
     .from('content_documents')
     .upsert(
@@ -95,6 +98,8 @@ export async function runArticleGenerationPipeline(
         word_count: wordCount,
         reading_time_minutes: readingTimeMinutes,
         version: 1,
+        cover_image_url: coverImage?.url ?? null,
+        cover_image_alt: coverImage?.alt ?? null,
       },
       { onConflict: 'project_id' },
     )
