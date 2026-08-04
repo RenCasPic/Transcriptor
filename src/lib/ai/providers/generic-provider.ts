@@ -17,8 +17,16 @@ import { buildSeoPrompt } from '@/lib/prompts/seo';
 const JSON_SYSTEM_PROMPT =
   'Responde EXCLUSIVAMENTE con un objeto JSON válido, sin texto adicional, sin bloques de código markdown.';
 
+interface ModelCallParams {
+  system: string;
+  prompt: string;
+  maxTokens: number;
+  /** Fuerza el modo JSON estricto del proveedor (evita texto extra o bloques markdown envolviendo la respuesta). */
+  jsonMode?: boolean;
+}
+
 interface ModelCaller {
-  call(params: { system: string; prompt: string; maxTokens: number }): Promise<string>;
+  call(params: ModelCallParams): Promise<string>;
 }
 
 class AnthropicCaller implements ModelCaller {
@@ -27,7 +35,7 @@ class AnthropicCaller implements ModelCaller {
     private readonly model: string,
   ) {}
 
-  async call({ system, prompt, maxTokens }: { system: string; prompt: string; maxTokens: number }): Promise<string> {
+  async call({ system, prompt, maxTokens }: ModelCallParams): Promise<string> {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -60,7 +68,7 @@ class OpenAiCaller implements ModelCaller {
     private readonly model: string,
   ) {}
 
-  async call({ system, prompt, maxTokens }: { system: string; prompt: string; maxTokens: number }): Promise<string> {
+  async call({ system, prompt, maxTokens, jsonMode }: ModelCallParams): Promise<string> {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -70,6 +78,7 @@ class OpenAiCaller implements ModelCaller {
       body: JSON.stringify({
         model: this.model,
         max_tokens: maxTokens,
+        ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
         messages: [
           { role: 'system', content: system },
           { role: 'user', content: prompt },
@@ -78,7 +87,8 @@ class OpenAiCaller implements ModelCaller {
     });
 
     if (!response.ok) {
-      throw new Error(`AI_PROVIDER_HTTP_ERROR:${response.status}`);
+      const errorBody = await response.text().catch(() => '');
+      throw new Error(`AI_PROVIDER_HTTP_ERROR:${response.status}:${errorBody.slice(0, 300)}`);
     }
 
     const data = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
@@ -100,7 +110,7 @@ class GroqCaller implements ModelCaller {
     private readonly model: string,
   ) {}
 
-  async call({ system, prompt, maxTokens }: { system: string; prompt: string; maxTokens: number }): Promise<string> {
+  async call({ system, prompt, maxTokens, jsonMode }: ModelCallParams): Promise<string> {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -110,6 +120,7 @@ class GroqCaller implements ModelCaller {
       body: JSON.stringify({
         model: this.model,
         max_tokens: maxTokens,
+        ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
         messages: [
           { role: 'system', content: system },
           { role: 'user', content: prompt },
@@ -118,7 +129,8 @@ class GroqCaller implements ModelCaller {
     });
 
     if (!response.ok) {
-      throw new Error(`AI_PROVIDER_HTTP_ERROR:${response.status}`);
+      const errorBody = await response.text().catch(() => '');
+      throw new Error(`AI_PROVIDER_HTTP_ERROR:${response.status}:${errorBody.slice(0, 300)}`);
     }
 
     const data = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
@@ -173,10 +185,17 @@ Devuelve un JSON con exactamente esta forma:
   "warnings": [{ "blockId": string|null, "type": "unsupported_claim"|"number_verification"|"name_verification"|"date_verification"|"possible_hallucination"|"missing_source", "message": string }]
 }`;
 
-    const raw = await this.caller.call({ system: JSON_SYSTEM_PROMPT, prompt, maxTokens: 4096 });
-    const parsed = GeneratedArticleSchema.safeParse(extractJson(raw));
+    const raw = await this.caller.call({ system: JSON_SYSTEM_PROMPT, prompt, maxTokens: 8192, jsonMode: true });
+    let json: unknown;
+    try {
+      json = extractJson(raw);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'JSON_PARSE_ERROR';
+      throw new Error(`AI_PROVIDER_INVALID_ARTICLE_RESPONSE:${message}:${raw.slice(0, 300)}`);
+    }
+    const parsed = GeneratedArticleSchema.safeParse(json);
     if (!parsed.success) {
-      throw new Error('AI_PROVIDER_INVALID_ARTICLE_RESPONSE');
+      throw new Error(`AI_PROVIDER_INVALID_ARTICLE_RESPONSE:${parsed.error.issues[0]?.message ?? 'SCHEMA_ERROR'}`);
     }
     return parsed.data;
   }
@@ -197,7 +216,7 @@ Devuelve un JSON con exactamente esta forma:
 Devuelve un JSON con exactamente esta forma:
 { "title": string, "slug": string, "metaDescription": string, "primaryKeyword"?: string, "secondaryKeywords": string[] }`;
 
-    const raw = await this.caller.call({ system: JSON_SYSTEM_PROMPT, prompt, maxTokens: 512 });
+    const raw = await this.caller.call({ system: JSON_SYSTEM_PROMPT, prompt, maxTokens: 1024, jsonMode: true });
     const parsed = SeoMetadataSchema.safeParse(extractJson(raw));
     if (!parsed.success) {
       throw new Error('AI_PROVIDER_INVALID_SEO_RESPONSE');

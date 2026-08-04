@@ -55,6 +55,7 @@ export async function generateArticleAction(projectId: string): Promise<ActionRe
     return ok(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'GENERATION_FAILED';
+    console.error('Article generation failed:', error);
 
     if (job) {
       await supabase
@@ -73,7 +74,7 @@ function translateGenerationError(message: string): string {
     return 'Necesitas añadir una transcripción antes de generar el artículo.';
   }
   if (message.startsWith('AI_PROVIDER_')) {
-    return 'El proveedor de IA no devolvió una respuesta válida. Inténtalo de nuevo.';
+    return `El proveedor de IA no devolvió una respuesta válida. Inténtalo de nuevo. (${message.slice(0, 200)})`;
   }
-  return 'No se pudo generar el artículo. Inténtalo de nuevo.';
+  return `No se pudo generar el artículo. Inténtalo de nuevo. (${message.slice(0, 200)})`;
 }
