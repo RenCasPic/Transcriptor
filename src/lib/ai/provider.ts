@@ -67,6 +67,13 @@ export interface ContentGenerationProvider {
 export interface TranscriptionInput {
   /** URL firmada del archivo de audio/video a transcribir. */
   mediaUrl?: string;
+  /**
+   * Extensión del archivo original (sin punto, ej. "mp4"). Whisper determina
+   * el formato de entrada por el nombre de archivo del part, no por el
+   * Content-Type de la respuesta fetch, así que es necesaria para que la API
+   * acepte el archivo.
+   */
+  fileExtension?: string;
   /** Si es verdadero, se devuelve la transcripción de demostración sin llamar a ningún servicio externo. */
   demo?: boolean;
   language: string;

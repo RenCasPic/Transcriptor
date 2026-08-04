@@ -41,7 +41,8 @@ export class WhisperTranscriptionProvider implements TranscriptionProvider {
     }
 
     const formData = new FormData();
-    formData.append('file', fileBlob, 'media');
+    const extension = input.fileExtension || 'mp4';
+    formData.append('file', fileBlob, `media.${extension}`);
     formData.append('model', 'whisper-1');
     formData.append('response_format', 'verbose_json');
     formData.append('timestamp_granularities[]', 'segment');

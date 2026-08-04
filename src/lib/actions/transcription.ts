@@ -108,6 +108,7 @@ async function transcribeCore(
     const provider = getTranscriptionProvider();
     const result = await provider.transcribe({
       mediaUrl: signedUrlData.signedUrl,
+      fileExtension: params.storagePath.split('.').pop(),
       language: params.language,
     });
 
