@@ -117,7 +117,7 @@ export function UploadVideoCard({ workspaceId }: { workspaceId: string }) {
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="flex items-center gap-2 text-base">
           <Film className="h-4 w-4" />
-          {t.dashboard.uploadVideo}
+          {t.dashboard.uploadFile}
         </CardTitle>
         <input
           ref={fileInputRef}
@@ -128,7 +128,7 @@ export function UploadVideoCard({ workspaceId }: { workspaceId: string }) {
         />
         <Button onClick={() => fileInputRef.current?.click()} disabled={isSubmitting}>
           {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Film className="h-4 w-4" />}
-          {t.dashboard.uploadVideo}
+          {t.dashboard.uploadFile}
         </Button>
       </CardHeader>
       <CardContent className="space-y-3">

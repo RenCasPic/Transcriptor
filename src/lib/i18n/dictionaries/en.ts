@@ -118,10 +118,10 @@ export const en: Dictionary = {
   },
   dashboard: {
     title: 'Create your article',
-    subtitle: 'Upload a video or connect your YouTube channel to generate your next article.',
+    subtitle: 'Upload a file or paste a link to generate your next article.',
     newProject: 'New project',
-    uploadVideo: 'Upload video',
-    connectYoutube: 'Connect YouTube',
+    uploadFile: 'Upload file',
+    pasteLink: 'Paste link',
     searchPlaceholder: 'Search projects...',
     allStatuses: 'All statuses',
     filterByStatus: 'Filter by status',

@@ -72,7 +72,7 @@ export function YoutubeUrlCard() {
       <CardHeader className="space-y-0">
         <CardTitle className="flex items-center gap-2 text-base">
           <Youtube className="h-4 w-4" />
-          {t.dashboard.connectYoutube}
+          {t.dashboard.pasteLink}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -87,7 +87,7 @@ export function YoutubeUrlCard() {
           />
           <Button onClick={handleImport} disabled={isSubmitting || !videoUrl.trim()}>
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Youtube className="h-4 w-4" />}
-            {t.dashboard.connectYoutube}
+            {t.dashboard.pasteLink}
           </Button>
         </div>
       </CardContent>

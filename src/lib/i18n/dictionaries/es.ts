@@ -120,10 +120,10 @@ export const es = {
   },
   dashboard: {
     title: 'Crea tu artículo',
-    subtitle: 'Sube un video o conecta tu canal de YouTube para generar tu próximo artículo.',
+    subtitle: 'Sube un archivo o pega un enlace para generar tu próximo artículo.',
     newProject: 'Nuevo proyecto',
-    uploadVideo: 'Subir video',
-    connectYoutube: 'Conectar YouTube',
+    uploadFile: 'Subir archivo',
+    pasteLink: 'Pegar enlace',
     searchPlaceholder: 'Buscar proyectos...',
     allStatuses: 'Todos los estados',
     filterByStatus: 'Filtrar por estado',
