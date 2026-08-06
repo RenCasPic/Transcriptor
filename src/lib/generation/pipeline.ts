@@ -106,7 +106,9 @@ export async function runArticleGenerationPipeline(
     .select('id')
     .single();
 
-  if (documentError || !document) throw new Error('SAVE_DOCUMENT_FAILED');
+  if (documentError || !document) {
+    throw new Error(`SAVE_DOCUMENT_FAILED:${documentError?.message ?? 'unknown'}`);
+  }
 
   await supabase.from('document_versions').insert({
     document_id: document.id,
