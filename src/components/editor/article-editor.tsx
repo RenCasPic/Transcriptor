@@ -8,7 +8,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { toast } from 'sonner';
 import { BlockId } from '@/lib/editor/block-id-extension';
 import { useAutosave } from '@/lib/editor/use-autosave';
-import { countWords, estimateReadingTimeMinutes } from '@/lib/content/metrics';
+import { countWords } from '@/lib/content/metrics';
 import { rewriteSectionAction } from '@/lib/actions/editor';
 import { createVersionAction } from '@/lib/actions/versions';
 import type { RewriteInstruction } from '@/lib/ai/provider';
@@ -16,9 +16,9 @@ import type { Json } from '@/lib/types/database';
 import { EditorToolbar } from './editor-toolbar';
 import { AiActionMenu } from './ai-action-menu';
 import { RewritePreviewDialog } from './rewrite-preview-dialog';
-import { SaveStatusIndicator } from './save-status-indicator';
+import { EditorFooter } from './editor-footer';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useDictionary, useLocale } from '@/lib/i18n/dictionary-provider';
+import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
 interface RewriteState {
   from: number;
@@ -51,7 +51,6 @@ export function ArticleEditor({
   onContentSnapshot?: (snapshot: { plainText: string; html: string; json: Json; wordCount: number }) => void;
 }) {
   const t = useDictionary();
-  const locale = useLocale();
   const INSTRUCTION_LABELS: Record<RewriteInstruction, string> = {
     rewrite: t.editor.aiMenu.rewrite,
     shorten: t.editor.aiMenu.shorten,
@@ -79,7 +78,7 @@ export function ArticleEditor({
     content: initialContentJson as object,
     immediatelyRender: false,
     editorProps: {
-      attributes: { class: 'tiptap-editor min-h-[60vh]' },
+      attributes: { class: 'tiptap-editor' },
     },
     onUpdate: ({ editor }) => {
       const text = editor.getText();
@@ -162,39 +161,44 @@ export function ArticleEditor({
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="border-b bg-gradient-to-b from-primary/5 to-background p-4">
+    // min-h-0 es la pieza clave: sin esto, este contenedor (item flex dentro
+    // de la columna del EditorShell) se estiraría al alto natural de su
+    // contenido en vez de respetar el alto que le da el layout padre, y el
+    // scroll interno de más abajo dejaría de funcionar correctamente.
+    <div className="flex h-full min-h-0 flex-col">
+      {/* Header: fuera del contenedor con scroll → siempre visible, sin necesitar position:sticky. */}
+      <div className="shrink-0 border-b bg-gradient-to-b from-primary/5 to-background px-4 py-2.5 sm:px-8">
         <input
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
           placeholder={t.editor.titlePlaceholder}
-          className="w-full bg-transparent text-2xl font-bold tracking-tight outline-none placeholder:text-muted-foreground"
+          className="mx-auto block w-full max-w-3xl bg-transparent text-2xl font-bold tracking-tight outline-none placeholder:text-muted-foreground"
         />
       </div>
+
+      {/* Toolbar: también fuera del scroll → siempre visible. */}
       <EditorToolbar editor={editor} />
-      <div className="flex-1 overflow-y-auto px-6 py-5">
-        {coverImageUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={coverImageUrl}
-            alt={coverImageAlt ?? ''}
-            className="mb-6 aspect-[4/1] w-full rounded-lg object-cover shadow-sm"
-          />
-        )}
-        <AiActionMenu editor={editor} onAction={handleAction} />
-        <EditorContent editor={editor} />
-      </div>
-      <div className="flex items-center justify-between border-t px-4 py-2 text-xs text-muted-foreground">
-        <div className="flex gap-3">
-          <span>
-            {liveWordCount.toLocaleString(locale)} {t.common.words}
-          </span>
-          <span>
-            {estimateReadingTimeMinutes(liveWordCount)} {t.common.minutesReading}
-          </span>
+
+      {/* Único contenedor con scroll de este panel. flex-1 + min-h-0 le dan
+          exactamente el espacio restante (≈85-90% del panel); el padding
+          inferior generoso deja lugar para hacer clic después del último
+          párrafo y mantiene el último bloque siempre visible al final. */}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-3xl px-4 py-6 pb-32 sm:px-8">
+          {coverImageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={coverImageUrl}
+              alt={coverImageAlt ?? ''}
+              className="mb-6 aspect-[16/6] w-full rounded-lg object-cover shadow-sm"
+            />
+          )}
+          <AiActionMenu editor={editor} onAction={handleAction} />
+          <EditorContent editor={editor} />
         </div>
-        <SaveStatusIndicator status={status} />
       </div>
+
+      <EditorFooter wordCount={liveWordCount} status={status} />
 
       <RewritePreviewDialog
         open={!!rewriteState}

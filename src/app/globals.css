@@ -39,6 +39,12 @@
     --ring: 243 75% 59%;
 
     --radius: 0.6rem;
+
+    /* Alto del header fijo de la app (src/components/layout/header.tsx, h-16).
+       Único lugar donde vive este valor: cualquier layout de altura completa
+       (como el editor) lo resta vía calc(100vh - var(--app-header-h)) en vez
+       de repetir "4rem" en varios componentes. */
+    --app-header-h: 4rem;
   }
 
   .dark {

@@ -44,8 +44,8 @@ export function TranscriptPanel({
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="border-b p-3">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="shrink-0 border-b p-3">
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -56,7 +56,7 @@ export function TranscriptPanel({
           />
         </div>
       </div>
-      <div className="flex-1 space-y-1 overflow-y-auto p-3">
+      <div className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3">
         {filtered.map((segment) => {
           const isUsed = usedSegmentIds.has(segment.id);
           const isSelected = selectedSegmentId === segment.id;

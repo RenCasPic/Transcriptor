@@ -42,8 +42,8 @@ export function EditorDrawerTabs({
 }) {
   const t = useDictionary();
   return (
-    <Tabs defaultValue="seo" className="flex h-full flex-col">
-      <TabsList className="mx-4 mt-3 grid grid-cols-4">
+    <Tabs defaultValue="seo" className="flex h-full min-h-0 flex-col">
+      <TabsList className="mx-4 mt-3 shrink-0 grid grid-cols-4">
         <TabsTrigger value="seo">{t.editor.tabs.seo}</TabsTrigger>
         <TabsTrigger value="alerts">
           {t.editor.tabs.alerts}
@@ -56,7 +56,7 @@ export function EditorDrawerTabs({
         <TabsTrigger value="history">{t.editor.tabs.history}</TabsTrigger>
         <TabsTrigger value="project">{t.editor.tabs.project}</TabsTrigger>
       </TabsList>
-      <div className="flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         <TabsContent value="seo" className="mt-0">
           <SeoPanel
             documentId={documentId}
