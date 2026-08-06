@@ -84,14 +84,14 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
   ];
 
   return (
-    <div className="flex flex-wrap items-center gap-0.5 border-b p-1.5">
+    <div className="flex flex-wrap items-center gap-0.5 border-b p-1">
       {buttons.map((btn) => (
         <Button
           key={btn.label}
           type="button"
           variant="ghost"
           size="icon"
-          className={cn('h-8 w-8', btn.isActive && 'bg-accent text-accent-foreground')}
+          className={cn('h-7 w-7', btn.isActive && 'bg-accent text-accent-foreground')}
           title={btn.label}
           onClick={btn.onClick}
         >
@@ -103,7 +103,7 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
         type="button"
         variant="ghost"
         size="icon"
-        className="h-8 w-8"
+        className="h-7 w-7"
         title={t.editor.toolbar.undo}
         onClick={() => editor.chain().focus().undo().run()}
         disabled={!editor.can().undo()}
@@ -114,7 +114,7 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
         type="button"
         variant="ghost"
         size="icon"
-        className="h-8 w-8"
+        className="h-7 w-7"
         title={t.editor.toolbar.redo}
         onClick={() => editor.chain().focus().redo().run()}
         disabled={!editor.can().redo()}

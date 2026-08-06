@@ -15,7 +15,7 @@ export function EditorFooter({ wordCount, status }: { wordCount: number; status:
   const locale = useLocale();
 
   return (
-    <div className="flex shrink-0 items-center justify-between border-t bg-background px-4 py-1.5 text-xs text-muted-foreground sm:px-8">
+    <div className="flex shrink-0 items-center justify-between border-t bg-background px-4 py-1 text-xs text-muted-foreground sm:px-8">
       <div className="flex gap-3">
         <span>
           {wordCount.toLocaleString(locale)} {t.common.words}

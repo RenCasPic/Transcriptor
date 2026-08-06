@@ -84,7 +84,7 @@ export function EditorShell({
 
   return (
     <div className="-m-4 flex h-[calc(100vh-var(--app-header-h))] flex-col bg-gradient-to-br from-indigo-100 via-violet-50 to-amber-50 dark:from-indigo-950/30 dark:via-violet-950/20 dark:to-amber-950/20 lg:-m-8">
-      <div className="flex items-center justify-between border-b bg-background/80 px-3 py-2 shadow-sm backdrop-blur">
+      <div className="flex items-center justify-between border-b bg-background/80 px-3 py-1.5 shadow-sm backdrop-blur">
         <div className="flex min-w-0 items-center gap-2">
           <Button variant="ghost" size="icon" asChild>
             <Link href={`/projects/${project.id}`}>
@@ -106,31 +106,24 @@ export function EditorShell({
       </div>
 
       {/*
-        Proporción ≈20/55/25 vía minmax(), no px fijos: en pantallas angostas
-        (laptop 1280px) las columnas laterales no debían robarle espacio
-        proporcionalmente mayor al panel central, que es el prioritario.
-        Los mínimos (240px / 300px) evitan que Transcripción/SEO se vuelvan
-        inusables en el punto donde el layout cambia a una sola columna (lg).
+        Layout: Publicación ocupa toda la altura a la izquierda (~69%);
+        Transcripción y SEO se apilan a la derecha (~31%), cada una a la mitad
+        de esa altura. Se logra con grid-rows-2 + row-span-2 en Publicación:
+        al ser el PRIMER hijo en el DOM, la colocación automática de grid lo
+        pone en la columna 1 ocupando ambas filas; los siguientes dos hijos
+        (Transcripción, SEO) caen en la columna 2, fila 1 y fila 2 en ese
+        orden. Si reordenas estos tres divs en el JSX, cambia dónde cae cada
+        panel — por eso Publicación va primero.
+        minmax(): igual que antes, evita que la columna derecha se vuelva
+        inusable en pantallas angostas antes de pasar a una sola columna (lg).
         min-h-0: sin esto, el grid crece al alto de su contenido en vez de
         quedarse en el alto que le da flex-1, y el scroll interno se rompe.
+        Publicación no lleva la barra morada de título de columna: es el
+        panel principal.
       */}
-      <div className="grid min-h-0 flex-1 gap-4 overflow-hidden p-4 lg:grid-cols-[minmax(240px,1fr)_minmax(480px,2.4fr)_minmax(300px,1.15fr)]">
-        <div className="hidden min-h-0 flex-col overflow-hidden rounded-xl border border-primary bg-background shadow-sm lg:flex">
-          <div className="shrink-0 border-b border-primary bg-gradient-to-b from-primary/10 to-transparent px-4 py-2.5 text-center text-base font-semibold">
-            {t.editor.columns.transcript}
-          </div>
-          <div className="min-h-0 flex-1">
-            <TranscriptPanel
-              segments={segments}
-              usedSegmentIds={usedSegmentIds}
-              selectedSegmentId={selectedSegmentId}
-              onSelectSegment={setSelectedSegmentId}
-            />
-          </div>
-        </div>
-
-        <div className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-primary bg-background shadow-md">
-          <div className="shrink-0 border-b border-primary bg-gradient-to-b from-primary/10 to-transparent px-4 py-2.5 text-center text-base font-semibold">
+      <div className="grid min-h-0 flex-1 gap-4 overflow-hidden p-3 lg:grid-cols-[minmax(560px,2.2fr)_minmax(280px,1fr)] lg:grid-rows-2">
+        <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl bg-background shadow-2xl ring-1 ring-black/5 lg:row-span-2">
+          <div className="shrink-0 bg-primary px-4 py-2 text-center text-sm font-bold uppercase tracking-wide text-primary-foreground">
             {t.editor.columns.publication}
           </div>
           <div className="min-h-0 flex-1">
@@ -148,8 +141,22 @@ export function EditorShell({
           </div>
         </div>
 
-        <div className="hidden min-h-0 flex-col overflow-hidden rounded-xl border border-primary bg-background shadow-sm lg:flex">
-          <div className="shrink-0 border-b border-primary bg-gradient-to-b from-primary/10 to-transparent px-4 py-2.5 text-center text-base font-semibold">
+        <div className="hidden min-h-0 flex-col overflow-hidden rounded-2xl bg-background shadow-lg ring-1 ring-black/5 lg:flex">
+          <div className="shrink-0 bg-primary px-4 py-2 text-center text-sm font-bold uppercase tracking-wide text-primary-foreground">
+            {t.editor.columns.transcript}
+          </div>
+          <div className="min-h-0 flex-1">
+            <TranscriptPanel
+              segments={segments}
+              usedSegmentIds={usedSegmentIds}
+              selectedSegmentId={selectedSegmentId}
+              onSelectSegment={setSelectedSegmentId}
+            />
+          </div>
+        </div>
+
+        <div className="hidden min-h-0 flex-col overflow-hidden rounded-2xl bg-background shadow-lg ring-1 ring-black/5 lg:flex">
+          <div className="shrink-0 bg-primary px-4 py-2 text-center text-sm font-bold uppercase tracking-wide text-primary-foreground">
             {t.editor.columns.seo}
           </div>
           <div className="min-h-0 flex-1">

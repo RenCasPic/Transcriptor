@@ -167,7 +167,7 @@ export function ArticleEditor({
     // scroll interno de más abajo dejaría de funcionar correctamente.
     <div className="flex h-full min-h-0 flex-col">
       {/* Header: fuera del contenedor con scroll → siempre visible, sin necesitar position:sticky. */}
-      <div className="shrink-0 border-b bg-gradient-to-b from-primary/5 to-background px-4 py-2.5 sm:px-8">
+      <div className="shrink-0 border-b px-4 py-2 sm:px-8">
         <input
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
@@ -186,11 +186,15 @@ export function ArticleEditor({
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto max-w-3xl px-4 py-6 pb-32 sm:px-8">
           {coverImageUrl && (
+            // Alto fijo (no aspect-ratio): en una columna ancha, una proporción
+            // como 16/6 crece con el ancho y termina dominando la primera
+            // pantalla. Un alto fijo mantiene la imagen como acento visual, no
+            // como lo primero que hay que scrollear para llegar al texto.
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={coverImageUrl}
               alt={coverImageAlt ?? ''}
-              className="mb-6 aspect-[16/6] w-full rounded-lg object-cover shadow-sm"
+              className="mb-6 h-40 w-full rounded-lg object-cover shadow-sm sm:h-48"
             />
           )}
           <AiActionMenu editor={editor} onAction={handleAction} />
