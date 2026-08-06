@@ -83,8 +83,8 @@ export function EditorShell({
   };
 
   return (
-    <div className="-m-4 flex h-[calc(100vh-4rem)] flex-col lg:-m-8">
-      <div className="flex items-center justify-between border-b bg-background px-3 py-2">
+    <div className="-m-4 flex h-[calc(100vh-4rem)] flex-col bg-gradient-to-br from-indigo-100 via-violet-50 to-amber-50 dark:from-indigo-950/30 dark:via-violet-950/20 dark:to-amber-950/20 lg:-m-8">
+      <div className="flex items-center justify-between border-b bg-background/80 px-3 py-2 shadow-sm backdrop-blur">
         <div className="flex min-w-0 items-center gap-2">
           <Button variant="ghost" size="icon" asChild>
             <Link href={`/projects/${project.id}`}>
@@ -106,8 +106,8 @@ export function EditorShell({
       </div>
 
       <div className="grid flex-1 gap-4 overflow-hidden p-4 lg:grid-cols-[300px_1fr_360px]">
-        <div className="hidden flex-col overflow-hidden rounded-xl border border-primary bg-background lg:flex">
-          <div className="shrink-0 border-b border-primary px-4 py-3 text-center text-base font-semibold">
+        <div className="hidden flex-col overflow-hidden rounded-xl border border-primary bg-background shadow-sm lg:flex">
+          <div className="shrink-0 border-b border-primary bg-gradient-to-b from-primary/10 to-transparent px-4 py-3 text-center text-base font-semibold">
             {t.editor.columns.transcript}
           </div>
           <div className="flex-1 overflow-hidden">
@@ -120,8 +120,8 @@ export function EditorShell({
           </div>
         </div>
 
-        <div className="flex flex-col overflow-hidden rounded-xl border border-primary bg-background">
-          <div className="shrink-0 border-b border-primary px-4 py-3 text-center text-base font-semibold">
+        <div className="flex flex-col overflow-hidden rounded-xl border border-primary bg-background shadow-md">
+          <div className="shrink-0 border-b border-primary bg-gradient-to-b from-primary/10 to-transparent px-4 py-3 text-center text-base font-semibold">
             {t.editor.columns.publication}
           </div>
           <div className="flex-1 overflow-hidden">
@@ -139,8 +139,8 @@ export function EditorShell({
           </div>
         </div>
 
-        <div className="hidden flex-col overflow-hidden rounded-xl border border-primary bg-background lg:flex">
-          <div className="shrink-0 border-b border-primary px-4 py-3 text-center text-base font-semibold">
+        <div className="hidden flex-col overflow-hidden rounded-xl border border-primary bg-background shadow-sm lg:flex">
+          <div className="shrink-0 border-b border-primary bg-gradient-to-b from-primary/10 to-transparent px-4 py-3 text-center text-base font-semibold">
             {t.editor.columns.seo}
           </div>
           <div className="flex-1 overflow-hidden">

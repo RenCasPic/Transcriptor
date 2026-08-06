@@ -163,11 +163,7 @@ export function ArticleEditor({
 
   return (
     <div className="flex h-full flex-col">
-      {coverImageUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={coverImageUrl} alt={coverImageAlt ?? ''} className="aspect-[3/1] w-full shrink-0 object-cover" />
-      )}
-      <div className="border-b p-4">
+      <div className="border-b bg-gradient-to-b from-primary/5 to-background p-4">
         <input
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
@@ -176,7 +172,15 @@ export function ArticleEditor({
         />
       </div>
       <EditorToolbar editor={editor} />
-      <div className="flex-1 overflow-y-auto px-6 py-4">
+      <div className="flex-1 overflow-y-auto px-6 py-5">
+        {coverImageUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={coverImageUrl}
+            alt={coverImageAlt ?? ''}
+            className="mb-6 aspect-[4/1] w-full rounded-lg object-cover shadow-sm"
+          />
+        )}
         <AiActionMenu editor={editor} onAction={handleAction} />
         <EditorContent editor={editor} />
       </div>
