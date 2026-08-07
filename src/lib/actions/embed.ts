@@ -52,7 +52,7 @@ export async function setDocumentPublicAction(
     .eq('id', parsed.data.documentId);
 
   if (error) {
-    return err('UPDATE_VISIBILITY_ERROR', 'No se pudo actualizar la visibilidad del artículo.');
+    return err('UPDATE_VISIBILITY_ERROR', `No se pudo actualizar la visibilidad del artículo. (${error.message})`);
   }
 
   revalidatePath(`/projects/${document.project_id}/editor`);

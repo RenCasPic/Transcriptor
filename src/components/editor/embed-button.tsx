@@ -29,15 +29,19 @@ export function EmbedButton({ documentId, initialIsPublic }: { documentId: strin
 
   async function handleToggle(next: boolean) {
     setIsToggling(true);
-    const result = await setDocumentPublicAction({ documentId, isPublic: next });
-    setIsToggling(false);
-
-    if (!result.success) {
+    try {
+      const result = await setDocumentPublicAction({ documentId, isPublic: next });
+      if (!result.success) {
+        toast.error(result.error.message || t.editor.embedDialog.toggleError);
+        return;
+      }
+      setIsPublic(next);
+      toast.success(next ? t.editor.embedDialog.publishSuccess : t.editor.embedDialog.unpublishSuccess);
+    } catch {
       toast.error(t.editor.embedDialog.toggleError);
-      return;
+    } finally {
+      setIsToggling(false);
     }
-    setIsPublic(next);
-    toast.success(next ? t.editor.embedDialog.publishSuccess : t.editor.embedDialog.unpublishSuccess);
   }
 
   async function copyToClipboard(value: string, successMessage: string) {

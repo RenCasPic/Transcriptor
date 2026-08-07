@@ -308,6 +308,8 @@ export const es = {
       noResultsFor: 'Sin resultados para',
       copyFragment: 'Fragmento copiado',
       copyError: 'No se pudo copiar el fragmento',
+      collapse: 'Colapsar transcripción',
+      expand: 'Expandir transcripción',
     },
     toolbar: {
       heading2: 'Encabezado H2',

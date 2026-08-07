@@ -306,6 +306,8 @@ export const en: Dictionary = {
       noResultsFor: 'No results for',
       copyFragment: 'Fragment copied',
       copyError: 'Could not copy the fragment',
+      collapse: 'Collapse transcript',
+      expand: 'Expand transcript',
     },
     toolbar: {
       heading2: 'Heading H2',
