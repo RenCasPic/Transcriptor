@@ -42,21 +42,26 @@ export function EditorDrawerTabs({
 }) {
   const t = useDictionary();
   return (
-    <Tabs defaultValue="seo" className="flex h-full min-h-0 flex-col">
-      <TabsList className="mx-4 mt-3 shrink-0 grid grid-cols-4">
-        <TabsTrigger value="seo">{t.editor.tabs.seo}</TabsTrigger>
-        <TabsTrigger value="alerts">
-          {t.editor.tabs.alerts}
-          {warnings.filter((w) => w.status === 'open').length > 0 && (
-            <span className="ml-1 rounded-full bg-warning px-1.5 text-[10px] text-warning-foreground">
-              {warnings.filter((w) => w.status === 'open').length}
-            </span>
-          )}
-        </TabsTrigger>
-        <TabsTrigger value="history">{t.editor.tabs.history}</TabsTrigger>
-        <TabsTrigger value="project">{t.editor.tabs.project}</TabsTrigger>
-      </TabsList>
-      <div className="min-h-0 flex-1 overflow-y-auto">
+    <Tabs defaultValue="seo" className="flex flex-col">
+      <div className="sticky top-11 z-20 bg-background">
+        <div className="rounded-t-2xl bg-primary px-4 py-2 text-center text-sm font-bold uppercase tracking-wide text-primary-foreground">
+          {t.editor.columns.seo}
+        </div>
+        <TabsList className="mx-4 mt-3 grid grid-cols-4">
+          <TabsTrigger value="seo">{t.editor.tabs.seo}</TabsTrigger>
+          <TabsTrigger value="alerts">
+            {t.editor.tabs.alerts}
+            {warnings.filter((w) => w.status === 'open').length > 0 && (
+              <span className="ml-1 rounded-full bg-warning px-1.5 text-[10px] text-warning-foreground">
+                {warnings.filter((w) => w.status === 'open').length}
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="history">{t.editor.tabs.history}</TabsTrigger>
+          <TabsTrigger value="project">{t.editor.tabs.project}</TabsTrigger>
+        </TabsList>
+      </div>
+      <div>
         <TabsContent value="seo" className="mt-0">
           <SeoPanel
             documentId={documentId}

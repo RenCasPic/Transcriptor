@@ -83,8 +83,12 @@ export function EditorShell({
   };
 
   return (
-    <div className="-m-4 flex h-[calc(100vh-var(--app-header-h))] flex-col bg-gradient-to-br from-indigo-100 via-violet-50 to-amber-50 dark:from-indigo-950/30 dark:via-violet-950/20 dark:to-amber-950/20 lg:-m-8">
-      <div className="flex items-center justify-between border-b bg-background/80 px-3 py-1.5 shadow-sm backdrop-blur">
+    // Ya NO se fija a 100vh: min-h asegura que ocupe al menos la pantalla,
+    // pero puede crecer más allá y la página completa hace scroll (scroll
+    // del navegador, no de una caja interna). La barra superior y los
+    // encabezados de cada columna son sticky para seguir visibles.
+    <div className="-m-4 min-h-[calc(100vh-var(--app-header-h))] bg-gradient-to-br from-indigo-100 via-violet-50 to-amber-50 dark:from-indigo-950/30 dark:via-violet-950/20 dark:to-amber-950/20 lg:-m-8">
+      <div className="sticky top-0 z-40 flex h-11 items-center justify-between border-b bg-background/95 px-3 shadow-sm backdrop-blur">
         <div className="flex min-w-0 items-center gap-2">
           <Button variant="ghost" size="icon" asChild>
             <Link href={`/projects/${project.id}`}>
@@ -107,75 +111,63 @@ export function EditorShell({
 
       {/*
         Layout: Publicación ocupa toda la altura a la izquierda (~69%);
-        Transcripción y SEO se apilan a la derecha (~31%), cada una a la mitad
-        de esa altura. Se logra con grid-rows-2 + row-span-2 en Publicación:
-        al ser el PRIMER hijo en el DOM, la colocación automática de grid lo
-        pone en la columna 1 ocupando ambas filas; los siguientes dos hijos
-        (Transcripción, SEO) caen en la columna 2, fila 1 y fila 2 en ese
-        orden. Si reordenas estos tres divs en el JSX, cambia dónde cae cada
-        panel — por eso Publicación va primero.
-        minmax(): igual que antes, evita que la columna derecha se vuelva
-        inusable en pantallas angostas antes de pasar a una sola columna (lg).
-        min-h-0: sin esto, el grid crece al alto de su contenido en vez de
-        quedarse en el alto que le da flex-1, y el scroll interno se rompe.
-        Publicación no lleva la barra morada de título de columna: es el
-        panel principal.
+        Transcripción y SEO se apilan a la derecha (~31%). row-span-2 en
+        Publicación + ser el PRIMER hijo en el DOM la coloca ocupando ambas
+        filas de la columna 1; Transcripción y SEO caen en la columna 2,
+        fila 1 y fila 2. Si reordenas estos tres bloques en el JSX, cambia
+        dónde cae cada panel.
+        Cada panel (ArticleEditor, TranscriptPanel, EditorDrawerTabs) trae su
+        propio encabezado "sticky top-11" por dentro (11 = altura de la barra
+        superior de arriba, en unidades Tailwind), así queda pegado justo
+        debajo sin superponerse. Ya no hay overflow-hidden/min-h-0/flex-1 en
+        este nivel: el alto real ahora lo decide el contenido, y si supera la
+        pantalla, se hace scroll de la página completa.
       */}
-      <div className="grid min-h-0 flex-1 gap-4 overflow-hidden p-3 lg:grid-cols-[minmax(560px,2.2fr)_minmax(280px,1fr)] lg:grid-rows-2">
-        <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl bg-background shadow-2xl ring-1 ring-black/5 lg:row-span-2">
-          <div className="shrink-0 bg-primary px-4 py-2 text-center text-sm font-bold uppercase tracking-wide text-primary-foreground">
-            {t.editor.columns.publication}
-          </div>
-          <div className="min-h-0 flex-1">
-            <ArticleEditor
-              documentId={document.id}
-              projectId={project.id}
-              initialTitle={document.title}
-              initialContentJson={document.contentJson}
-              initialVersion={document.version}
-              initialWordCount={document.wordCount}
-              coverImageUrl={document.coverImageUrl}
-              coverImageAlt={document.coverImageAlt}
-              onContentSnapshot={(next) => setSnapshot(next)}
-            />
-          </div>
+      <div className="grid gap-4 p-3 lg:grid-cols-[minmax(560px,2.2fr)_minmax(280px,1fr)] lg:grid-rows-2">
+        {/* Sin overflow-hidden aquí: rompería los encabezados sticky de abajo
+            (sticky necesita que ningún ancestro recorte/scrollee por su
+            cuenta). El redondeado lo aportan los propios hijos (rounded-t-2xl
+            en su encabezado; el fondo del contenido ya coincide con el de
+            esta tarjeta, así que no hace falta recortar nada abajo). */}
+        <div className="rounded-2xl bg-background shadow-2xl ring-1 ring-black/5 lg:row-span-2">
+          <ArticleEditor
+            documentId={document.id}
+            projectId={project.id}
+            initialTitle={document.title}
+            initialContentJson={document.contentJson}
+            initialVersion={document.version}
+            initialWordCount={document.wordCount}
+            coverImageUrl={document.coverImageUrl}
+            coverImageAlt={document.coverImageAlt}
+            onContentSnapshot={(next) => setSnapshot(next)}
+          />
         </div>
 
-        <div className="hidden min-h-0 flex-col overflow-hidden rounded-2xl bg-background shadow-lg ring-1 ring-black/5 lg:flex">
-          <div className="shrink-0 bg-primary px-4 py-2 text-center text-sm font-bold uppercase tracking-wide text-primary-foreground">
-            {t.editor.columns.transcript}
-          </div>
-          <div className="min-h-0 flex-1">
-            <TranscriptPanel
-              segments={segments}
-              usedSegmentIds={usedSegmentIds}
-              selectedSegmentId={selectedSegmentId}
-              onSelectSegment={setSelectedSegmentId}
-            />
-          </div>
+        <div className="hidden rounded-2xl bg-background shadow-lg ring-1 ring-black/5 lg:block">
+          <TranscriptPanel
+            segments={segments}
+            usedSegmentIds={usedSegmentIds}
+            selectedSegmentId={selectedSegmentId}
+            onSelectSegment={setSelectedSegmentId}
+          />
         </div>
 
-        <div className="hidden min-h-0 flex-col overflow-hidden rounded-2xl bg-background shadow-lg ring-1 ring-black/5 lg:flex">
-          <div className="shrink-0 bg-primary px-4 py-2 text-center text-sm font-bold uppercase tracking-wide text-primary-foreground">
-            {t.editor.columns.seo}
-          </div>
-          <div className="min-h-0 flex-1">
-            <EditorDrawerTabs
-              documentId={document.id}
-              projectId={project.id}
-              project={project}
-              documentTitle={document.title}
-              excerpt={document.excerpt ?? ''}
-              seo={seoData}
-              wordCount={snapshot.wordCount}
-              html={snapshot.html}
-              warnings={warnings}
-              sourceLinksByBlock={sourceLinksByBlock}
-              onNavigateToSegment={setSelectedSegmentId}
-              versions={versions}
-              currentUserId={currentUserId}
-            />
-          </div>
+        <div className="hidden rounded-2xl bg-background shadow-lg ring-1 ring-black/5 lg:block">
+          <EditorDrawerTabs
+            documentId={document.id}
+            projectId={project.id}
+            project={project}
+            documentTitle={document.title}
+            excerpt={document.excerpt ?? ''}
+            seo={seoData}
+            wordCount={snapshot.wordCount}
+            html={snapshot.html}
+            warnings={warnings}
+            sourceLinksByBlock={sourceLinksByBlock}
+            onNavigateToSegment={setSelectedSegmentId}
+            versions={versions}
+            currentUserId={currentUserId}
+          />
         </div>
       </div>
 

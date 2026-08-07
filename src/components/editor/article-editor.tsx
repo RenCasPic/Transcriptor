@@ -161,45 +161,38 @@ export function ArticleEditor({
   }
 
   return (
-    // min-h-0 es la pieza clave: sin esto, este contenedor (item flex dentro
-    // de la columna del EditorShell) se estiraría al alto natural de su
-    // contenido en vez de respetar el alto que le da el layout padre, y el
-    // scroll interno de más abajo dejaría de funcionar correctamente.
-    <div className="flex h-full min-h-0 flex-col">
-      {/* Header: fuera del contenedor con scroll → siempre visible, sin necesitar position:sticky. */}
-      <div className="shrink-0 border-b px-4 py-2 sm:px-8">
-        <input
-          value={title}
-          onChange={(e) => handleTitleChange(e.target.value)}
-          placeholder={t.editor.titlePlaceholder}
-          className="mx-auto block w-full max-w-3xl bg-transparent text-2xl font-bold tracking-tight outline-none placeholder:text-muted-foreground"
-        />
+    // Ya no está clavado a la altura del panel (h-full/min-h-0/overflow):
+    // crece con su contenido y es la PÁGINA la que hace scroll. El grupo de
+    // abajo (encabezado + título + toolbar) es sticky top-11: 11 = la altura
+    // (h-11) de la barra superior del EditorShell, así queda pegado justo
+    // debajo de ella sin tapar nada ni dejar un hueco.
+    <div className="flex flex-col">
+      <div className="sticky top-11 z-20 bg-background shadow-sm">
+        <div className="rounded-t-2xl bg-primary px-4 py-2 text-center text-sm font-bold uppercase tracking-wide text-primary-foreground">
+          {t.editor.columns.publication}
+        </div>
+        <div className="border-b px-4 py-2 sm:px-8">
+          <input
+            value={title}
+            onChange={(e) => handleTitleChange(e.target.value)}
+            placeholder={t.editor.titlePlaceholder}
+            className="mx-auto block w-full max-w-3xl bg-transparent text-2xl font-bold tracking-tight outline-none placeholder:text-muted-foreground"
+          />
+        </div>
+        <EditorToolbar editor={editor} />
       </div>
 
-      {/* Toolbar: también fuera del scroll → siempre visible. */}
-      <EditorToolbar editor={editor} />
-
-      {/* Único contenedor con scroll de este panel. flex-1 + min-h-0 le dan
-          exactamente el espacio restante (≈85-90% del panel); el padding
-          inferior generoso deja lugar para hacer clic después del último
-          párrafo y mantiene el último bloque siempre visible al final. */}
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-3xl px-4 py-6 pb-32 sm:px-8">
-          {coverImageUrl && (
-            // Alto fijo (no aspect-ratio): en una columna ancha, una proporción
-            // como 16/6 crece con el ancho y termina dominando la primera
-            // pantalla. Un alto fijo mantiene la imagen como acento visual, no
-            // como lo primero que hay que scrollear para llegar al texto.
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={coverImageUrl}
-              alt={coverImageAlt ?? ''}
-              className="mb-6 h-40 w-full rounded-lg object-cover shadow-sm sm:h-48"
-            />
-          )}
-          <AiActionMenu editor={editor} onAction={handleAction} />
-          <EditorContent editor={editor} />
-        </div>
+      <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-8">
+        {coverImageUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={coverImageUrl}
+            alt={coverImageAlt ?? ''}
+            className="mb-6 h-40 w-full rounded-lg object-cover shadow-sm sm:h-48"
+          />
+        )}
+        <AiActionMenu editor={editor} onAction={handleAction} />
+        <EditorContent editor={editor} />
       </div>
 
       <EditorFooter wordCount={liveWordCount} status={status} />

@@ -44,19 +44,24 @@ export function TranscriptPanel({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="shrink-0 border-b p-3">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder={t.editor.transcript.searchPlaceholder}
-            className="h-8 pl-8 text-xs"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+    <div className="flex flex-col">
+      <div className="sticky top-11 z-20 bg-background">
+        <div className="rounded-t-2xl bg-primary px-4 py-2 text-center text-sm font-bold uppercase tracking-wide text-primary-foreground">
+          {t.editor.columns.transcript}
+        </div>
+        <div className="border-b p-3">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder={t.editor.transcript.searchPlaceholder}
+              className="h-8 pl-8 text-xs"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
         </div>
       </div>
-      <div className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3">
+      <div className="space-y-1 p-3">
         {filtered.map((segment) => {
           const isUsed = usedSegmentIds.has(segment.id);
           const isSelected = selectedSegmentId === segment.id;
