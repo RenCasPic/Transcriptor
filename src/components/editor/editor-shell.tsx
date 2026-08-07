@@ -110,12 +110,15 @@ export function EditorShell({
       </div>
 
       {/*
-        Layout: Publicación ocupa toda la altura a la izquierda (~69%);
-        Transcripción y SEO se apilan a la derecha (~31%). row-span-2 en
-        Publicación + ser el PRIMER hijo en el DOM la coloca ocupando ambas
-        filas de la columna 1; Transcripción y SEO caen en la columna 2,
-        fila 1 y fila 2. Si reordenas estos tres bloques en el JSX, cambia
-        dónde cae cada panel.
+        Layout: Publicación a la izquierda (~69% del ancho), Transcripción y
+        SEO apiladas a la derecha (~31%). A propósito NO se usa
+        grid-rows-2 + row-span-2: eso estira Transcripción y SEO para que
+        cada una mida exactamente la mitad del alto de Publicación,
+        infla el alto de esas dos columnas al ritmo del artículo (si es
+        largo, se inflan con él), aunque su propio contenido sea corto.
+        Con esta estructura, cada panel mide lo que su propio contenido
+        necesita: la columna derecha es un simple flex-col con las dos
+        tarjetas apiladas y un gap, sin depender del alto de Publicación.
         Cada panel (ArticleEditor, TranscriptPanel, EditorDrawerTabs) trae su
         propio encabezado "sticky top-11" por dentro (11 = altura de la barra
         superior de arriba, en unidades Tailwind), así queda pegado justo
@@ -123,13 +126,13 @@ export function EditorShell({
         este nivel: el alto real ahora lo decide el contenido, y si supera la
         pantalla, se hace scroll de la página completa.
       */}
-      <div className="grid gap-4 p-3 lg:grid-cols-[minmax(560px,2.2fr)_minmax(280px,1fr)] lg:grid-rows-2">
+      <div className="grid gap-4 p-3 lg:grid-cols-[minmax(560px,2.2fr)_minmax(280px,1fr)]">
         {/* Sin overflow-hidden aquí: rompería los encabezados sticky de abajo
             (sticky necesita que ningún ancestro recorte/scrollee por su
             cuenta). El redondeado lo aportan los propios hijos (rounded-t-2xl
             en su encabezado; el fondo del contenido ya coincide con el de
             esta tarjeta, así que no hace falta recortar nada abajo). */}
-        <div className="rounded-2xl bg-background shadow-2xl ring-1 ring-black/5 lg:row-span-2">
+        <div className="rounded-2xl bg-background shadow-2xl ring-1 ring-black/5">
           <ArticleEditor
             documentId={document.id}
             projectId={project.id}
@@ -143,31 +146,33 @@ export function EditorShell({
           />
         </div>
 
-        <div className="hidden rounded-2xl bg-background shadow-lg ring-1 ring-black/5 lg:block">
-          <TranscriptPanel
-            segments={segments}
-            usedSegmentIds={usedSegmentIds}
-            selectedSegmentId={selectedSegmentId}
-            onSelectSegment={setSelectedSegmentId}
-          />
-        </div>
+        <div className="hidden lg:flex lg:flex-col lg:gap-4">
+          <div className="rounded-2xl bg-background shadow-lg ring-1 ring-black/5">
+            <TranscriptPanel
+              segments={segments}
+              usedSegmentIds={usedSegmentIds}
+              selectedSegmentId={selectedSegmentId}
+              onSelectSegment={setSelectedSegmentId}
+            />
+          </div>
 
-        <div className="hidden rounded-2xl bg-background shadow-lg ring-1 ring-black/5 lg:block">
-          <EditorDrawerTabs
-            documentId={document.id}
-            projectId={project.id}
-            project={project}
-            documentTitle={document.title}
-            excerpt={document.excerpt ?? ''}
-            seo={seoData}
-            wordCount={snapshot.wordCount}
-            html={snapshot.html}
-            warnings={warnings}
-            sourceLinksByBlock={sourceLinksByBlock}
-            onNavigateToSegment={setSelectedSegmentId}
-            versions={versions}
-            currentUserId={currentUserId}
-          />
+          <div className="rounded-2xl bg-background shadow-lg ring-1 ring-black/5">
+            <EditorDrawerTabs
+              documentId={document.id}
+              projectId={project.id}
+              project={project}
+              documentTitle={document.title}
+              excerpt={document.excerpt ?? ''}
+              seo={seoData}
+              wordCount={snapshot.wordCount}
+              html={snapshot.html}
+              warnings={warnings}
+              sourceLinksByBlock={sourceLinksByBlock}
+              onNavigateToSegment={setSelectedSegmentId}
+              versions={versions}
+              currentUserId={currentUserId}
+            />
+          </div>
         </div>
       </div>
 
