@@ -168,7 +168,17 @@ export async function fetchYoutubeTranscript(
     throw new Error(`YOUTUBE_TRANSCRIPT_FETCH_ERROR:${transcriptResponse.status}`);
   }
 
-  const data = (await transcriptResponse.json()) as { events?: TimedTextEvent[] };
+  // YouTube a veces responde 200 OK con el cuerpo vacío para una pista de
+  // subtítulos que en teoría existe (idiomas auto-traducidos, cambios en su
+  // endpoint interno, etc.) — response.json() en ese caso lanza
+  // "Unexpected end of JSON input". Se trata igual que "sin subtítulos
+  // utilizables" en vez de dejar escapar el SyntaxError crudo.
+  let data: { events?: TimedTextEvent[] };
+  try {
+    data = (await transcriptResponse.json()) as { events?: TimedTextEvent[] };
+  } catch {
+    throw new Error('TRANSCRIPT_FETCH_PARSE_ERROR');
+  }
   const segments: YoutubeTranscriptSegment[] = [];
 
   for (const event of data.events ?? []) {
