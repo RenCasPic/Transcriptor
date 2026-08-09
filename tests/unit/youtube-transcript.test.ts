@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractYoutubeVideoId } from '@/lib/integrations/youtube-transcript';
+import { extractYoutubeVideoId, isValidYoutubeVideoId } from '@/lib/integrations/youtube-transcript';
 
 describe('extractYoutubeVideoId', () => {
   it('extrae el ID de una URL /watch estándar', () => {
@@ -42,5 +42,31 @@ describe('extractYoutubeVideoId', () => {
 
   it('devuelve null para la home de YouTube sin video', () => {
     expect(extractYoutubeVideoId('https://www.youtube.com/')).toBeNull();
+  });
+
+  it('devuelve null si el valor de v= no tiene forma de ID de video (defensa contra inyección de URL)', () => {
+    expect(extractYoutubeVideoId('https://www.youtube.com/watch?v=<script>alert(1)</script>')).toBeNull();
+  });
+
+  it('devuelve null si el valor de v= es demasiado corto', () => {
+    expect(extractYoutubeVideoId('https://www.youtube.com/watch?v=abc')).toBeNull();
+  });
+});
+
+describe('isValidYoutubeVideoId', () => {
+  it('acepta un ID válido de 11 caracteres', () => {
+    expect(isValidYoutubeVideoId('dQw4w9WgXcQ')).toBe(true);
+  });
+
+  it('acepta IDs con guiones y guiones bajos', () => {
+    expect(isValidYoutubeVideoId('a-b_c-d_e-f')).toBe(true);
+  });
+
+  it('rechaza un ID demasiado corto', () => {
+    expect(isValidYoutubeVideoId('abc')).toBe(false);
+  });
+
+  it('rechaza un ID con caracteres no permitidos', () => {
+    expect(isValidYoutubeVideoId('dQw4w9WgX/Q')).toBe(false);
   });
 });

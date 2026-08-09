@@ -281,9 +281,16 @@ export const en: Dictionary = {
       mediaUploadError: 'Could not upload the file. Please try again.',
       mediaProcessError: 'Could not process the file.',
       youtubeTab: 'YouTube',
-      youtubeUrlHint: 'Paste the link of a public YouTube video that has captions.',
+      youtubeUrlHint: 'Paste the link of a public YouTube video. If it has no captions, we transcribe the audio automatically.',
       youtubeUrlPlaceholder: 'https://www.youtube.com/watch?v=...',
-      youtubeImportSuccess: 'Captions imported successfully',
+      youtubeImportSuccess: 'Video imported successfully',
+      youtubeStages: {
+        fetching_captions: 'Getting video info...',
+        no_captions_found: 'No captions found...',
+        extracting_audio: 'Extracting audio...',
+        transcribing_audio: 'Transcribing audio with AI...',
+        done: 'Transcription completed',
+      },
     },
   },
   editor: {

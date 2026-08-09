@@ -9,12 +9,12 @@ import { getTranscriptionProvider } from '@/lib/ai/transcription';
 import { saveTranscript } from '@/lib/generation/save-transcript';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { isUrlSafeToFetch } from '@/lib/security/url-safety';
+import { MAX_MEDIA_BYTES } from '@/lib/media/limits';
 import type { Database } from '@/lib/types/database';
 
 const SIGNED_URL_TTL_SECONDS = 300;
 const TRANSCRIPTION_RATE_LIMIT = 5;
 const TRANSCRIPTION_RATE_WINDOW_SECONDS = 60 * 60;
-const MAX_MEDIA_BYTES = 26_214_400; // 25 MB, igual al límite del bucket y de Whisper
 
 const MEDIA_MIME_TO_SOURCE_TYPE: Record<string, 'audio' | 'video'> = {
   'video/mp4': 'video',

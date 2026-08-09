@@ -12,8 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArticleConfigFields } from './article-config-fields';
 import { ArticleConfigSchema, type ArticleConfigInput } from '@/lib/validations/project';
 import { createQuickProjectAction, updateProjectAction } from '@/lib/actions/projects';
-import { importYoutubeVideoAction } from '@/lib/actions/youtube';
 import { generateArticleAction } from '@/lib/actions/generation';
+import { useYoutubeImport } from '@/lib/youtube/use-youtube-import';
 import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
 export function YoutubeUrlCard() {
@@ -21,6 +21,7 @@ export function YoutubeUrlCard() {
   const t = useDictionary();
   const [videoUrl, setVideoUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { stage, run } = useYoutubeImport();
 
   const {
     register,
@@ -44,7 +45,7 @@ export function YoutubeUrlCard() {
       }
       const projectId = projectResult.data.id;
 
-      const result = await importYoutubeVideoAction({ projectId, videoUrl: videoUrl.trim(), language: 'es' });
+      const result = await run({ projectId, videoUrl: videoUrl.trim(), language: 'es' });
       if (!result.success) {
         toast.error(result.error.message);
         router.push(`/projects/${projectId}?tab=youtube`);
@@ -90,6 +91,12 @@ export function YoutubeUrlCard() {
             {t.dashboard.pasteLink}
           </Button>
         </div>
+        {isSubmitting && stage !== 'idle' && (
+          <p className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            {t.projects.source.youtubeStages[stage]}
+          </p>
+        )}
       </CardContent>
     </Card>
   );

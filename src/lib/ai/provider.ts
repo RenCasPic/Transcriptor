@@ -68,6 +68,13 @@ export interface TranscriptionInput {
   /** URL firmada del archivo de audio/video a transcribir. */
   mediaUrl?: string;
   /**
+   * Audio ya en memoria (p. ej. extraído de un video de YouTube sin
+   * subtítulos). Tiene prioridad sobre `mediaUrl` cuando ambos vienen
+   * presentes: evita el viaje extra de subirlo a Storage y volver a
+   * descargarlo solo para transcribirlo una vez.
+   */
+  audioBlob?: Blob;
+  /**
    * Extensión del archivo original (sin punto, ej. "mp4"). Whisper determina
    * el formato de entrada por el nombre de archivo del part, no por el
    * Content-Type de la respuesta fetch, así que es necesaria para que la API

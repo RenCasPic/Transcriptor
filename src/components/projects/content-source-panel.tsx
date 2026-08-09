@@ -10,8 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { importTranscriptAction } from '@/lib/actions/projects';
 import { transcribeMediaAction, importMediaFromUrlAction } from '@/lib/actions/transcription';
-import { importYoutubeVideoAction } from '@/lib/actions/youtube';
 import { generateArticleAction } from '@/lib/actions/generation';
+import { useYoutubeImport } from '@/lib/youtube/use-youtube-import';
 import { createClient } from '@/lib/supabase/client';
 import { DEMO_TRANSCRIPT_TEXT } from '@/lib/content/demo-transcript';
 import { sanitizeFilename } from '@/lib/content/slug';
@@ -60,6 +60,7 @@ export function ContentSourcePanel({
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isImportingUrl, setIsImportingUrl] = useState(false);
   const [isImportingYoutube, setIsImportingYoutube] = useState(false);
+  const { stage: youtubeStage, run: runYoutubeImport } = useYoutubeImport();
 
   /**
    * Encadena la generación del artículo (con su SEO) justo después de
@@ -234,7 +235,7 @@ export function ContentSourcePanel({
 
     setIsImportingYoutube(true);
     try {
-      const result = await importYoutubeVideoAction({ projectId, videoUrl: youtubeUrl.trim(), language });
+      const result = await runYoutubeImport({ projectId, videoUrl: youtubeUrl.trim(), language });
 
       if (!result.success) {
         toast.error(result.error.message);
@@ -344,6 +345,12 @@ export function ContentSourcePanel({
               {t.projects.source.useLink}
             </Button>
           </div>
+          {isImportingYoutube && youtubeStage !== 'idle' && (
+            <p className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              {t.projects.source.youtubeStages[youtubeStage]}
+            </p>
+          )}
         </TabsContent>
 
         <TabsContent value="demo" className="space-y-3">

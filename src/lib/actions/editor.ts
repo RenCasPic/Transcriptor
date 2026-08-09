@@ -2,7 +2,6 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import DOMPurify from 'isomorphic-dompurify';
 import { createClient } from '@/lib/supabase/server';
 import { ok, err, type ActionResult } from '@/lib/types/domain';
 import { countWords, estimateReadingTimeMinutes } from '@/lib/content/metrics';
@@ -54,6 +53,7 @@ export async function saveDocumentAction(input: z.infer<typeof SaveDocumentSchem
     return err('VERSION_CONFLICT', 'El documento fue modificado en otra sesión. Recarga la página para continuar.');
   }
 
+  const { default: DOMPurify } = await import('isomorphic-dompurify');
   const sanitizedHtml = DOMPurify.sanitize(parsed.data.contentHtml, {
     ALLOWED_TAGS: ['p', 'h2', 'h3', 'ul', 'ol', 'li', 'blockquote', 'strong', 'em', 'a', 'br'],
     ALLOWED_ATTR: ['href', 'target', 'rel', 'data-block-id'],

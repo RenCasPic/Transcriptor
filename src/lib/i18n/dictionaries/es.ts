@@ -283,9 +283,16 @@ export const es = {
       mediaUploadError: 'No se pudo subir el archivo. Inténtalo de nuevo.',
       mediaProcessError: 'No se pudo procesar el archivo.',
       youtubeTab: 'YouTube',
-      youtubeUrlHint: 'Pega el enlace de un video público de YouTube que tenga subtítulos.',
+      youtubeUrlHint: 'Pega el enlace de un video público de YouTube. Si no tiene subtítulos, transcribimos el audio automáticamente.',
       youtubeUrlPlaceholder: 'https://www.youtube.com/watch?v=...',
-      youtubeImportSuccess: 'Subtítulos importados correctamente',
+      youtubeImportSuccess: 'Video importado correctamente',
+      youtubeStages: {
+        fetching_captions: 'Obteniendo información del video...',
+        no_captions_found: 'No encontramos subtítulos...',
+        extracting_audio: 'Extrayendo audio...',
+        transcribing_audio: 'Transcribiendo audio con IA...',
+        done: 'Transcripción completada',
+      },
     },
   },
   editor: {

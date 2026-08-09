@@ -17,7 +17,19 @@
 
 const PATHNAME_ID_PATTERNS = [/^\/shorts\/([^/]+)/, /^\/embed\/([^/]+)/, /^\/live\/([^/]+)/];
 
-/** Extrae el ID de video de las formas más comunes de URL de YouTube. Devuelve null si no reconoce el formato. */
+const YOUTUBE_VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
+
+/** Valida que un string tenga la forma exacta de un ID de video de YouTube (11 caracteres del charset base64url). */
+export function isValidYoutubeVideoId(id: string): boolean {
+  return YOUTUBE_VIDEO_ID_PATTERN.test(id);
+}
+
+/**
+ * Extrae el ID de video de las formas más comunes de URL de YouTube.
+ * Devuelve null si no reconoce el formato o si lo que extrajo no tiene la
+ * forma de un ID de video real (evita propagar basura a los módulos que
+ * reconstruyen una URL canónica a partir de este valor, como play-dl).
+ */
 export function extractYoutubeVideoId(rawUrl: string): string | null {
   let url: URL;
   try {
@@ -27,22 +39,25 @@ export function extractYoutubeVideoId(rawUrl: string): string | null {
   }
 
   const hostname = url.hostname.toLowerCase().replace(/^www\./, '');
+  let candidate: string | null = null;
 
   if (hostname === 'youtu.be') {
-    return url.pathname.slice(1).split('/')[0] || null;
-  }
-
-  if (hostname === 'youtube.com' || hostname === 'm.youtube.com') {
+    candidate = url.pathname.slice(1).split('/')[0] || null;
+  } else if (hostname === 'youtube.com' || hostname === 'm.youtube.com') {
     if (url.pathname === '/watch') {
-      return url.searchParams.get('v');
-    }
-    for (const pattern of PATHNAME_ID_PATTERNS) {
-      const match = url.pathname.match(pattern);
-      if (match?.[1]) return match[1];
+      candidate = url.searchParams.get('v');
+    } else {
+      for (const pattern of PATHNAME_ID_PATTERNS) {
+        const match = url.pathname.match(pattern);
+        if (match?.[1]) {
+          candidate = match[1];
+          break;
+        }
+      }
     }
   }
 
-  return null;
+  return candidate && isValidYoutubeVideoId(candidate) ? candidate : null;
 }
 
 interface CaptionTrack {

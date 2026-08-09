@@ -26,15 +26,18 @@ export class GroqTranscriptionProvider implements TranscriptionProvider {
   constructor(private readonly apiKey: string) {}
 
   async transcribe(input: TranscriptionInput): Promise<TranscriptResult> {
-    if (!input.mediaUrl) {
+    let fileBlob: Blob;
+    if (input.audioBlob) {
+      fileBlob = input.audioBlob;
+    } else if (input.mediaUrl) {
+      const fileResponse = await fetch(input.mediaUrl);
+      if (!fileResponse.ok) {
+        throw new Error('TRANSCRIPTION_SOURCE_FETCH_FAILED');
+      }
+      fileBlob = await fileResponse.blob();
+    } else {
       throw new Error('TRANSCRIPTION_MISSING_MEDIA_URL');
     }
-
-    const fileResponse = await fetch(input.mediaUrl);
-    if (!fileResponse.ok) {
-      throw new Error('TRANSCRIPTION_SOURCE_FETCH_FAILED');
-    }
-    const fileBlob = await fileResponse.blob();
 
     if (fileBlob.size > 26_214_400) {
       throw new Error('TRANSCRIPTION_FILE_TOO_LARGE');

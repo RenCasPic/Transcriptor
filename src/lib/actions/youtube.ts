@@ -6,10 +6,26 @@ import { createClient } from '@/lib/supabase/server';
 import { ok, err, type ActionResult } from '@/lib/types/domain';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { saveTranscript } from '@/lib/generation/save-transcript';
-import { extractYoutubeVideoId, fetchYoutubeTranscript } from '@/lib/integrations/youtube-transcript';
+import { extractYoutubeVideoId, fetchYoutubeTranscript, isValidYoutubeVideoId } from '@/lib/integrations/youtube-transcript';
+import { getAudioExtractor } from '@/lib/integrations/audio-extractor';
+import { getTranscriptionProvider, isRealTranscriptionConfigured } from '@/lib/ai/transcription';
+import { readStreamWithLimit } from '@/lib/media/read-stream-with-limit';
+import { MAX_MEDIA_BYTES } from '@/lib/media/limits';
 
 const IMPORT_RATE_LIMIT = 5;
 const IMPORT_RATE_WINDOW_SECONDS = 60 * 60;
+
+// El fallback de audio es más caro (descarga + transcripción real vía Groq),
+// así que se limita aparte y más estricto que el chequeo de subtítulos.
+const AUDIO_FALLBACK_RATE_LIMIT = 3;
+const AUDIO_FALLBACK_RATE_WINDOW_SECONDS = 60 * 60;
+
+// Tope de duración para el fallback de audio, no para el video en sí:
+// evita gastar tiempo/memoria descargando audio de contenido excesivamente
+// largo (streams, películas completas, etc.). Configurable por si algún
+// despliegue necesita un límite distinto.
+const MAX_YOUTUBE_AUDIO_DURATION_SECONDS = Number(process.env.YOUTUBE_AUDIO_MAX_DURATION_SECONDS ?? 5400);
+const AUDIO_DOWNLOAD_TIMEOUT_MS = 60_000;
 
 const ImportYoutubeVideoSchema = z.object({
   projectId: z.string().uuid(),
@@ -19,16 +35,22 @@ const ImportYoutubeVideoSchema = z.object({
 
 export type ImportYoutubeVideoInput = z.infer<typeof ImportYoutubeVideoSchema>;
 
+export type ImportYoutubeVideoResult =
+  | { status: 'completed'; transcriptId: string; title: string }
+  | { status: 'needs_audio_fallback'; sourceId: string; jobId: string | null; videoId: string; title: string };
+
 /**
- * Importa los subtítulos de un video de YouTube (propio o ajeno, siempre que
- * sea público y tenga subtítulos) a partir de su URL, usando
- * `fetchYoutubeTranscript` (sin OAuth, ver ese módulo para el trade-off).
- * No descarga ni transcribe el audio/video real: si el video no tiene
- * subtítulos, se le pide al usuario que lo suba manualmente.
+ * Importa un video de YouTube a partir de su URL. Primero intenta usar sus
+ * subtítulos (propios o ajenos, siempre que el video sea público) vía
+ * `fetchYoutubeTranscript`. Si el video no tiene subtítulos y hay un
+ * proveedor de transcripción real configurado, en vez de fallar devuelve
+ * `needs_audio_fallback` para que el cliente encadene
+ * `transcribeYoutubeAudioAction` (ver ese módulo para el porqué de dos
+ * llamadas en vez de una sola función que hace todo).
  */
 export async function importYoutubeVideoAction(
   input: ImportYoutubeVideoInput,
-): Promise<ActionResult<{ transcriptId: string; title: string }>> {
+): Promise<ActionResult<ImportYoutubeVideoResult>> {
   const parsed = ImportYoutubeVideoSchema.safeParse(input);
   if (!parsed.success) {
     return err('VALIDATION_ERROR', parsed.error.issues[0]?.message ?? 'Datos inválidos');
@@ -123,9 +145,24 @@ export async function importYoutubeVideoAction(
     await supabase.from('projects').update({ status: 'draft' }).eq('id', parsed.data.projectId);
 
     revalidatePath(`/projects/${parsed.data.projectId}`);
-    return ok({ transcriptId: saved.transcriptId, title: transcript.title });
+    return ok({ status: 'completed', transcriptId: saved.transcriptId, title: transcript.title });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'YOUTUBE_IMPORT_FAILED';
+
+    if (message === 'NO_CAPTIONS' && isRealTranscriptionConfigured()) {
+      // No se marca el job/proyecto como fallido: sigue "processing" hasta
+      // que el cliente encadene transcribeYoutubeAudioAction con este mismo
+      // source/job. Si el usuario abandona sin reintentar, queda como
+      // "processing" — mismo comportamiento que cualquier otro job huérfano
+      // de este MVP (no hay barrido de jobs colgados).
+      return ok({
+        status: 'needs_audio_fallback',
+        sourceId: source.id,
+        jobId: job?.id ?? null,
+        videoId,
+        title: 'Video de YouTube',
+      });
+    }
 
     if (job) {
       await supabase
@@ -139,7 +176,144 @@ export async function importYoutubeVideoAction(
   }
 }
 
-function translateImportError(message: string): string {
+const TranscribeYoutubeAudioSchema = z.object({
+  projectId: z.string().uuid(),
+  sourceId: z.string().uuid(),
+  jobId: z.string().uuid().nullable(),
+  videoId: z.string().refine(isValidYoutubeVideoId, 'ID de video inválido'),
+  language: z.string().min(2).max(10).default('es'),
+});
+
+export type TranscribeYoutubeAudioInput = z.infer<typeof TranscribeYoutubeAudioSchema>;
+
+/**
+ * Segunda fase del import de YouTube, usada cuando el video no tiene
+ * subtítulos: extrae su audio (`AudioExtractor`, hoy vía play-dl) y lo
+ * transcribe con el proveedor de transcripción configurado (Groq/Whisper).
+ *
+ * Es una Server Action separada (no parte de `importYoutubeVideoAction`) a
+ * propósito, para que el cliente pueda mostrar progreso real en dos pasos
+ * ("buscando subtítulos" -> "transcribiendo audio") en vez de una sola
+ * espera opaca. El audio nunca se sube a Storage ni se guarda en ningún
+ * lado: se descarga a memoria, se manda a la API de transcripción y se
+ * descarta al terminar la función (ver `readStreamWithLimit`).
+ */
+export async function transcribeYoutubeAudioAction(
+  input: TranscribeYoutubeAudioInput,
+): Promise<ActionResult<{ transcriptId: string; title: string }>> {
+  const parsed = TranscribeYoutubeAudioSchema.safeParse(input);
+  if (!parsed.success) {
+    return err('VALIDATION_ERROR', parsed.error.issues[0]?.message ?? 'Datos inválidos');
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return err('UNAUTHENTICATED', 'Debes iniciar sesión.');
+  }
+
+  if (!isRealTranscriptionConfigured()) {
+    return err(
+      'NO_REAL_TRANSCRIPTION_PROVIDER',
+      'No hay un proveedor de transcripción configurado para procesar audio sin subtítulos.',
+    );
+  }
+
+  const rateLimit = checkRateLimit(
+    `transcribe-youtube-audio:${user.id}`,
+    AUDIO_FALLBACK_RATE_LIMIT,
+    AUDIO_FALLBACK_RATE_WINDOW_SECONDS,
+  );
+  if (!rateLimit.allowed) {
+    return err(
+      'RATE_LIMITED',
+      `Alcanzaste el límite de transcripciones automáticas de YouTube. Inténtalo de nuevo en ${Math.ceil(rateLimit.retryAfterSeconds / 60)} minutos.`,
+    );
+  }
+
+  // RLS ya filtra por membresía; este select además confirma que el source
+  // realmente pertenece al proyecto indicado (evita usar el jobId/sourceId
+  // de otro proyecto aunque ambos sean del mismo usuario).
+  const { data: source } = await supabase
+    .from('media_sources')
+    .select('id')
+    .eq('id', parsed.data.sourceId)
+    .eq('project_id', parsed.data.projectId)
+    .maybeSingle();
+  if (!source) {
+    return err('NOT_FOUND', 'No se encontró el video original.');
+  }
+
+  try {
+    const extractor = getAudioExtractor();
+    const extracted = await extractor.extract(`https://www.youtube.com/watch?v=${parsed.data.videoId}`, {
+      maxDurationSeconds: MAX_YOUTUBE_AUDIO_DURATION_SECONDS,
+    });
+
+    const audioBuffer = await readStreamWithLimit(extracted.stream, MAX_MEDIA_BYTES, AUDIO_DOWNLOAD_TIMEOUT_MS);
+    // Buffer es un Uint8Array válido en runtime; el cast solo evita un
+    // desajuste entre los tipos de Node (ArrayBufferLike) y DOM (ArrayBuffer)
+    // para BlobPart, sin copiar el buffer.
+    const audioBlob = new Blob([audioBuffer as unknown as BlobPart], { type: extracted.mimeType });
+
+    const provider = getTranscriptionProvider();
+    const result = await provider.transcribe({
+      audioBlob,
+      fileExtension: extracted.fileExtension,
+      language: parsed.data.language,
+    });
+
+    const saved = await saveTranscript(supabase, {
+      projectId: parsed.data.projectId,
+      sourceId: parsed.data.sourceId,
+      language: parsed.data.language,
+      fullText: result.fullText,
+      segments: result.segments.map((s) => ({
+        index: s.index,
+        speaker: s.speaker,
+        startSeconds: s.startSeconds,
+        endSeconds: s.endSeconds,
+        text: s.text,
+      })),
+    });
+
+    if ('error' in saved) {
+      throw new Error(saved.error);
+    }
+
+    await supabase
+      .from('media_sources')
+      .update({ metadata: { videoId: parsed.data.videoId, title: extracted.title, transcribedFrom: 'audio_fallback' } })
+      .eq('id', parsed.data.sourceId);
+
+    if (parsed.data.jobId) {
+      await supabase
+        .from('generation_jobs')
+        .update({ status: 'completed', progress: 100, completed_at: new Date().toISOString() })
+        .eq('id', parsed.data.jobId);
+    }
+    await supabase.from('projects').update({ status: 'draft' }).eq('id', parsed.data.projectId);
+
+    revalidatePath(`/projects/${parsed.data.projectId}`);
+    return ok({ transcriptId: saved.transcriptId, title: extracted.title });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'YOUTUBE_AUDIO_TRANSCRIPTION_FAILED';
+
+    if (parsed.data.jobId) {
+      await supabase
+        .from('generation_jobs')
+        .update({ status: 'failed', error_message: message, completed_at: new Date().toISOString() })
+        .eq('id', parsed.data.jobId);
+    }
+    await supabase.from('projects').update({ status: 'failed' }).eq('id', parsed.data.projectId);
+
+    return err('YOUTUBE_AUDIO_TRANSCRIPTION_FAILED', translateAudioFallbackError(message));
+  }
+}
+
+export function translateImportError(message: string): string {
   if (message === 'NO_CAPTIONS') {
     return 'Este video no tiene subtítulos disponibles. Prueba con otro video o sube el archivo manualmente.';
   }
@@ -150,4 +324,49 @@ function translateImportError(message: string): string {
     return 'No se pudo acceder a ese video de YouTube. Verifica que sea público e inténtalo de nuevo.';
   }
   return 'No se pudo importar el video. Inténtalo de nuevo.';
+}
+
+export function translateAudioFallbackError(message: string): string {
+  const maxMinutes = Math.round(MAX_YOUTUBE_AUDIO_DURATION_SECONDS / 60);
+
+  if (message === 'YOUTUBE_PRIVATE_VIDEO') {
+    return 'Este video es privado y no se puede transcribir automáticamente.';
+  }
+  if (message === 'YOUTUBE_VIDEO_NOT_FOUND') {
+    return 'No se encontró ese video. Puede haber sido eliminado o la URL ser incorrecta.';
+  }
+  if (message === 'YOUTUBE_AGE_RESTRICTED') {
+    return 'Este video tiene restricción de edad y no se puede procesar automáticamente.';
+  }
+  if (message === 'YOUTUBE_REGION_BLOCKED') {
+    return 'Este video no está disponible en la región de nuestro servidor.';
+  }
+  if (message === 'YOUTUBE_LIVE_UNSUPPORTED') {
+    return 'No se pueden transcribir transmisiones en vivo.';
+  }
+  if (message === 'YOUTUBE_AUDIO_FORMAT_UNSUPPORTED') {
+    return 'El formato de audio de este video no es compatible con la transcripción automática.';
+  }
+  if (message === 'YOUTUBE_AUDIO_TOO_LONG') {
+    return `Este video supera el límite de ${maxMinutes} minutos para la transcripción automática de audio.`;
+  }
+  if (message === 'TRANSCRIPTION_FILE_TOO_LARGE') {
+    return 'El audio extraído supera el límite de 25 MB permitido.';
+  }
+  if (message === 'YOUTUBE_AUDIO_DOWNLOAD_TIMEOUT' || message === 'YOUTUBE_AUDIO_EXTRACTION_TIMEOUT') {
+    return 'La extracción del audio tardó demasiado. Inténtalo de nuevo.';
+  }
+  if (message === 'YOUTUBE_AUDIO_DOWNLOAD_FAILED' || message === 'YOUTUBE_AUDIO_EXTRACTION_FAILED') {
+    return 'No se pudo descargar el audio de ese video. Inténtalo de nuevo más tarde.';
+  }
+  if (message === 'EMPTY_TRANSCRIPT') {
+    return 'No se detectó voz en el audio extraído del video.';
+  }
+  if (message.startsWith('TRANSCRIPTION_PROVIDER_HTTP_ERROR:429')) {
+    return 'Se alcanzó el límite de uso del servicio de transcripción. Inténtalo de nuevo en unos minutos.';
+  }
+  if (message.startsWith('TRANSCRIPTION_PROVIDER_HTTP_ERROR')) {
+    return 'El servicio de transcripción no pudo procesar el audio. Inténtalo de nuevo.';
+  }
+  return 'No se pudo transcribir el audio de ese video. Inténtalo de nuevo.';
 }
