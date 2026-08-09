@@ -10,8 +10,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArticleConfigFields } from './article-config-fields';
+import { ImportErrorPanel } from './import-error-panel';
 import { ArticleConfigSchema, type ArticleConfigInput } from '@/lib/validations/project';
-import { createQuickProjectAction, updateProjectAction } from '@/lib/actions/projects';
+import { createQuickProjectAction, updateProjectAction, deleteProjectAction } from '@/lib/actions/projects';
 import { generateArticleAction } from '@/lib/actions/generation';
 import { useYoutubeImport } from '@/lib/youtube/use-youtube-import';
 import { useDictionary } from '@/lib/i18n/dictionary-provider';
@@ -21,6 +22,7 @@ export function YoutubeUrlCard() {
   const t = useDictionary();
   const [videoUrl, setVideoUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
   const { stage, run } = useYoutubeImport();
 
   const {
@@ -36,6 +38,7 @@ export function YoutubeUrlCard() {
   async function handleImport() {
     if (!videoUrl.trim()) return;
 
+    setImportError(null);
     setIsSubmitting(true);
     try {
       const projectResult = await createQuickProjectAction({ source: 'youtube', ...getValues() });
@@ -47,8 +50,11 @@ export function YoutubeUrlCard() {
 
       const result = await run({ projectId, videoUrl: videoUrl.trim(), language: 'es' });
       if (!result.success) {
-        toast.error(result.error.message);
-        router.push(`/projects/${projectId}?tab=youtube`);
+        // El proyecto rápido no tiene ningún contenido útil si el import
+        // falló: se elimina en vez de dejarlo como un proyecto "Fallido"
+        // huérfano, y se explica el error en el propio dashboard.
+        await deleteProjectAction(projectId);
+        setImportError(result.error.message);
         return;
       }
 
@@ -96,6 +102,19 @@ export function YoutubeUrlCard() {
             <Loader2 className="h-3 w-3 animate-spin" />
             {t.projects.source.youtubeStages[stage]}
           </p>
+        )}
+        {importError && (
+          <ImportErrorPanel
+            title={t.dashboard.importError.title}
+            message={importError}
+            dismissLabel={t.dashboard.importError.dismiss}
+            onDismiss={() => setImportError(null)}
+            tips={[
+              t.dashboard.importError.youtubeTip1,
+              t.dashboard.importError.youtubeTip2,
+              t.dashboard.importError.youtubeTip3,
+            ]}
+          />
         )}
       </CardContent>
     </Card>

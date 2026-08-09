@@ -100,7 +100,8 @@ export function mapPlayDlError(error: unknown): Error {
   if (error instanceof Error && error.message.startsWith('YOUTUBE_')) {
     return error;
   }
-  const raw = (error instanceof Error ? error.message : String(error)).toLowerCase();
+  const original = error instanceof Error ? error.message : String(error);
+  const raw = original.toLowerCase();
   if (raw.includes('private')) return new Error('YOUTUBE_PRIVATE_VIDEO');
   if (raw.includes('sign in') || raw.includes('age')) return new Error('YOUTUBE_AGE_RESTRICTED');
   if (
@@ -113,5 +114,8 @@ export function mapPlayDlError(error: unknown): Error {
     return new Error('YOUTUBE_VIDEO_NOT_FOUND');
   }
   if (raw.includes('region') || raw.includes('country')) return new Error('YOUTUBE_REGION_BLOCKED');
-  return new Error('YOUTUBE_AUDIO_EXTRACTION_FAILED');
+  // Sin coincidencia conocida: se conserva el mensaje original de play-dl
+  // (después de los dos puntos) para poder diagnosticar sin acceso a los
+  // logs del servidor — ver translateAudioFallbackError.
+  return new Error(`YOUTUBE_AUDIO_EXTRACTION_FAILED:${original}`);
 }

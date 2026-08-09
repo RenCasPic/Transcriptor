@@ -133,6 +133,16 @@ export const en: Dictionary = {
     demoModeWarningTitle: 'Demo mode: transcription is not real',
     demoModeWarningDescription:
       "No transcription provider is configured, so any video or audio you upload isn't actually transcribed: a generic sample text is used instead. Set a free Groq key (or OpenAI Whisper) via TRANSCRIPTION_PROVIDER / TRANSCRIPTION_API_KEY to transcribe your real content.",
+    importError: {
+      title: "We couldn't complete the import",
+      dismiss: 'Dismiss',
+      youtubeTip1: 'Check that the link points to a public YouTube video.',
+      youtubeTip2: "If the video is private, was removed, or is age-restricted, we can't access it.",
+      youtubeTip3: 'Still not working? Try uploading the video or audio file directly.',
+      uploadTip1: "Check that the file doesn't exceed 25 MB.",
+      uploadTip2: 'Use a supported format: .mp4, .mov, .webm, .mp3, .wav, or .m4a.',
+      uploadTip3: 'Check your internet connection and try again.',
+    },
     stats: {
       projects: 'Projects',
       wordsGenerated: 'Words generated',

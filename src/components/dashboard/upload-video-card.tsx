@@ -9,8 +9,9 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArticleConfigFields } from './article-config-fields';
+import { ImportErrorPanel } from './import-error-panel';
 import { ArticleConfigSchema, type ArticleConfigInput } from '@/lib/validations/project';
-import { createQuickProjectAction } from '@/lib/actions/projects';
+import { createQuickProjectAction, deleteProjectAction } from '@/lib/actions/projects';
 import { transcribeMediaAction } from '@/lib/actions/transcription';
 import { generateArticleAction } from '@/lib/actions/generation';
 import { createClient } from '@/lib/supabase/client';
@@ -33,6 +34,7 @@ export function UploadVideoCard({ workspaceId }: { workspaceId: string }) {
   const t = useDictionary();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
 
   const {
     register,
@@ -60,7 +62,9 @@ export function UploadVideoCard({ workspaceId }: { workspaceId: string }) {
       return;
     }
 
+    setImportError(null);
     setIsSubmitting(true);
+    let createdProjectId: string | null = null;
     try {
       const projectResult = await createQuickProjectAction({ source: 'upload', ...getValues() });
       if (!projectResult.success) {
@@ -68,6 +72,7 @@ export function UploadVideoCard({ workspaceId }: { workspaceId: string }) {
         return;
       }
       const projectId = projectResult.data.id;
+      createdProjectId = projectId;
 
       const storagePath = `${workspaceId}/${projectId}/${Date.now()}-${sanitizeFilename(file.name)}`;
       const supabase = createClient();
@@ -77,8 +82,7 @@ export function UploadVideoCard({ workspaceId }: { workspaceId: string }) {
 
       if (uploadError) {
         console.error('Supabase storage upload error:', uploadError);
-        toast.error(`${t.projects.source.mediaUploadError} (${uploadError.message})`);
-        router.push(`/projects/${projectId}?tab=media`);
+        setImportError(`${t.projects.source.mediaUploadError} (${uploadError.message})`);
         return;
       }
 
@@ -91,11 +95,11 @@ export function UploadVideoCard({ workspaceId }: { workspaceId: string }) {
       });
 
       if (!result.success) {
-        toast.error(result.error.message);
-        router.push(`/projects/${projectId}?tab=media`);
+        setImportError(result.error.message);
         return;
       }
 
+      createdProjectId = null; // ya hay una transcripción válida: no se debe borrar el proyecto.
       const generationResult = await generateArticleAction(projectId);
       if (!generationResult.success) {
         toast.error(generationResult.error.message);
@@ -106,8 +110,14 @@ export function UploadVideoCard({ workspaceId }: { workspaceId: string }) {
       toast.success(t.projects.source.transcribeSuccess);
       router.push(`/projects/${projectId}/editor`);
     } catch {
-      toast.error(t.projects.source.mediaProcessError);
+      setImportError(t.projects.source.mediaProcessError);
     } finally {
+      // El proyecto rápido no tiene ningún contenido útil si la subida o la
+      // transcripción fallaron: se elimina en vez de dejarlo como un
+      // proyecto "Fallido" huérfano en la lista del usuario.
+      if (createdProjectId) {
+        await deleteProjectAction(createdProjectId);
+      }
       setIsSubmitting(false);
     }
   }
@@ -134,6 +144,19 @@ export function UploadVideoCard({ workspaceId }: { workspaceId: string }) {
       <CardContent className="space-y-3">
         <p className="text-xs text-muted-foreground">{t.projects.source.mediaFormats}</p>
         <ArticleConfigFields idPrefix="upload" register={register} control={control} errors={errors} />
+        {importError && (
+          <ImportErrorPanel
+            title={t.dashboard.importError.title}
+            message={importError}
+            dismissLabel={t.dashboard.importError.dismiss}
+            onDismiss={() => setImportError(null)}
+            tips={[
+              t.dashboard.importError.uploadTip1,
+              t.dashboard.importError.uploadTip2,
+              t.dashboard.importError.uploadTip3,
+            ]}
+          />
+        )}
       </CardContent>
     </Card>
   );

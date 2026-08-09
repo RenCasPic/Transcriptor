@@ -18,8 +18,10 @@ describe('mapPlayDlError', () => {
     expect(mapPlayDlError(new Error('Not available in your country')).message).toBe('YOUTUBE_REGION_BLOCKED');
   });
 
-  it('cae en YOUTUBE_AUDIO_EXTRACTION_FAILED para mensajes desconocidos', () => {
-    expect(mapPlayDlError(new Error('algo totalmente inesperado')).message).toBe('YOUTUBE_AUDIO_EXTRACTION_FAILED');
+  it('cae en YOUTUBE_AUDIO_EXTRACTION_FAILED preservando el mensaje original para mensajes desconocidos', () => {
+    expect(mapPlayDlError(new Error('algo totalmente inesperado')).message).toBe(
+      'YOUTUBE_AUDIO_EXTRACTION_FAILED:algo totalmente inesperado',
+    );
   });
 
   it('deja pasar sin cambios los errores ya codificados internamente (p. ej. de un timeout)', () => {

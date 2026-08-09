@@ -65,9 +65,11 @@ describe('translateAudioFallbackError', () => {
     expect(translate('YOUTUBE_AUDIO_EXTRACTION_TIMEOUT')).toMatch(/tardó demasiado/i);
   });
 
-  it('traduce fallos de descarga/extracción', () => {
+  it('traduce fallos de descarga/extracción, preservando el detalle original cuando lo hay', () => {
     expect(translate('YOUTUBE_AUDIO_DOWNLOAD_FAILED')).toMatch(/no se pudo descargar/i);
-    expect(translate('YOUTUBE_AUDIO_EXTRACTION_FAILED')).toMatch(/no se pudo descargar/i);
+    expect(translate('YOUTUBE_AUDIO_EXTRACTION_FAILED:algo raro de play-dl')).toMatch(
+      /no se pudo descargar.*algo raro de play-dl/is,
+    );
   });
 
   it('traduce transcripción vacía', () => {

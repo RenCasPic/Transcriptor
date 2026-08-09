@@ -49,8 +49,12 @@ export function translateAudioFallbackError(message: string, maxDurationSeconds:
   if (message === 'YOUTUBE_AUDIO_DOWNLOAD_TIMEOUT' || message === 'YOUTUBE_AUDIO_EXTRACTION_TIMEOUT') {
     return 'La extracción del audio tardó demasiado. Inténtalo de nuevo.';
   }
-  if (message === 'YOUTUBE_AUDIO_DOWNLOAD_FAILED' || message === 'YOUTUBE_AUDIO_EXTRACTION_FAILED') {
+  if (message === 'YOUTUBE_AUDIO_DOWNLOAD_FAILED') {
     return 'No se pudo descargar el audio de ese video. Inténtalo de nuevo más tarde.';
+  }
+  if (message.startsWith('YOUTUBE_AUDIO_EXTRACTION_FAILED')) {
+    const detail = message.slice('YOUTUBE_AUDIO_EXTRACTION_FAILED:'.length);
+    return `No se pudo descargar el audio de ese video. Inténtalo de nuevo más tarde. (${detail})`;
   }
   if (message === 'EMPTY_TRANSCRIPT') {
     return 'No se detectó voz en el audio extraído del video.';

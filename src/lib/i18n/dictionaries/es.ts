@@ -135,6 +135,16 @@ export const es = {
     demoModeWarningTitle: 'Modo demo: la transcripción no es real',
     demoModeWarningDescription:
       'No hay ningún proveedor de transcripción configurado, así que el video o audio que subas no se transcribe de verdad: se usa un texto de ejemplo genérico. Configura una clave gratuita de Groq (o de OpenAI Whisper) en TRANSCRIPTION_PROVIDER / TRANSCRIPTION_API_KEY para transcribir tu contenido real.',
+    importError: {
+      title: 'No se pudo completar la importación',
+      dismiss: 'Cerrar',
+      youtubeTip1: 'Verifica que el enlace sea de un video público de YouTube.',
+      youtubeTip2: 'Si el video es privado, fue eliminado o tiene restricción de edad, no podemos acceder a él.',
+      youtubeTip3: '¿Sigue sin funcionar? Prueba subiendo el archivo de video o audio directamente.',
+      uploadTip1: 'Verifica que el archivo no supere los 25 MB.',
+      uploadTip2: 'Usa un formato soportado: .mp4, .mov, .webm, .mp3, .wav o .m4a.',
+      uploadTip3: 'Revisa tu conexión a internet e inténtalo de nuevo.',
+    },
     stats: {
       projects: 'Proyectos',
       wordsGenerated: 'Palabras generadas',
