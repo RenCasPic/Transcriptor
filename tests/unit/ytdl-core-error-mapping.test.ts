@@ -18,12 +18,6 @@ describe('mapYtdlError', () => {
     expect(mapYtdlError(new Error('Not available in your country')).message).toBe('YOUTUBE_REGION_BLOCKED');
   });
 
-  it('cae en YOUTUBE_AUDIO_EXTRACTION_FAILED preservando el mensaje original para mensajes desconocidos (p. ej. fallas de descifrado)', () => {
-    expect(mapYtdlError(new Error('Could not parse decipher function')).message).toBe(
-      'YOUTUBE_AUDIO_EXTRACTION_FAILED:Could not parse decipher function',
-    );
-  });
-
   it('deja pasar sin cambios los errores ya codificados internamente (p. ej. de un timeout)', () => {
     expect(mapYtdlError(new Error('YOUTUBE_AUDIO_EXTRACTION_TIMEOUT')).message).toBe(
       'YOUTUBE_AUDIO_EXTRACTION_TIMEOUT',
@@ -32,5 +26,65 @@ describe('mapYtdlError', () => {
 
   it('maneja valores que no son instancias de Error', () => {
     expect(mapYtdlError('unavailable').message).toBe('YOUTUBE_VIDEO_NOT_FOUND');
+  });
+
+  describe('incompatibilidad de descifrado con el reproductor actual de YouTube', () => {
+    // Este es el caso que motivó el cambio: play-dl y @distube/ytdl-core
+    // fallan hoy contra el reproductor actual de YouTube al no poder
+    // descifrar sus firmas. Debe distinguirse claramente de: video privado,
+    // eliminado, con restricción de edad, bloqueado por región, timeout,
+    // error de Groq, o un bug interno de la aplicación (ver casos de abajo).
+    const decipherMessages = [
+      'Could not parse decipher function',
+      'Could not parse n transform function',
+      'Failed to find any playable formats',
+      'Error extracting signature decipher algorithm',
+    ];
+
+    for (const message of decipherMessages) {
+      it(`clasifica "${message}" como YOUTUBE_EXTRACTOR_INCOMPATIBLE`, () => {
+        const mapped = mapYtdlError(new Error(message));
+        expect(mapped.message).toBe(`YOUTUBE_EXTRACTOR_INCOMPATIBLE:${message}`);
+      });
+    }
+
+    it('no confunde un timeout de nuestra propia app con una incompatibilidad del extractor', () => {
+      const mapped = mapYtdlError(new Error('YOUTUBE_AUDIO_EXTRACTION_TIMEOUT'));
+      expect(mapped.message).not.toContain('YOUTUBE_EXTRACTOR_INCOMPATIBLE');
+      expect(mapped.message).toBe('YOUTUBE_AUDIO_EXTRACTION_TIMEOUT');
+    });
+
+    it('no confunde un error HTTP de Groq (ajeno al extractor) con una incompatibilidad del extractor', () => {
+      // Este tipo de error nunca pasa por mapYtdlError en el flujo real
+      // (lo lanza el proveedor de transcripción, no el extractor de audio),
+      // pero si por algún motivo llegara aquí, no debe clasificarse como
+      // incompatibilidad de YouTube.
+      const mapped = mapYtdlError(new Error('TRANSCRIPTION_PROVIDER_HTTP_ERROR:500'));
+      expect(mapped.message).not.toContain('YOUTUBE_EXTRACTOR_INCOMPATIBLE');
+    });
+
+    it('no confunde una URL inválida con una incompatibilidad del extractor', () => {
+      const mapped = mapYtdlError(new Error('No video id found: "not-a-url"'));
+      expect(mapped.message).toBe('YOUTUBE_VIDEO_NOT_FOUND');
+    });
+
+    it('no confunde un video privado con una incompatibilidad del extractor', () => {
+      expect(mapYtdlError(new Error('This is a private video')).message).not.toContain(
+        'YOUTUBE_EXTRACTOR_INCOMPATIBLE',
+      );
+    });
+
+    it('no confunde un video eliminado con una incompatibilidad del extractor', () => {
+      expect(mapYtdlError(new Error('Video unavailable')).message).not.toContain('YOUTUBE_EXTRACTOR_INCOMPATIBLE');
+    });
+
+    it('no confunde un error interno inesperado de nuestra app con una incompatibilidad de YouTube', () => {
+      // Un bug propio (p. ej. un TypeError) no debe leerse como "YouTube
+      // cambió algo": cae en el genérico YOUTUBE_AUDIO_EXTRACTION_FAILED,
+      // no en YOUTUBE_EXTRACTOR_INCOMPATIBLE.
+      const mapped = mapYtdlError(new TypeError("Cannot read properties of undefined (reading 'foo')"));
+      expect(mapped.message).not.toContain('YOUTUBE_EXTRACTOR_INCOMPATIBLE');
+      expect(mapped.message).toContain('YOUTUBE_AUDIO_EXTRACTION_FAILED');
+    });
   });
 });

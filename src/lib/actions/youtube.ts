@@ -11,7 +11,7 @@ import { getAudioExtractor } from '@/lib/integrations/audio-extractor';
 import { getTranscriptionProvider, isRealTranscriptionConfigured } from '@/lib/ai/transcription';
 import { readStreamWithLimit } from '@/lib/media/read-stream-with-limit';
 import { MAX_MEDIA_BYTES } from '@/lib/media/limits';
-import { translateImportError, translateAudioFallbackError } from './youtube-errors';
+import { translateImportError, translateAudioFallbackError, extractYoutubeErrorCode } from './youtube-errors';
 
 const IMPORT_RATE_LIMIT = 5;
 const IMPORT_RATE_WINDOW_SECONDS = 60 * 60;
@@ -319,8 +319,13 @@ export async function transcribeYoutubeAudioAction(
     }
     await supabase.from('projects').update({ status: 'failed' }).eq('id', parsed.data.projectId);
 
+    // El código específico (p. ej. YOUTUBE_EXTRACTOR_INCOMPATIBLE,
+    // YOUTUBE_PRIVATE_VIDEO) se expone tal cual como `error.code`, en vez de
+    // envolverlo todo bajo un único código genérico: así el frontend puede
+    // decidir qué sugerir (tips de ImportErrorPanel) sin tener que parsear
+    // el mensaje en español.
     return err(
-      'YOUTUBE_AUDIO_TRANSCRIPTION_FAILED',
+      extractYoutubeErrorCode(message),
       translateAudioFallbackError(message, MAX_YOUTUBE_AUDIO_DURATION_SECONDS),
     );
   }

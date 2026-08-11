@@ -142,6 +142,9 @@ export const en: Dictionary = {
       uploadTip1: "Check that the file doesn't exceed 25 MB.",
       uploadTip2: 'Use a supported format: .mp4, .mov, .webm, .mp3, .wav, or .m4a.',
       uploadTip3: 'Check your internet connection and try again.',
+      extractorIncompatibleTitle: "YouTube changed something we don't support yet",
+      extractorIncompatibleTip1: 'You can try again later: this usually resolves within a few days.',
+      extractorIncompatibleTip2: 'In the meantime, use "Upload file" to transcribe the video or audio directly.',
     },
     stats: {
       projects: 'Projects',
@@ -300,6 +303,7 @@ export const en: Dictionary = {
         extracting_audio: 'Extracting audio...',
         transcribing_audio: 'Transcribing audio with AI...',
         done: 'Transcription completed',
+        error: "Couldn't complete the transcription",
       },
     },
   },

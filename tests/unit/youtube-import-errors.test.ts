@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { translateImportError, translateAudioFallbackError } from '@/lib/actions/youtube-errors';
+import { translateImportError, translateAudioFallbackError, extractYoutubeErrorCode } from '@/lib/actions/youtube-errors';
 
 const MAX_DURATION_SECONDS = 5400;
 const translate = (message: string) => translateAudioFallbackError(message, MAX_DURATION_SECONDS);
@@ -83,5 +83,29 @@ describe('translateAudioFallbackError', () => {
 
   it('devuelve un mensaje genérico para errores desconocidos', () => {
     expect(translate('ALGO_RARO')).toMatch(/no se pudo transcribir el audio/i);
+  });
+
+  describe('YOUTUBE_EXTRACTOR_INCOMPATIBLE', () => {
+    it('explica que el cambio viene de YouTube, sin sugerir que el usuario hizo algo mal', () => {
+      const message = translate('YOUTUBE_EXTRACTOR_INCOMPATIBLE:Failed to find any playable formats');
+      expect(message).toMatch(/youtube cambió/i);
+      expect(message).not.toMatch(/verifica|inválid|privado|eliminado/i);
+    });
+
+    it('funciona igual sin un detalle adjunto', () => {
+      expect(translate('YOUTUBE_EXTRACTOR_INCOMPATIBLE')).toMatch(/youtube cambió/i);
+    });
+  });
+});
+
+describe('extractYoutubeErrorCode', () => {
+  it('devuelve el código base sin el detalle cuando hay uno', () => {
+    expect(extractYoutubeErrorCode('YOUTUBE_EXTRACTOR_INCOMPATIBLE:Failed to find any playable formats')).toBe(
+      'YOUTUBE_EXTRACTOR_INCOMPATIBLE',
+    );
+  });
+
+  it('devuelve el mensaje completo cuando no hay separador', () => {
+    expect(extractYoutubeErrorCode('YOUTUBE_PRIVATE_VIDEO')).toBe('YOUTUBE_PRIVATE_VIDEO');
   });
 });

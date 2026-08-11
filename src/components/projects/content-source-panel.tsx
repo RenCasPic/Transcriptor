@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ImportErrorPanel } from '@/components/dashboard/import-error-panel';
 import { importTranscriptAction } from '@/lib/actions/projects';
 import { transcribeMediaAction, importMediaFromUrlAction } from '@/lib/actions/transcription';
 import { generateArticleAction } from '@/lib/actions/generation';
@@ -60,6 +61,7 @@ export function ContentSourcePanel({
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isImportingUrl, setIsImportingUrl] = useState(false);
   const [isImportingYoutube, setIsImportingYoutube] = useState(false);
+  const [youtubeImportError, setYoutubeImportError] = useState<{ code: string; message: string } | null>(null);
   const { stage: youtubeStage, run: runYoutubeImport } = useYoutubeImport();
 
   /**
@@ -233,12 +235,13 @@ export function ContentSourcePanel({
   async function handleYoutubeImport() {
     if (!youtubeUrl.trim()) return;
 
+    setYoutubeImportError(null);
     setIsImportingYoutube(true);
     try {
       const result = await runYoutubeImport({ projectId, videoUrl: youtubeUrl.trim(), language });
 
       if (!result.success) {
-        toast.error(result.error.message);
+        setYoutubeImportError({ code: result.error.code, message: result.error.message });
         return;
       }
 
@@ -350,6 +353,27 @@ export function ContentSourcePanel({
               <Loader2 className="h-3 w-3 animate-spin" />
               {t.projects.source.youtubeStages[youtubeStage]}
             </p>
+          )}
+          {youtubeImportError && (
+            <ImportErrorPanel
+              title={
+                youtubeImportError.code === 'YOUTUBE_EXTRACTOR_INCOMPATIBLE'
+                  ? t.dashboard.importError.extractorIncompatibleTitle
+                  : t.dashboard.importError.title
+              }
+              message={youtubeImportError.message}
+              dismissLabel={t.dashboard.importError.dismiss}
+              onDismiss={() => setYoutubeImportError(null)}
+              tips={
+                youtubeImportError.code === 'YOUTUBE_EXTRACTOR_INCOMPATIBLE'
+                  ? [t.dashboard.importError.extractorIncompatibleTip1, t.dashboard.importError.extractorIncompatibleTip2]
+                  : [
+                      t.dashboard.importError.youtubeTip1,
+                      t.dashboard.importError.youtubeTip2,
+                      t.dashboard.importError.youtubeTip3,
+                    ]
+              }
+            />
           )}
         </TabsContent>
 

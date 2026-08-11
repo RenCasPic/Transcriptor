@@ -144,6 +144,9 @@ export const es = {
       uploadTip1: 'Verifica que el archivo no supere los 25 MB.',
       uploadTip2: 'Usa un formato soportado: .mp4, .mov, .webm, .mp3, .wav o .m4a.',
       uploadTip3: 'Revisa tu conexión a internet e inténtalo de nuevo.',
+      extractorIncompatibleTitle: 'YouTube cambió algo que todavía no soportamos',
+      extractorIncompatibleTip1: 'Puedes intentarlo de nuevo más tarde: suele resolverse en unos días.',
+      extractorIncompatibleTip2: 'Mientras tanto, usa "Subir archivo" para transcribir el video o audio directamente.',
     },
     stats: {
       projects: 'Proyectos',
@@ -302,6 +305,7 @@ export const es = {
         extracting_audio: 'Extrayendo audio...',
         transcribing_audio: 'Transcribiendo audio con IA...',
         done: 'Transcripción completada',
+        error: 'No se pudo completar la transcripción',
       },
     },
   },

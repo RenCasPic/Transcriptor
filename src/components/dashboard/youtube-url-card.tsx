@@ -22,7 +22,7 @@ export function YoutubeUrlCard() {
   const t = useDictionary();
   const [videoUrl, setVideoUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [importError, setImportError] = useState<string | null>(null);
+  const [importError, setImportError] = useState<{ code: string; message: string } | null>(null);
   const { stage, run } = useYoutubeImport();
 
   const {
@@ -54,7 +54,7 @@ export function YoutubeUrlCard() {
         // falló: se elimina en vez de dejarlo como un proyecto "Fallido"
         // huérfano, y se explica el error en el propio dashboard.
         await deleteProjectAction(projectId);
-        setImportError(result.error.message);
+        setImportError({ code: result.error.code, message: result.error.message });
         return;
       }
 
@@ -105,15 +105,23 @@ export function YoutubeUrlCard() {
         )}
         {importError && (
           <ImportErrorPanel
-            title={t.dashboard.importError.title}
-            message={importError}
+            title={
+              importError.code === 'YOUTUBE_EXTRACTOR_INCOMPATIBLE'
+                ? t.dashboard.importError.extractorIncompatibleTitle
+                : t.dashboard.importError.title
+            }
+            message={importError.message}
             dismissLabel={t.dashboard.importError.dismiss}
             onDismiss={() => setImportError(null)}
-            tips={[
-              t.dashboard.importError.youtubeTip1,
-              t.dashboard.importError.youtubeTip2,
-              t.dashboard.importError.youtubeTip3,
-            ]}
+            tips={
+              importError.code === 'YOUTUBE_EXTRACTOR_INCOMPATIBLE'
+                ? [t.dashboard.importError.extractorIncompatibleTip1, t.dashboard.importError.extractorIncompatibleTip2]
+                : [
+                    t.dashboard.importError.youtubeTip1,
+                    t.dashboard.importError.youtubeTip2,
+                    t.dashboard.importError.youtubeTip3,
+                  ]
+            }
           />
         )}
       </CardContent>

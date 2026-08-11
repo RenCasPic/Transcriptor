@@ -14,7 +14,8 @@ export type YoutubeImportStage =
   | 'no_captions_found'
   | 'extracting_audio'
   | 'transcribing_audio'
-  | 'done';
+  | 'done'
+  | 'error';
 
 interface RunParams {
   projectId: string;
@@ -47,12 +48,20 @@ export function useYoutubeImport() {
     videoUrl,
     language,
   }: RunParams): Promise<ActionResult<{ transcriptId: string; title: string }>> {
+    // Reinicia cualquier estado que haya quedado de un intento anterior
+    // (etapa, timer cosmético) para que un nuevo intento arranque limpio,
+    // sin importar cómo haya terminado el anterior.
+    if (cosmeticTimerRef.current) {
+      clearTimeout(cosmeticTimerRef.current);
+      cosmeticTimerRef.current = null;
+    }
     setIsRunning(true);
     setStage('fetching_captions');
 
     try {
       const first = await importYoutubeVideoAction({ projectId, videoUrl, language });
       if (!first.success) {
+        setStage('error');
         return first;
       }
 
@@ -75,11 +84,20 @@ export function useYoutubeImport() {
       });
 
       if (!second.success) {
+        setStage('error');
         return second;
       }
 
       setStage('done');
       return ok(second.data.transcriptId, second.data.title);
+    } catch (error) {
+      // Defensivo: una Server Action no debería lanzar (ambas envuelven
+      // todo en try/catch y devuelven `{success: false}`), pero si algo
+      // inesperado revienta antes de eso (p. ej. un fallo de red llamando a
+      // la acción), esto evita que quede sin mostrar ningún error.
+      setStage('error');
+      const message = error instanceof Error ? error.message : 'YOUTUBE_IMPORT_UNEXPECTED_ERROR';
+      return { success: false, error: { code: 'YOUTUBE_IMPORT_UNEXPECTED_ERROR', message } };
     } finally {
       if (cosmeticTimerRef.current) {
         clearTimeout(cosmeticTimerRef.current);

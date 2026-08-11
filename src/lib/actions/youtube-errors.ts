@@ -6,6 +6,18 @@
  * `youtube.ts` junto a las Server Actions.
  */
 
+/**
+ * Códigos internos como `YOUTUBE_EXTRACTOR_INCOMPATIBLE` o
+ * `YOUTUBE_AUDIO_EXTRACTION_FAILED` a veces llevan un `:detalle` pegado
+ * (el mensaje original de la librería, para poder diagnosticar sin acceso a
+ * los logs). Esta función devuelve solo el código, sin el detalle, para que
+ * el frontend pueda decidir qué mostrar (p. ej. qué tips ofrecer en
+ * `ImportErrorPanel`) sin tener que parsear el mensaje traducido en español.
+ */
+export function extractYoutubeErrorCode(message: string): string {
+  return message.split(':')[0] ?? message;
+}
+
 export function translateImportError(message: string): string {
   if (message === 'NO_CAPTIONS') {
     return 'Este video no tiene subtítulos disponibles. Prueba con otro video o sube el archivo manualmente.';
@@ -51,6 +63,15 @@ export function translateAudioFallbackError(message: string, maxDurationSeconds:
   }
   if (message === 'YOUTUBE_AUDIO_DOWNLOAD_FAILED') {
     return 'No se pudo descargar el audio de ese video. Inténtalo de nuevo más tarde.';
+  }
+  if (message.startsWith('YOUTUBE_EXTRACTOR_INCOMPATIBLE')) {
+    // A propósito NO redactado como si el usuario hubiera hecho algo mal
+    // (no es una URL inválida, ni un video privado/eliminado, ni un límite
+    // de tamaño): YouTube cambió algo en cómo entrega sus archivos de audio
+    // y nuestro extractor todavía no sabe leerlo. Las sugerencias (esperar /
+    // usar "Subir archivo") las elige el frontend según este mismo código
+    // — ver ImportErrorPanel.
+    return 'No podemos obtener automáticamente el audio de este video en este momento. YouTube cambió recientemente la forma en que entrega sus archivos de audio y nuestro extractor todavía no es compatible con ese cambio.';
   }
   if (message.startsWith('YOUTUBE_AUDIO_EXTRACTION_FAILED')) {
     const detail = message.slice('YOUTUBE_AUDIO_EXTRACTION_FAILED:'.length);
