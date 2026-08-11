@@ -14,7 +14,7 @@ export interface ExtractAudioOptions {
 
 /**
  * Abstracción sobre la extracción de audio de un video de una plataforma
- * externa (hoy solo YouTube, ver `play-dl-extractor.ts` para la única
+ * externa (hoy solo YouTube, ver `ytdl-core-extractor.ts` para la única
  * implementación y su trade-off). Aislar esto detrás de una interfaz permite
  * sustituir el mecanismo (hoy una librería no oficial) por un proveedor
  * oficial más adelante sin tocar quien la consume.

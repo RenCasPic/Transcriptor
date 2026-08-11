@@ -28,7 +28,8 @@ export function isValidYoutubeVideoId(id: string): boolean {
  * Extrae el ID de video de las formas más comunes de URL de YouTube.
  * Devuelve null si no reconoce el formato o si lo que extrajo no tiene la
  * forma de un ID de video real (evita propagar basura a los módulos que
- * reconstruyen una URL canónica a partir de este valor, como play-dl).
+ * reconstruyen una URL canónica a partir de este valor, como el extractor
+ * de audio).
  */
 export function extractYoutubeVideoId(rawUrl: string): string | null {
   let url: URL;

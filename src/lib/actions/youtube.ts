@@ -198,7 +198,7 @@ export type TranscribeYoutubeAudioInput = z.infer<typeof TranscribeYoutubeAudioS
 
 /**
  * Segunda fase del import de YouTube, usada cuando el video no tiene
- * subtítulos: extrae su audio (`AudioExtractor`, hoy vía play-dl) y lo
+ * subtítulos: extrae su audio (`AudioExtractor`, hoy vía @distube/ytdl-core) y lo
  * transcribe con el proveedor de transcripción configurado (Groq/Whisper).
  *
  * Es una Server Action separada (no parte de `importYoutubeVideoAction`) a

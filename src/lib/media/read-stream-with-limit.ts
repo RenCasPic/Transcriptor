@@ -3,7 +3,7 @@ import type { Readable } from 'node:stream';
 /**
  * Consume un stream de Node hasta el final y lo junta en un solo Buffer, con
  * dos protecciones necesarias porque el stream viene de una fuente externa
- * no confiable (audio de YouTube vía play-dl):
+ * no confiable (audio de YouTube vía @distube/ytdl-core):
  *
  * - Corta la descarga en cuanto se supera `maxBytes`, en vez de esperar a
  *   tenerlo todo en memoria para recién ahí rechazarlo (evita gastar tiempo y
