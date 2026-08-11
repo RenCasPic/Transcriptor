@@ -132,7 +132,7 @@ export const en: Dictionary = {
     noResultsFor: 'No results for',
     demoModeWarningTitle: 'Demo mode: transcription is not real',
     demoModeWarningDescription:
-      "No transcription provider is configured, so any video or audio you upload isn't actually transcribed: a generic sample text is used instead. Set a free Groq key (or OpenAI Whisper) via TRANSCRIPTION_PROVIDER / TRANSCRIPTION_API_KEY to transcribe your real content.",
+      "No transcription provider is configured, so any video/audio you upload, or a YouTube link you paste without captions, isn't actually transcribed: a generic sample text is used instead. Set a free Groq key (or OpenAI Whisper) via TRANSCRIPTION_PROVIDER / TRANSCRIPTION_API_KEY to transcribe your real content.",
     importError: {
       title: "We couldn't complete the import",
       dismiss: 'Dismiss',
@@ -297,6 +297,7 @@ export const en: Dictionary = {
       youtubeUrlHint: 'Paste the link of a public YouTube video. If it has no captions, we transcribe the audio automatically.',
       youtubeUrlPlaceholder: 'https://www.youtube.com/watch?v=...',
       youtubeImportSuccess: 'Video imported successfully',
+      youtubeDemoModeNotice: "Demo mode — simulated transcript, it doesn't actually come from the video.",
       youtubeStages: {
         fetching_captions: 'Getting video info...',
         no_captions_found: 'No captions found...',

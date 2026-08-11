@@ -246,6 +246,9 @@ export function ContentSourcePanel({
       }
 
       toast.success(t.projects.source.youtubeImportSuccess);
+      if (result.data.isDemo) {
+        toast.info(t.projects.source.youtubeDemoModeNotice);
+      }
       setYoutubeUrl('');
       await generateAndRedirect();
     } finally {

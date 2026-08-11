@@ -134,7 +134,7 @@ export const es = {
     noResultsFor: 'Sin resultados para',
     demoModeWarningTitle: 'Modo demo: la transcripción no es real',
     demoModeWarningDescription:
-      'No hay ningún proveedor de transcripción configurado, así que el video o audio que subas no se transcribe de verdad: se usa un texto de ejemplo genérico. Configura una clave gratuita de Groq (o de OpenAI Whisper) en TRANSCRIPTION_PROVIDER / TRANSCRIPTION_API_KEY para transcribir tu contenido real.',
+      'No hay ningún proveedor de transcripción configurado, así que el video/audio que subas, o el enlace de YouTube que pegues sin subtítulos, no se transcribe de verdad: se usa un texto de ejemplo genérico. Configura una clave gratuita de Groq (o de OpenAI Whisper) en TRANSCRIPTION_PROVIDER / TRANSCRIPTION_API_KEY para transcribir tu contenido real.',
     importError: {
       title: 'No se pudo completar la importación',
       dismiss: 'Cerrar',
@@ -299,6 +299,7 @@ export const es = {
       youtubeUrlHint: 'Pega el enlace de un video público de YouTube. Si no tiene subtítulos, transcribimos el audio automáticamente.',
       youtubeUrlPlaceholder: 'https://www.youtube.com/watch?v=...',
       youtubeImportSuccess: 'Video importado correctamente',
+      youtubeDemoModeNotice: 'Modo demo — transcripción simulada, no proviene realmente del video.',
       youtubeStages: {
         fetching_captions: 'Obteniendo información del video...',
         no_captions_found: 'No encontramos subtítulos...',

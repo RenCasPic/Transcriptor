@@ -68,6 +68,9 @@ export function YoutubeUrlCard() {
       }
 
       toast.success(t.projects.source.youtubeImportSuccess);
+      if (result.data.isDemo) {
+        toast.info(t.projects.source.youtubeDemoModeNotice);
+      }
       router.push(`/projects/${projectId}/editor`);
     } finally {
       setIsSubmitting(false);
