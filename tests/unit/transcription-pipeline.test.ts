@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { runTranscriptionJob, type TranscriptionJobDeps } from '@/lib/generation/transcription-pipeline';
+import { TranscriptionNotConfiguredError } from '@/lib/ai/transcription';
 import type { TranscriptionProvider, TranscriptResult } from '@/lib/ai/provider';
 import type { AudioChunker } from '@/lib/media/audio-chunker';
 import type { MediaLimits } from '@/lib/media/limits';
@@ -14,18 +15,12 @@ const LIMITS: MediaLimits = {
   chunkAudioBitrateKbps: 64,
 };
 
-function fakeProvider(supportsChunking = true): TranscriptionProvider {
+function fakeProvider(): TranscriptionProvider {
   let call = 0;
   return {
-    limits: { maxRequestBytes: 25 * MB, maxRequestSeconds: null, supportsChunking },
-    async transcribe(input): Promise<TranscriptResult> {
+    limits: { maxRequestBytes: 25 * MB, maxRequestSeconds: null, supportsChunking: true },
+    async transcribe(): Promise<TranscriptResult> {
       call += 1;
-      if (input.demo) {
-        return {
-          fullText: 'demo',
-          segments: [{ index: 0, speaker: null, startSeconds: 0, endSeconds: 1, text: 'demo', confidence: null }],
-        };
-      }
       const n = call;
       return {
         fullText: `part-${n}`,
@@ -135,7 +130,7 @@ const UPLOAD_SOURCE = {
 describe('runTranscriptionJob', () => {
   it('archivo pequeño: transcribe en una sola pasada y encadena la generación', async () => {
     const { supabase, updates } = makeSupabase({ job: JOB, mediaSource: UPLOAD_SOURCE, objectSize: 5 * MB });
-    const { deps, persist, runGeneration } = baseDeps({ getProvider: () => fakeProvider(true) });
+    const { deps, persist, runGeneration } = baseDeps({ getProvider: () => fakeProvider() });
 
     const result = await runTranscriptionJob(supabase, { jobId: 'job-1', deps });
 
@@ -153,7 +148,7 @@ describe('runTranscriptionJob', () => {
   it('archivo grande: trocea, transcribe cada parte y recompone una transcripción ordenada con timestamps', async () => {
     const { supabase, updates } = makeSupabase({ job: JOB, mediaSource: UPLOAD_SOURCE, objectSize: 120 * MB });
     const { deps, persist } = baseDeps({
-      getProvider: () => fakeProvider(true),
+      getProvider: () => fakeProvider(),
       getChunker: () => fakeChunker(3),
     });
 
@@ -173,7 +168,7 @@ describe('runTranscriptionJob', () => {
   it('archivo grande sin troceador disponible: falla con un código explícito y recuperable', async () => {
     const { supabase, updates } = makeSupabase({ job: JOB, mediaSource: UPLOAD_SOURCE, objectSize: 120 * MB });
     const { deps } = baseDeps({
-      getProvider: () => fakeProvider(true),
+      getProvider: () => fakeProvider(),
       isChunkingAvailable: async () => false,
     });
 
@@ -183,24 +178,25 @@ describe('runTranscriptionJob', () => {
     expect((updates.projects as Array<{ status?: string }>).some((u) => u.status === 'failed')).toBe(true);
   });
 
-  it('modo demo: no accede al archivo ni trocea, y marca transcribedVia=demo', async () => {
-    const { supabase, updates } = makeSupabase({ job: JOB, mediaSource: UPLOAD_SOURCE, objectSize: 999 * MB });
-    const { deps, persist } = baseDeps({ getProvider: () => fakeProvider(false) });
+  it('sin proveedor de transcripción configurado: falla con un código accionable', async () => {
+    const { supabase, updates } = makeSupabase({ job: JOB, mediaSource: UPLOAD_SOURCE, objectSize: 5 * MB });
+    const { deps, persist } = baseDeps({
+      getProvider: () => {
+        throw new TranscriptionNotConfiguredError();
+      },
+    });
 
     const result = await runTranscriptionJob(supabase, { jobId: 'job-1', deps });
 
-    expect(result.status).toBe('completed');
-    expect(persist).toHaveBeenCalledOnce();
-    const completed = (updates.generation_jobs as Array<{ status?: string; output?: { transcribedVia?: string } }>).find(
-      (u) => u.status === 'completed',
-    );
-    expect(completed?.output?.transcribedVia).toBe('demo');
+    expect(result).toMatchObject({ status: 'failed', errorCode: 'TRANSCRIPTION_NOT_CONFIGURED' });
+    expect(persist).not.toHaveBeenCalled();
+    expect((updates.projects as Array<{ status?: string }>).some((u) => u.status === 'failed')).toBe(true);
   });
 
   it('autoGenerate=false: guarda la transcripción y deja el proyecto en draft sin generar', async () => {
     const job = { ...JOB, input: { ...JOB.input, autoGenerate: false } };
     const { supabase, updates } = makeSupabase({ job, mediaSource: UPLOAD_SOURCE, objectSize: 5 * MB });
-    const { deps, runGeneration } = baseDeps({ getProvider: () => fakeProvider(true) });
+    const { deps, runGeneration } = baseDeps({ getProvider: () => fakeProvider() });
 
     await runTranscriptionJob(supabase, { jobId: 'job-1', deps });
 
@@ -211,7 +207,7 @@ describe('runTranscriptionJob', () => {
   it('job ya completado: no hace nada (idempotente)', async () => {
     const job = { ...JOB, status: 'completed' };
     const { supabase } = makeSupabase({ job, mediaSource: UPLOAD_SOURCE, objectSize: 5 * MB });
-    const { deps, persist } = baseDeps({ getProvider: () => fakeProvider(true) });
+    const { deps, persist } = baseDeps({ getProvider: () => fakeProvider() });
 
     const result = await runTranscriptionJob(supabase, { jobId: 'job-1', deps });
 

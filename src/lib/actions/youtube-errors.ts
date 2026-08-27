@@ -34,6 +34,9 @@ export function translateImportError(message: string): string {
 export function translateAudioFallbackError(message: string, maxDurationSeconds: number): string {
   const maxMinutes = Math.round(maxDurationSeconds / 60);
 
+  if (message === 'TRANSCRIPTION_NOT_CONFIGURED') {
+    return 'Este video no tiene subtítulos y falta configurar la API key de transcripción (TRANSCRIPTION_API_KEY o GROQ_API_KEY) para transcribir su audio.';
+  }
   if (message === 'YOUTUBE_PRIVATE_VIDEO') {
     return 'Este video es privado y no se puede transcribir automáticamente.';
   }

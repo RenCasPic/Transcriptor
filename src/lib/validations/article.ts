@@ -2,9 +2,8 @@ import { z } from 'zod';
 
 /**
  * Esquemas Zod para la salida estructurada de los proveedores de generación de IA.
- * Cualquier proveedor (mock o real) debe producir datos que validen contra
- * `GeneratedArticleSchema` antes de persistirse. Ver `ContentGenerationProvider`
- * en `src/lib/ai/provider.ts`.
+ * Todo proveedor debe producir datos que validen contra `GeneratedArticleSchema`
+ * antes de persistirse. Ver `ContentGenerationProvider` en `src/lib/ai/provider.ts`.
  */
 
 export const ArticleNodeTypeSchema = z.enum(['heading', 'paragraph', 'list', 'quote']);

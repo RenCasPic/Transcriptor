@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Upload, Sparkles, Youtube, Film, Link2 } from 'lucide-react';
+import { Loader2, Upload, Youtube, Film, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,6 @@ import { generateArticleAction } from '@/lib/actions/generation';
 import { useYoutubeImport } from '@/lib/youtube/use-youtube-import';
 import { useMediaUpload } from '@/lib/media/use-media-upload';
 import { createClient } from '@/lib/supabase/client';
-import { DEMO_TRANSCRIPT_TEXT } from '@/lib/content/demo-transcript';
 import { sanitizeFilename } from '@/lib/content/slug';
 import { MEDIA_ACCEPT_ATTR, validateMediaUpload } from '@/lib/media/formats';
 import { useDictionary } from '@/lib/i18n/dictionary-provider';
@@ -29,7 +28,7 @@ const EXTENSION_TO_SOURCE: Record<string, 'txt' | 'srt' | 'vtt'> = {
   vtt: 'vtt',
 };
 
-const VALID_TABS = ['paste', 'upload', 'media', 'youtube', 'demo'] as const;
+const VALID_TABS = ['paste', 'upload', 'media', 'youtube'] as const;
 type SourceTab = (typeof VALID_TABS)[number];
 
 export function ContentSourcePanel({
@@ -192,10 +191,6 @@ export function ContentSourcePanel({
     }
   }
 
-  async function handleUseDemo() {
-    await handleImport({ sourceType: 'manual', text: DEMO_TRANSCRIPT_TEXT });
-  }
-
   async function handleImportFromUrl() {
     if (!mediaUrl.trim()) return;
 
@@ -229,9 +224,6 @@ export function ContentSourcePanel({
       }
 
       toast.success(t.projects.source.youtubeImportSuccess);
-      if (result.data.isDemo) {
-        toast.info(t.projects.source.youtubeDemoModeNotice);
-      }
       setYoutubeUrl('');
       await generateAndRedirect();
     } finally {
@@ -249,7 +241,6 @@ export function ContentSourcePanel({
           <TabsTrigger value="upload">{t.projects.source.uploadTab}</TabsTrigger>
           <TabsTrigger value="media">{t.projects.source.mediaTab}</TabsTrigger>
           <TabsTrigger value="youtube">{t.projects.source.youtubeTab}</TabsTrigger>
-          <TabsTrigger value="demo">{t.projects.source.demoTab}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="paste" className="space-y-3">
@@ -388,14 +379,6 @@ export function ContentSourcePanel({
               }
             />
           )}
-        </TabsContent>
-
-        <TabsContent value="demo" className="space-y-3">
-          <p className="text-sm text-muted-foreground">{t.projects.source.demoDescription}</p>
-          <Button onClick={handleUseDemo} disabled={isSubmitting}>
-            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            {t.projects.source.useDemoTranscript}
-          </Button>
         </TabsContent>
       </Tabs>
     </div>

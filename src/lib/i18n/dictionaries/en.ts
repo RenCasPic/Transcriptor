@@ -130,9 +130,9 @@ export const en: Dictionary = {
     emptyCta: 'Create my first project',
     modifiedAgo: 'Modified',
     noResultsFor: 'No results for',
-    demoModeWarningTitle: 'Demo mode: transcription is not real',
-    demoModeWarningDescription:
-      "No transcription provider is configured, so any video/audio you upload, or a YouTube link you paste without captions, isn't actually transcribed: a generic sample text is used instead. Set a free Groq key (or OpenAI Whisper) via TRANSCRIPTION_PROVIDER / TRANSCRIPTION_API_KEY to transcribe your real content.",
+    setupRequiredTitle: 'API keys not configured',
+    setupRequiredDescription:
+      'Transcribing audio/video and generating articles requires an API key. Fastest path: create a free key at console.groq.com and set it as GROQ_API_KEY in your .env file (it covers both transcription and generation). Until then, these features return an explicit error.',
     importError: {
       title: "We couldn't complete the import",
       dismiss: 'Dismiss',
@@ -268,7 +268,6 @@ export const en: Dictionary = {
       pasteTab: 'Paste text',
       uploadTab: 'Upload file',
       mediaTab: 'Video or audio',
-      demoTab: 'Use demo',
       pastePlaceholder: 'Paste the transcript of your video, podcast, or interview here...',
       useThisTranscript: 'Use this transcript',
       uploadFormats: 'Supported formats: .txt, .srt, .vtt (max. 5 MB)',
@@ -313,6 +312,10 @@ export const en: Dictionary = {
         MEDIA_DURATION_EXCEEDED: 'The file exceeds the maximum allowed duration.',
         TRANSCRIPTION_PROVIDER_ERROR:
           'The transcription service could not process the audio. Please try again in a few minutes.',
+        TRANSCRIPTION_NOT_CONFIGURED:
+          'The transcription API key is not configured (TRANSCRIPTION_API_KEY or GROQ_API_KEY).',
+        AI_NOT_CONFIGURED:
+          'The AI API key is not configured (AI_API_KEY or GROQ_API_KEY) to generate the article.',
         EMPTY_TRANSCRIPT: 'No speech was detected in the file. Make sure it has audio.',
         JOB_FAILED: 'Processing the file failed. Please try again.',
         GENERATION_FAILED:
@@ -325,8 +328,6 @@ export const en: Dictionary = {
       linkHint: "Must be a direct download link (Drive, Dropbox, your own CDN, etc). YouTube links or other streaming platforms are not supported.",
       linkPlaceholder: 'https://example.com/my-video.mp4',
       useLink: 'Use link',
-      demoDescription: 'Try the full flow with a sample transcript, no upload needed.',
-      useDemoTranscript: 'Use demo transcript',
       importSuccess: 'Transcript imported successfully',
       transcribeSuccess: 'Transcription completed',
       unsupportedTextFormat: 'Unsupported format. Use a .txt, .srt, or .vtt file',
@@ -341,7 +342,6 @@ export const en: Dictionary = {
       youtubeUrlHint: 'Paste the link of a public YouTube video. If it has no captions, we transcribe the audio automatically.',
       youtubeUrlPlaceholder: 'https://www.youtube.com/watch?v=...',
       youtubeImportSuccess: 'Video imported successfully',
-      youtubeDemoModeNotice: "Demo mode — simulated transcript, it doesn't actually come from the video.",
       youtubeStages: {
         fetching_captions: 'Getting video info...',
         no_captions_found: 'No captions found...',

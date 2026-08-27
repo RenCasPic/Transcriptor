@@ -73,6 +73,9 @@ function translateGenerationError(message: string): string {
   if (message === 'TRANSCRIPT_NOT_FOUND' || message === 'TRANSCRIPT_EMPTY') {
     return 'Necesitas añadir una transcripción antes de generar el artículo.';
   }
+  if (message === 'AI_NOT_CONFIGURED') {
+    return 'Falta configurar la API key de IA (AI_API_KEY o GROQ_API_KEY) para generar el artículo.';
+  }
   if (message.startsWith('AI_PROVIDER_')) {
     return `El proveedor de IA no devolvió una respuesta válida. Inténtalo de nuevo. (${message.slice(0, 200)})`;
   }

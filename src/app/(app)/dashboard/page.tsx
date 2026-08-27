@@ -4,7 +4,8 @@ import { UploadVideoCard } from '@/components/dashboard/upload-video-card';
 import { YoutubeUrlCard } from '@/components/dashboard/youtube-url-card';
 import { getCurrentWorkspace } from '@/lib/data/workspace';
 import { getDictionary } from '@/lib/i18n/get-dictionary';
-import { isRealTranscriptionConfigured } from '@/lib/ai/transcription';
+import { isTranscriptionConfigured } from '@/lib/ai/transcription';
+import { isContentGenerationConfigured } from '@/lib/ai/providers';
 import { getMediaLimits } from '@/lib/media/limits';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -27,12 +28,12 @@ export default async function DashboardPage() {
         <p className="mt-1 text-sm text-muted-foreground">{t.dashboard.subtitle}</p>
       </div>
 
-      {!isRealTranscriptionConfigured() && (
+      {(!isTranscriptionConfigured() || !isContentGenerationConfigured()) && (
         <div className="flex gap-3 rounded-lg border border-warning/40 bg-warning/10 p-4">
           <AlertTriangle className="h-5 w-5 shrink-0 text-warning" />
           <div>
-            <p className="text-sm font-semibold text-foreground">{t.dashboard.demoModeWarningTitle}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{t.dashboard.demoModeWarningDescription}</p>
+            <p className="text-sm font-semibold text-foreground">{t.dashboard.setupRequiredTitle}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{t.dashboard.setupRequiredDescription}</p>
           </div>
         </div>
       )}

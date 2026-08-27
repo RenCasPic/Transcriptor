@@ -21,7 +21,7 @@ Implementado: se pega la URL de cualquier video público de YouTube (propio o aj
 **Cómo funciona ahora** (`src/lib/integrations/youtube-transcript.ts`): no usa la Data API oficial (que de todas formas no permite descargar video/audio, ni siquiera del propio canal). En su lugar, lee la página pública del video igual que lo hace el reproductor web de YouTube, extrae la lista de pistas de subtítulos embebida en el HTML, y descarga la pista elegida desde su `baseUrl` (`timedtext`). Es un endpoint interno/no documentado, no la API oficial — funciona con cualquier video público con subtítulos, es gratis, pero **YouTube puede cambiarlo o bloquearlo sin aviso** (mismo trade-off que herramientas como `youtube-transcript`/`youtube-transcript-api`). Trade-off aceptado explícitamente para evitar la fricción de OAuth.
 
 **Limitaciones conocidas**:
-- Si el video no tiene subtítulos en absoluto (ni manuales ni generados automáticamente), la importación falla con un mensaje explícito; no hay fallback automático a Whisper (no se descarga audio/video, ver arriba).
+- Si el video no tiene subtítulos (ni manuales ni generados), se extrae su audio con `@distube/ytdl-core` y se transcribe con el proveedor configurado (`transcribeYoutubeAudioAction`). Requiere `TRANSCRIPTION_API_KEY` / `GROQ_API_KEY`; sin clave, falla con un mensaje explícito.
 - Sujeto a que YouTube no cambie el formato interno de la página o del endpoint `timedtext`; si eso ocurre, `fetchYoutubeTranscript` empezará a fallar hasta que se actualice el parseo.
 - No requiere autenticación del usuario ni límite por canal — el rate limit es por usuario de la app (`checkRateLimit`), no por canal de YouTube.
 

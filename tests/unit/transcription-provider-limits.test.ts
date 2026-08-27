@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from 'vitest';
-import { DemoTranscriptionProvider } from '@/lib/ai/transcription/demo-provider';
 import { GroqTranscriptionProvider } from '@/lib/ai/transcription/groq-provider';
 import { WhisperTranscriptionProvider } from '@/lib/ai/transcription/whisper-provider';
 import { PROVIDER_REQUEST_MAX_BYTES } from '@/lib/media/limits';
@@ -10,12 +9,6 @@ describe('TranscriptionProvider.limits', () => {
       expect(provider.limits.maxRequestBytes).toBe(PROVIDER_REQUEST_MAX_BYTES);
       expect(provider.limits.supportsChunking).toBe(true);
     }
-  });
-
-  it('el proveedor demo no impone tamaño y no soporta troceado (ignora el audio real)', () => {
-    const demo = new DemoTranscriptionProvider();
-    expect(demo.limits.supportsChunking).toBe(false);
-    expect(demo.limits.maxRequestBytes).toBeGreaterThan(PROVIDER_REQUEST_MAX_BYTES * 1000);
   });
 
   it('el rechazo por tamaño usa el límite declarado, no un número hardcodeado', async () => {

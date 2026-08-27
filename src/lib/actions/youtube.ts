@@ -8,11 +8,10 @@ import { checkRateLimit } from '@/lib/rate-limit';
 import { saveTranscript } from '@/lib/generation/save-transcript';
 import { extractYoutubeVideoId, fetchYoutubeTranscript, isValidYoutubeVideoId } from '@/lib/integrations/youtube-transcript';
 import { getAudioExtractor } from '@/lib/integrations/audio-extractor';
-import { getTranscriptionProvider, isRealTranscriptionConfigured } from '@/lib/ai/transcription';
+import { getTranscriptionProvider } from '@/lib/ai/transcription';
 import type { TranscriptResult } from '@/lib/ai/provider';
 import { readStreamWithLimit } from '@/lib/media/read-stream-with-limit';
 import { MAX_MEDIA_BYTES } from '@/lib/media/limits';
-import { getConfiguredDemoTranscriptLength, getDemoTranscript } from '@/lib/content/demo-transcript';
 import { translateImportError, translateAudioFallbackError, extractYoutubeErrorCode } from './youtube-errors';
 
 const IMPORT_RATE_LIMIT = 5;
@@ -157,10 +156,9 @@ export async function importYoutubeVideoAction(
     // fallback de audio. YOUTUBE_PAGE_FETCH_ERROR/YOUTUBE_TRANSCRIPT_FETCH_ERROR
     // quedan afuera a propósito: si ni siquiera se pudo acceder al video, el
     // fallback (que también necesita acceder a él) fallaría igual, sin más
-    // info, solo gastando el límite de uso. A propósito ya NO se exige
-    // isRealTranscriptionConfigured() aquí: transcribeYoutubeAudioAction
-    // sabe manejar tanto el caso real como el demo (ver isDemo ahí), así que
-    // el fallback siempre vale la pena ofrecerlo.
+    // info, solo gastando el límite de uso. Si no hay proveedor de
+    // transcripción configurado, el fallback fallará con un error accionable
+    // (TRANSCRIPTION_NOT_CONFIGURED) en vez de ofrecer una transcripción falsa.
     const hasNoUsableCaptions =
       message === 'NO_CAPTIONS' || message === 'EMPTY_TRANSCRIPT' || message === 'TRANSCRIPT_FETCH_PARSE_ERROR';
 
@@ -215,7 +213,7 @@ export type TranscribeYoutubeAudioInput = z.infer<typeof TranscribeYoutubeAudioS
  */
 export async function transcribeYoutubeAudioAction(
   input: TranscribeYoutubeAudioInput,
-): Promise<ActionResult<{ transcriptId: string; title: string; isDemo: boolean }>> {
+): Promise<ActionResult<{ transcriptId: string; title: string }>> {
   const parsed = TranscribeYoutubeAudioSchema.safeParse(input);
   if (!parsed.success) {
     return err('VALIDATION_ERROR', parsed.error.issues[0]?.message ?? 'Datos inválidos');
@@ -228,14 +226,6 @@ export async function transcribeYoutubeAudioAction(
   if (!user) {
     return err('UNAUTHENTICATED', 'Debes iniciar sesión.');
   }
-
-  // Sin proveedor real configurado (TRANSCRIPTION_PROVIDER=demo o sin clave):
-  // en vez de bloquear el fallback, se completa con una transcripción de
-  // demostración — ver DemoTranscriptionProvider. Es la única decisión
-  // "demo vs. real" de toda esta función: a partir de aquí, `isDemo` solo se
-  // usa para decidir si se extrae audio real o no y para etiquetar el
-  // resultado, nunca para bifurcar la lógica de guardado/estado.
-  const isDemo = !isRealTranscriptionConfigured();
 
   const rateLimit = checkRateLimit(
     `transcribe-youtube-audio:${user.id}`,
@@ -263,35 +253,28 @@ export async function transcribeYoutubeAudioAction(
   }
 
   try {
-    let result: TranscriptResult;
-    let title: string;
+    // `getTranscriptionProvider()` lanza si no hay API key configurada
+    // (TRANSCRIPTION_API_KEY / GROQ_API_KEY); el catch de abajo lo traduce a un
+    // error accionable en vez de intentar extraer audio para nada.
+    const provider = getTranscriptionProvider();
 
-    if (isDemo) {
-      // Sin extractor: DemoTranscriptionProvider ignora cualquier
-      // audio/mediaUrl que se le pase, así que intentar extraer audio real
-      // solo gastaría tiempo en algo que de todas formas se va a descartar.
-      const demoTranscript = getDemoTranscript(getConfiguredDemoTranscriptLength());
-      title = demoTranscript.title;
-      result = await getTranscriptionProvider().transcribe({ demo: true, language: parsed.data.language });
-    } else {
-      const extractor = getAudioExtractor();
-      const extracted = await extractor.extract(`https://www.youtube.com/watch?v=${parsed.data.videoId}`, {
-        maxDurationSeconds: MAX_YOUTUBE_AUDIO_DURATION_SECONDS,
-      });
+    const extractor = getAudioExtractor();
+    const extracted = await extractor.extract(`https://www.youtube.com/watch?v=${parsed.data.videoId}`, {
+      maxDurationSeconds: MAX_YOUTUBE_AUDIO_DURATION_SECONDS,
+    });
 
-      const audioBuffer = await readStreamWithLimit(extracted.stream, MAX_MEDIA_BYTES, AUDIO_DOWNLOAD_TIMEOUT_MS);
-      // Buffer es un Uint8Array válido en runtime; el cast solo evita un
-      // desajuste entre los tipos de Node (ArrayBufferLike) y DOM (ArrayBuffer)
-      // para BlobPart, sin copiar el buffer.
-      const audioBlob = new Blob([audioBuffer as unknown as BlobPart], { type: extracted.mimeType });
+    const audioBuffer = await readStreamWithLimit(extracted.stream, MAX_MEDIA_BYTES, AUDIO_DOWNLOAD_TIMEOUT_MS);
+    // Buffer es un Uint8Array válido en runtime; el cast solo evita un
+    // desajuste entre los tipos de Node (ArrayBufferLike) y DOM (ArrayBuffer)
+    // para BlobPart, sin copiar el buffer.
+    const audioBlob = new Blob([audioBuffer as unknown as BlobPart], { type: extracted.mimeType });
 
-      title = extracted.title;
-      result = await getTranscriptionProvider().transcribe({
-        audioBlob,
-        fileExtension: extracted.fileExtension,
-        language: parsed.data.language,
-      });
-    }
+    const title = extracted.title;
+    const result: TranscriptResult = await provider.transcribe({
+      audioBlob,
+      fileExtension: extracted.fileExtension,
+      language: parsed.data.language,
+    });
 
     const saved = await saveTranscript(supabase, {
       projectId: parsed.data.projectId,
@@ -317,7 +300,7 @@ export async function transcribeYoutubeAudioAction(
         metadata: {
           videoId: parsed.data.videoId,
           title,
-          transcribedFrom: isDemo ? 'demo_fallback' : 'audio_fallback',
+          transcribedFrom: 'audio_fallback',
         },
       })
       .eq('id', parsed.data.sourceId);
@@ -331,7 +314,7 @@ export async function transcribeYoutubeAudioAction(
     await supabase.from('projects').update({ status: 'draft' }).eq('id', parsed.data.projectId);
 
     revalidatePath(`/projects/${parsed.data.projectId}`);
-    return ok({ transcriptId: saved.transcriptId, title, isDemo });
+    return ok({ transcriptId: saved.transcriptId, title });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'YOUTUBE_AUDIO_TRANSCRIPTION_FAILED';
 

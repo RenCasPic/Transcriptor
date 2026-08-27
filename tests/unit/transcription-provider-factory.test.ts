@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getTranscriptionProvider, isRealTranscriptionConfigured } from '@/lib/ai/transcription';
-import { DemoTranscriptionProvider } from '@/lib/ai/transcription/demo-provider';
+import {
+  getTranscriptionProvider,
+  isTranscriptionConfigured,
+  TranscriptionNotConfiguredError,
+} from '@/lib/ai/transcription';
 import { GroqTranscriptionProvider } from '@/lib/ai/transcription/groq-provider';
 import { WhisperTranscriptionProvider } from '@/lib/ai/transcription/whisper-provider';
 
@@ -8,81 +11,83 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-describe('getTranscriptionProvider (selección demo vs. real)', () => {
-  it('devuelve DemoTranscriptionProvider cuando TRANSCRIPTION_PROVIDER=demo', () => {
-    vi.stubEnv('TRANSCRIPTION_PROVIDER', 'demo');
-    expect(getTranscriptionProvider()).toBeInstanceOf(DemoTranscriptionProvider);
-  });
-
-  it('devuelve DemoTranscriptionProvider cuando no hay TRANSCRIPTION_PROVIDER configurado', () => {
-    vi.stubEnv('TRANSCRIPTION_PROVIDER', undefined as unknown as string);
-    expect(getTranscriptionProvider()).toBeInstanceOf(DemoTranscriptionProvider);
-  });
-
-  it('devuelve GroqTranscriptionProvider cuando TRANSCRIPTION_PROVIDER=groq con API key', () => {
+describe('getTranscriptionProvider', () => {
+  it('lanza TranscriptionNotConfiguredError si no hay ninguna API key', () => {
     vi.stubEnv('TRANSCRIPTION_PROVIDER', 'groq');
+    vi.stubEnv('TRANSCRIPTION_API_KEY', '');
+    vi.stubEnv('GROQ_API_KEY', '');
+    expect(() => getTranscriptionProvider()).toThrow(TranscriptionNotConfiguredError);
+  });
+
+  it('por defecto usa Groq cuando hay API key', () => {
+    vi.stubEnv('TRANSCRIPTION_PROVIDER', undefined as unknown as string);
     vi.stubEnv('TRANSCRIPTION_API_KEY', 'fake-key');
     expect(getTranscriptionProvider()).toBeInstanceOf(GroqTranscriptionProvider);
   });
 
-  it('devuelve WhisperTranscriptionProvider cuando TRANSCRIPTION_PROVIDER=whisper con API key', () => {
+  it('usa Whisper cuando TRANSCRIPTION_PROVIDER=whisper', () => {
     vi.stubEnv('TRANSCRIPTION_PROVIDER', 'whisper');
     vi.stubEnv('TRANSCRIPTION_API_KEY', 'fake-key');
     expect(getTranscriptionProvider()).toBeInstanceOf(WhisperTranscriptionProvider);
   });
 
-  it('cae a Demo si TRANSCRIPTION_PROVIDER=groq pero falta la API key (evita romper el flujo)', () => {
+  it('acepta GROQ_API_KEY como clave compartida cuando no hay TRANSCRIPTION_API_KEY', () => {
     vi.stubEnv('TRANSCRIPTION_PROVIDER', 'groq');
     vi.stubEnv('TRANSCRIPTION_API_KEY', '');
-    expect(getTranscriptionProvider()).toBeInstanceOf(DemoTranscriptionProvider);
-  });
-});
-
-describe('isRealTranscriptionConfigured', () => {
-  it('es false en modo demo', () => {
-    vi.stubEnv('TRANSCRIPTION_PROVIDER', 'demo');
-    expect(isRealTranscriptionConfigured()).toBe(false);
+    vi.stubEnv('GROQ_API_KEY', 'shared-key');
+    expect(getTranscriptionProvider()).toBeInstanceOf(GroqTranscriptionProvider);
   });
 
-  it('es true con groq + API key', () => {
-    vi.stubEnv('TRANSCRIPTION_PROVIDER', 'groq');
+  it('lanza para un proveedor no soportado', () => {
+    vi.stubEnv('TRANSCRIPTION_PROVIDER', 'deepgram');
     vi.stubEnv('TRANSCRIPTION_API_KEY', 'fake-key');
-    expect(isRealTranscriptionConfigured()).toBe(true);
-  });
-
-  it('es false con groq sin API key', () => {
-    vi.stubEnv('TRANSCRIPTION_PROVIDER', 'groq');
-    vi.stubEnv('TRANSCRIPTION_API_KEY', '');
-    expect(isRealTranscriptionConfigured()).toBe(false);
+    expect(() => getTranscriptionProvider()).toThrow(/UNSUPPORTED_TRANSCRIPTION_PROVIDER/);
   });
 });
 
-describe('contrato compartido entre proveedores (mismo TranscriptResult)', () => {
-  it('Demo y Groq devuelven exactamente la misma forma de resultado', async () => {
-    // Groq real necesitaría red; se simula su respuesta HTTP para poder
-    // comparar el contrato sin depender de una API externa en los tests.
+describe('isTranscriptionConfigured', () => {
+  it('es false sin ninguna clave', () => {
+    vi.stubEnv('TRANSCRIPTION_API_KEY', '');
+    vi.stubEnv('GROQ_API_KEY', '');
+    expect(isTranscriptionConfigured()).toBe(false);
+  });
+
+  it('es true con TRANSCRIPTION_API_KEY', () => {
+    vi.stubEnv('TRANSCRIPTION_API_KEY', 'k');
+    expect(isTranscriptionConfigured()).toBe(true);
+  });
+
+  it('es true solo con GROQ_API_KEY', () => {
+    vi.stubEnv('TRANSCRIPTION_API_KEY', '');
+    vi.stubEnv('GROQ_API_KEY', 'k');
+    expect(isTranscriptionConfigured()).toBe(true);
+  });
+});
+
+describe('contrato compartido entre proveedores reales', () => {
+  it('Groq y Whisper devuelven la misma forma de TranscriptResult', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => ({
         ok: true,
-        json: async () => ({
-          text: 'Texto de prueba',
-          segments: [{ start: 0, end: 1.5, text: 'Texto de prueba' }],
-        }),
+        json: async () => ({ text: 'Texto de prueba', segments: [{ start: 0, end: 1.5, text: 'Texto de prueba' }] }),
       })),
     );
 
-    const demoResult = await new DemoTranscriptionProvider().transcribe({ language: 'es' });
-    const groqResult = await new GroqTranscriptionProvider('fake-key').transcribe({
-      audioBlob: new Blob(['fake-audio']),
-      fileExtension: 'webm',
+    const groq = await new GroqTranscriptionProvider('k').transcribe({
+      audioBlob: new Blob(['x']),
+      fileExtension: 'mp3',
+      language: 'es',
+    });
+    const whisper = await new WhisperTranscriptionProvider('k').transcribe({
+      audioBlob: new Blob(['x']),
+      fileExtension: 'mp3',
       language: 'es',
     });
 
-    const shapeOf = (value: unknown) => Object.keys(value as object).sort();
-    expect(shapeOf(demoResult)).toEqual(shapeOf(groqResult));
-    expect(shapeOf(demoResult.segments[0])).toEqual(shapeOf(groqResult.segments[0]));
-
+    const shapeOf = (v: unknown) => Object.keys(v as object).sort();
+    expect(shapeOf(groq)).toEqual(shapeOf(whisper));
+    expect(shapeOf(groq.segments[0])).toEqual(shapeOf(whisper.segments[0]));
     vi.unstubAllGlobals();
   });
 });

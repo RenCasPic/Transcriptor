@@ -1,17 +1,27 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Flujo completo del MVP (sección 13 del brief): registro, creación de
- * proyecto, importación de transcripción, generación en modo demo, edición,
- * guardado y exportación.
+ * Flujo completo del MVP: registro, creación de proyecto, importación de
+ * transcripción (pegando texto), generación del artículo, edición, guardado y
+ * exportación.
  *
  * Requiere:
  *   - Supabase local corriendo (`supabase start`) con las migraciones aplicadas.
- *   - AI_PROVIDER=mock (o sin AI_API_KEY) para que la generación no dependa de
- *     una API externa real.
+ *   - Una API key de IA (`GROQ_API_KEY` o `AI_API_KEY`) para el paso de
+ *     generación; sin ella ese test se omite automáticamente.
  *   - El servidor de desarrollo accesible en APP_URL (por defecto lo levanta
  *     `playwright.config.ts` con `npm run dev`).
  */
+
+const AI_CONFIGURED = !!(process.env.GROQ_API_KEY || process.env.AI_API_KEY);
+
+const SAMPLE_TRANSCRIPT = [
+  'Marina Ortiz: Hoy quiero hablar de cómo estructurar un plan de contenidos trimestral que de verdad se cumpla.',
+  'Marina Ortiz: Lo primero es partir de tres objetivos de negocio, no de ideas de contenido sueltas.',
+  'Marina Ortiz: El segundo paso es mapear esos objetivos contra las preguntas que hacen los clientes en ventas y soporte.',
+  'Marina Ortiz: Un error común es planear por formato en lugar de planear por etapa del cliente y luego elegir el formato.',
+  'Marina Ortiz: Mi recomendación final: antes de escribir el primer artículo, define cómo vas a medir si el plan funcionó.',
+].join('\n\n');
 
 function uniqueEmail() {
   return `e2e-${Date.now()}-${Math.floor(Math.random() * 10_000)}@example.com`;
@@ -39,7 +49,7 @@ test.describe.serial('flujo completo: de registro a artículo exportado', () => 
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 });
   });
 
-  test('3-4. Creación de proyecto e importación de transcripción demo', async ({ page }) => {
+  test('3-4. Creación de proyecto e importación de transcripción (pegar texto)', async ({ page }) => {
     await page.goto('/login');
     await page.getByLabel('Correo electrónico').fill(email);
     await page.getByLabel('Contraseña').fill(password);
@@ -54,12 +64,14 @@ test.describe.serial('flujo completo: de registro a artículo exportado', () => 
 
     await expect(page).toHaveURL(/\/projects\/[0-9a-f-]+$/, { timeout: 15_000 });
 
-    await page.getByRole('tab', { name: 'Usar demo' }).click();
-    await page.getByRole('button', { name: 'Usar transcripción de demostración' }).click();
-    await expect(page.getByText('Transcripción cargada')).toBeVisible({ timeout: 10_000 });
+    await page.getByRole('tab', { name: 'Pegar texto' }).click();
+    await page.getByPlaceholder(/Pega aquí la transcripción/).fill(SAMPLE_TRANSCRIPT);
+    await page.getByRole('button', { name: 'Usar esta transcripción' }).click();
+    await expect(page.getByText('Transcripción cargada')).toBeVisible({ timeout: 15_000 });
   });
 
-  test('5. Generación de artículo en modo demo/mock', async ({ page }) => {
+  test('5. Generación de artículo', async ({ page }) => {
+    test.skip(!AI_CONFIGURED, 'Requiere GROQ_API_KEY o AI_API_KEY para generar el artículo.');
     await page.goto('/login');
     await page.getByLabel('Correo electrónico').fill(email);
     await page.getByLabel('Contraseña').fill(password);
@@ -73,6 +85,7 @@ test.describe.serial('flujo completo: de registro a artículo exportado', () => 
   });
 
   test('6-7. Edición, guardado automático y exportación', async ({ page }) => {
+    test.skip(!AI_CONFIGURED, 'Depende del artículo generado en el paso 5.');
     await page.goto('/login');
     await page.getByLabel('Correo electrónico').fill(email);
     await page.getByLabel('Contraseña').fill(password);

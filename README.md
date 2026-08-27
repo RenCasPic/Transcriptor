@@ -12,7 +12,6 @@ Aplicación SaaS construida con **Next.js (App Router) + TypeScript estricto + S
 - [Desarrollo local](#desarrollo-local)
 - [Conectar Supabase](#conectar-supabase)
 - [Configurar el proveedor de IA](#configurar-el-proveedor-de-ia)
-- [Modo demo (sin claves de IA)](#modo-demo-sin-claves-de-ia)
 - [Ejecutar pruebas](#ejecutar-pruebas)
 - [Desplegar en Vercel](#desplegar-en-vercel)
 - [Estructura del proyecto](#estructura-del-proyecto)
@@ -84,16 +83,17 @@ Todas las tablas privadas tienen RLS habilitado (ver `supabase/migrations/0003_w
 La generación de contenido está detrás de la interfaz `ContentGenerationProvider` (`src/lib/ai/provider.ts`). El proveedor activo se elige con variables de entorno, **nunca se llama a un proveedor de IA desde el navegador**.
 
 ```env
-AI_PROVIDER=mock       # mock | anthropic | openai
-AI_API_KEY=            # requerido si AI_PROVIDER no es "mock"
+GROQ_API_KEY=          # clave única que cubre IA + transcripción (recomendada, gratis)
+AI_PROVIDER=groq       # groq | anthropic | openai
+AI_API_KEY=            # clave específica de IA; opcional si usas Groq (basta GROQ_API_KEY)
 AI_MODEL=              # opcional, cada proveedor tiene un default razonable
 ```
 
-- **`mock`** (default): genera artículos de forma determinista reorganizando la transcripción real, sin llamar a ningún servicio externo. Ideal para desarrollo, pruebas y demos.
+- **`groq`** (default): gratis en https://console.groq.com, sin tarjeta de crédito. Una sola `GROQ_API_KEY` sirve para generación **y** transcripción.
 - **`anthropic`**: usa la API de Mensajes de Anthropic (`AI_API_KEY` = API key de Anthropic).
 - **`openai`**: usa la API de Chat Completions de OpenAI (`AI_API_KEY` = API key de OpenAI).
 
-Si `AI_PROVIDER` no es `mock` pero falta `AI_API_KEY`, la app recurre automáticamente al proveedor mock para no romper el modo demo.
+**La generación de artículos requiere una API key.** Sin `AI_API_KEY` ni `GROQ_API_KEY`, `generateArticleAction` devuelve un `ActionResult` de error explícito (`AI_NOT_CONFIGURED`) — no hay proveedor "mock" ni contenido de ejemplo.
 
 Para añadir un proveedor nuevo: implementa `ContentGenerationProvider` en `src/lib/ai/providers/`, y regístralo en el switch de `src/lib/ai/providers/generic-provider.ts` (o crea una clase independiente y añade el caso en `src/lib/ai/providers/index.ts`).
 
@@ -102,11 +102,11 @@ Para añadir un proveedor nuevo: implementa `ContentGenerationProvider` en `src/
 Además de pegar texto o subir TXT/SRT/VTT, se puede subir un archivo de video o audio (mp4, mov, webm, mkv, mp3, wav, m4a, aac, ogg, flac) para transcribirlo automáticamente:
 
 ```env
-TRANSCRIPTION_PROVIDER=groq      # demo | groq | whisper
-TRANSCRIPTION_API_KEY=           # API key de Groq u OpenAI
+TRANSCRIPTION_PROVIDER=groq      # groq | whisper
+TRANSCRIPTION_API_KEY=           # opcional si usas Groq (basta GROQ_API_KEY)
 ```
 
-`whisper` usa la API de Whisper de OpenAI (`whisper-1`), que **tiene costo por minuto transcrito**; `groq` es gratis dentro de un límite de uso razonable. Sin `TRANSCRIPTION_API_KEY`, la app usa una transcripción de demostración en su lugar.
+`groq` es gratis dentro de un límite de uso razonable; `whisper` usa la API de Whisper de OpenAI (`whisper-1`), que **tiene costo por minuto transcrito**. **La transcripción requiere una API key** (`TRANSCRIPTION_API_KEY` o `GROQ_API_KEY`): sin ella, subir audio/video o el fallback de audio de YouTube devuelven un error explícito (`TRANSCRIPTION_NOT_CONFIGURED`).
 
 #### Archivos grandes (> 25 MB)
 
@@ -116,8 +116,6 @@ Cuando el audio supera el límite por petición del proveedor (25 MB en Whisper/
 
 Límites configurables (ver `.env.example`): `MEDIA_MAX_UPLOAD_MB` (500 por defecto), `MEDIA_MAX_DURATION_SECONDS`, `MEDIA_CHUNK_TARGET_MB`, `MEDIA_CHUNK_MAX_SECONDS`, `MEDIA_CHUNK_AUDIO_BITRATE_KBPS`. El tamaño máximo **efectivo** también depende del límite global de Storage de tu proyecto Supabase (Dashboard → Storage → Settings) y del `file_size_limit` del bucket (migración `0020`).
 
-En **modo demo** (`TRANSCRIPTION_PROVIDER=demo` o sin API key) no se descarga ni trocea nada: el flujo completo funciona con una transcripción de ejemplo.
-
 #### Worker / cron (opcional)
 
 Por defecto, el job se procesa vía `after()` dentro de la misma invocación serverless que lo encola. Para archivos muy largos o para mayor robustez, configura `JOBS_WORKER_SECRET` y llama periódicamente a `POST /api/jobs/transcription` (cabecera `x-jobs-secret`) desde un cron (Vercel Cron, GitHub Actions, etc.): drena los jobs `queued` y retoma los `processing` colgados. Mover el procesamiento a un worker dedicado es cambiar quién llama a ese endpoint, no cómo funciona el pipeline.
@@ -125,10 +123,6 @@ Por defecto, el job se procesa vía `after()` dentro de la misma invocación ser
 ### Importar desde YouTube
 
 Se puede pegar el enlace de cualquier video público de YouTube (propio o ajeno) y la app importa sus subtítulos ya existentes como transcripción — no hace falta conectar ninguna cuenta ni configurar credenciales. Ver `src/lib/integrations/youtube-transcript.ts` para el detalle: no usa la Data API oficial de YouTube (que no permite descargar video/audio ni siquiera para el canal propio), sino que lee la página pública del video igual que hace el reproductor web, así que depende de un endpoint no documentado que YouTube podría cambiar sin aviso. Si el video no tiene subtítulos, hay que subirlo manualmente (pestaña "Video o audio").
-
-## Modo demo (sin claves de IA)
-
-Con `AI_PROVIDER=mock` (el valor por defecto en `.env.example`) puedes recorrer todo el flujo —crear proyecto, cargar transcripción de demo, generar artículo, editar, ver alertas y fuentes, historial de versiones, exportar— sin configurar ninguna clave externa.
 
 ## Ejecutar pruebas
 
@@ -139,7 +133,7 @@ npm test            # Vitest (pruebas unitarias)
 npm run test:e2e    # Playwright (requiere Supabase local + npm run dev)
 ```
 
-Las pruebas end-to-end (`npm run test:e2e`) asumen `AI_PROVIDER=mock` y Supabase local corriendo con las migraciones aplicadas.
+Las pruebas end-to-end (`npm run test:e2e`) necesitan Supabase local corriendo con las migraciones aplicadas. El paso de generación de artículo se omite automáticamente si no hay `GROQ_API_KEY` / `AI_API_KEY`.
 
 ## Desplegar en Vercel
 

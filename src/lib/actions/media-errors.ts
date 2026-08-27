@@ -24,6 +24,8 @@ export const MEDIA_ERROR_CODES = [
   'CHUNK_TOO_LARGE',
   'MEDIA_DURATION_EXCEEDED',
   'TRANSCRIPTION_PROVIDER_ERROR',
+  'TRANSCRIPTION_NOT_CONFIGURED',
+  'AI_NOT_CONFIGURED',
   'EMPTY_TRANSCRIPT',
   'JOB_FAILED',
   'GENERATION_FAILED',
@@ -75,6 +77,10 @@ export function translateMediaError(message: string, ctx: MediaErrorContext): st
       return `El archivo supera la duración máxima permitida (${ctx.maxDurationMinutes} minutos).`;
     case 'TRANSCRIPTION_PROVIDER_ERROR':
       return 'El servicio de transcripción no pudo procesar el audio. Inténtalo de nuevo en unos minutos.';
+    case 'TRANSCRIPTION_NOT_CONFIGURED':
+      return 'Falta configurar la API key de transcripción (TRANSCRIPTION_API_KEY o GROQ_API_KEY).';
+    case 'AI_NOT_CONFIGURED':
+      return 'Falta configurar la API key de IA (AI_API_KEY o GROQ_API_KEY) para generar el artículo.';
     case 'EMPTY_TRANSCRIPT':
       return 'No se detectó voz en el archivo. Verifica que tenga audio.';
     case 'JOB_FAILED':

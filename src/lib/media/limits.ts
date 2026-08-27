@@ -2,7 +2,7 @@
  * Configuración de límites de medios (audio/video). Todo lo que antes era el
  * único `MAX_MEDIA_BYTES` (25 MB hardcodeado) vive ahora aquí y es
  * configurable por variable de entorno, con defaults razonables para que el
- * modo demo y el desarrollo local funcionen sin configurar nada.
+ * desarrollo local funcione sin configurar nada.
  *
  * Distinción clave:
  * - `maxUploadBytes`: lo que un usuario puede SUBIR a Storage. Puede ser muy

@@ -132,9 +132,9 @@ export const es = {
     emptyCta: 'Crear mi primer proyecto',
     modifiedAgo: 'Modificado',
     noResultsFor: 'Sin resultados para',
-    demoModeWarningTitle: 'Modo demo: la transcripción no es real',
-    demoModeWarningDescription:
-      'No hay ningún proveedor de transcripción configurado, así que el video/audio que subas, o el enlace de YouTube que pegues sin subtítulos, no se transcribe de verdad: se usa un texto de ejemplo genérico. Configura una clave gratuita de Groq (o de OpenAI Whisper) en TRANSCRIPTION_PROVIDER / TRANSCRIPTION_API_KEY para transcribir tu contenido real.',
+    setupRequiredTitle: 'Falta configurar tus claves de API',
+    setupRequiredDescription:
+      'Para transcribir audio/video y generar artículos necesitas una API key. La forma más rápida: crea una clave gratuita en console.groq.com y ponla como GROQ_API_KEY en tu archivo .env (cubre transcripción y generación). Hasta entonces, estas funciones devolverán un error indicándolo.',
     importError: {
       title: 'No se pudo completar la importación',
       dismiss: 'Cerrar',
@@ -270,7 +270,6 @@ export const es = {
       pasteTab: 'Pegar texto',
       uploadTab: 'Subir archivo',
       mediaTab: 'Video o audio',
-      demoTab: 'Usar demo',
       pastePlaceholder: 'Pega aquí la transcripción de tu video, podcast o entrevista...',
       useThisTranscript: 'Usar esta transcripción',
       uploadFormats: 'Formatos soportados: .txt, .srt, .vtt (máx. 5 MB)',
@@ -317,6 +316,10 @@ export const es = {
         MEDIA_DURATION_EXCEEDED: 'El archivo supera la duración máxima permitida.',
         TRANSCRIPTION_PROVIDER_ERROR:
           'El servicio de transcripción no pudo procesar el audio. Inténtalo de nuevo en unos minutos.',
+        TRANSCRIPTION_NOT_CONFIGURED:
+          'Falta configurar la API key de transcripción (TRANSCRIPTION_API_KEY o GROQ_API_KEY).',
+        AI_NOT_CONFIGURED:
+          'Falta configurar la API key de IA (AI_API_KEY o GROQ_API_KEY) para generar el artículo.',
         EMPTY_TRANSCRIPT: 'No se detectó voz en el archivo. Verifica que tenga audio.',
         JOB_FAILED: 'El procesamiento del archivo falló. Inténtalo de nuevo.',
         GENERATION_FAILED:
@@ -330,8 +333,6 @@ export const es = {
       linkHint: 'Debe ser un enlace de descarga directa (Drive, Dropbox, un CDN propio, etc.). No soporta enlaces de YouTube ni de otras plataformas de streaming.',
       linkPlaceholder: 'https://ejemplo.com/mi-video.mp4',
       useLink: 'Usar enlace',
-      demoDescription: 'Prueba el flujo completo con una transcripción de ejemplo, sin necesidad de subir nada.',
-      useDemoTranscript: 'Usar transcripción de demostración',
       importSuccess: 'Transcripción importada correctamente',
       transcribeSuccess: 'Transcripción completada',
       unsupportedTextFormat: 'Formato no soportado. Usa un archivo .txt, .srt o .vtt',
@@ -346,7 +347,6 @@ export const es = {
       youtubeUrlHint: 'Pega el enlace de un video público de YouTube. Si no tiene subtítulos, transcribimos el audio automáticamente.',
       youtubeUrlPlaceholder: 'https://www.youtube.com/watch?v=...',
       youtubeImportSuccess: 'Video importado correctamente',
-      youtubeDemoModeNotice: 'Modo demo — transcripción simulada, no proviene realmente del video.',
       youtubeStages: {
         fetching_captions: 'Obteniendo información del video...',
         no_captions_found: 'No encontramos subtítulos...',

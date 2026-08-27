@@ -1,41 +1,48 @@
 import type { TranscriptionProvider } from '@/lib/ai/provider';
-import { DemoTranscriptionProvider } from './demo-provider';
 import { WhisperTranscriptionProvider } from './whisper-provider';
 import { GroqTranscriptionProvider } from './groq-provider';
 
+const DEFAULT_TRANSCRIPTION_PROVIDER = 'groq';
+
 /**
- * Fábrica del proveedor de transcripción. Se controla con las variables de
- * entorno TRANSCRIPTION_PROVIDER ("demo" | "whisper" | "groq") y
- * TRANSCRIPTION_API_KEY. "groq" usa la API de Groq (Whisper gratis, sin
- * tarjeta de crédito, con límite de uso razonable) como alternativa sin costo
- * a "whisper" (OpenAI, de pago) mientras no se contrate un proveedor
- * definitivo. Sin clave configurada, siempre recurre al proveedor demo para
- * no romper el modo de exploración sin servicios externos.
+ * Falta configurar un proveedor de transcripción (sin `TRANSCRIPTION_API_KEY`
+ * ni `GROQ_API_KEY`). Se traduce a un error accionable en la capa de acciones.
  */
-export function getTranscriptionProvider(): TranscriptionProvider {
-  const providerName = (process.env.TRANSCRIPTION_PROVIDER ?? 'demo').toLowerCase();
-  const apiKey = process.env.TRANSCRIPTION_API_KEY;
-
-  if (providerName === 'whisper' && apiKey) {
-    return new WhisperTranscriptionProvider(apiKey);
+export class TranscriptionNotConfiguredError extends Error {
+  constructor() {
+    super('TRANSCRIPTION_NOT_CONFIGURED');
+    this.name = 'TranscriptionNotConfiguredError';
   }
+}
 
-  if (providerName === 'groq' && apiKey) {
-    return new GroqTranscriptionProvider(apiKey);
-  }
-
-  return new DemoTranscriptionProvider();
+/** Clave efectiva: `TRANSCRIPTION_API_KEY` específica o la `GROQ_API_KEY` compartida. */
+function resolveTranscriptionApiKey(): string | undefined {
+  return process.env.TRANSCRIPTION_API_KEY || process.env.GROQ_API_KEY || undefined;
 }
 
 /**
- * Indica si hay un proveedor de transcripción REAL configurado (Groq o
- * Whisper con su API key), en vez del modo demo (que ignora el audio/video
- * subido y siempre devuelve el mismo texto de ejemplo). Se usa para avisar
- * en la interfaz antes de que el usuario suba contenido y se lleve la
- * sorpresa de un artículo que no tiene nada que ver con su video.
+ * Fábrica del proveedor de transcripción. `TRANSCRIPTION_PROVIDER` ("groq" |
+ * "whisper"); por defecto "groq" (Whisper servido gratis por Groq dentro de un
+ * límite de uso razonable, sin tarjeta). `whisper` usa la API de OpenAI (con
+ * costo). Requiere una API key: sin ella lanza `TranscriptionNotConfiguredError`.
  */
-export function isRealTranscriptionConfigured(): boolean {
-  const providerName = (process.env.TRANSCRIPTION_PROVIDER ?? 'demo').toLowerCase();
-  const apiKey = process.env.TRANSCRIPTION_API_KEY;
-  return (providerName === 'whisper' || providerName === 'groq') && !!apiKey;
+export function getTranscriptionProvider(): TranscriptionProvider {
+  const providerName = (process.env.TRANSCRIPTION_PROVIDER || DEFAULT_TRANSCRIPTION_PROVIDER).toLowerCase();
+  const apiKey = resolveTranscriptionApiKey();
+  if (!apiKey) {
+    throw new TranscriptionNotConfiguredError();
+  }
+
+  if (providerName === 'whisper') {
+    return new WhisperTranscriptionProvider(apiKey);
+  }
+  if (providerName === 'groq') {
+    return new GroqTranscriptionProvider(apiKey);
+  }
+  throw new Error(`UNSUPPORTED_TRANSCRIPTION_PROVIDER:${providerName}`);
+}
+
+/** Si hay una API key de transcripción configurada (para avisos de setup en la UI). */
+export function isTranscriptionConfigured(): boolean {
+  return !!resolveTranscriptionApiKey();
 }

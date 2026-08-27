@@ -10,7 +10,6 @@ import { getMediaLimits, type MediaLimits } from '@/lib/media/limits';
 import { extensionOf } from '@/lib/media/formats';
 import { saveTranscript } from '@/lib/generation/save-transcript';
 import { runArticleGenerationPipeline } from '@/lib/generation/pipeline';
-import { getConfiguredDemoTranscriptLength, getDemoTranscript } from '@/lib/content/demo-transcript';
 import { isUrlSafeToFetch } from '@/lib/security/url-safety';
 
 const SIGNED_URL_TTL_SECONDS = 60 * 30;
@@ -45,7 +44,7 @@ interface JobOutput {
   transcriptId?: string;
   documentId?: string;
   chunkCount?: number;
-  transcribedVia?: 'demo' | 'single' | 'chunked';
+  transcribedVia?: 'single' | 'chunked';
 }
 
 /**
@@ -120,59 +119,51 @@ export async function runTranscriptionJob(
     let chunkCount = 1;
     let durationSeconds: number | null = null;
 
-    if (!provider.limits.supportsChunking) {
-      // Modo demo: se ignora el archivo real. No hace falta descargar,
-      // extraer audio ni trocear.
+    const media = await resolveMediaAccess(supabase, source, limits, deps);
+    const fileExtension =
+      extensionOf(source.original_filename ?? '') ||
+      (media.kind === 'url' ? extensionOf(new URL(media.url).pathname) : 'mp4');
+
+    if (media.sizeBytes !== null && media.sizeBytes <= provider.limits.maxRequestBytes) {
       await setJobProgress(supabase, jobId, { stage: 'transcribing', progress: 40 });
-      transcript = await provider.transcribe({ demo: true, language: input.language });
-      transcribedVia = 'demo';
+      const single = await provider.transcribe({
+        mediaUrl: media.url,
+        fileExtension,
+        language: input.language,
+      });
+      transcript = mergeChunkTranscripts([{ startSeconds: 0, result: single }]);
+      transcribedVia = 'single';
     } else {
-      const media = await resolveMediaAccess(supabase, source, limits, deps);
-      const fileExtension =
-        extensionOf(source.original_filename ?? '') ||
-        (media.kind === 'url' ? extensionOf(new URL(media.url).pathname) : 'mp4');
-
-      if (media.sizeBytes !== null && media.sizeBytes <= provider.limits.maxRequestBytes) {
-        await setJobProgress(supabase, jobId, { stage: 'transcribing', progress: 40 });
-        const single = await provider.transcribe({
-          mediaUrl: media.url,
-          fileExtension,
-          language: input.language,
-        });
-        transcript = mergeChunkTranscripts([{ startSeconds: 0, result: single }]);
-        transcribedVia = 'single';
-      } else {
-        if (!(await deps.isChunkingAvailable())) {
-          throw new JobError('MEDIA_REQUIRES_CHUNKING_UNAVAILABLE');
-        }
-        await setJobProgress(supabase, jobId, { stage: 'chunking', progress: 20 });
-
-        const stream = await openStream(media.url, deps.fetchImpl);
-        const chunker: AudioChunker = deps.getChunker();
-        const { chunks, totalDurationSeconds } = await chunker.chunk(
-          { stream, sourceExtension: fileExtension },
-          {
-            targetBytes: Math.min(limits.chunkTargetBytes, provider.limits.maxRequestBytes),
-            maxSeconds: limits.chunkMaxSeconds,
-            audioBitrateKbps: limits.chunkAudioBitrateKbps,
-            maxTotalSeconds: limits.maxDurationSeconds,
-          },
-        );
-
-        durationSeconds = totalDurationSeconds || null;
-        chunkCount = chunks.length;
-        const parts: ChunkTranscript[] = [];
-        for (const chunk of chunks) {
-          await setJobProgress(supabase, jobId, {
-            stage: 'transcribing',
-            progress: 25 + Math.round((chunk.index / chunks.length) * 55),
-          });
-          const partial = await transcribeChunk(provider, chunk.blob, chunk.fileExtension, input.language);
-          parts.push({ startSeconds: chunk.startSeconds, result: partial });
-        }
-        transcript = mergeChunkTranscripts(parts);
-        transcribedVia = 'chunked';
+      if (!(await deps.isChunkingAvailable())) {
+        throw new JobError('MEDIA_REQUIRES_CHUNKING_UNAVAILABLE');
       }
+      await setJobProgress(supabase, jobId, { stage: 'chunking', progress: 20 });
+
+      const stream = await openStream(media.url, deps.fetchImpl);
+      const chunker: AudioChunker = deps.getChunker();
+      const { chunks, totalDurationSeconds } = await chunker.chunk(
+        { stream, sourceExtension: fileExtension },
+        {
+          targetBytes: Math.min(limits.chunkTargetBytes, provider.limits.maxRequestBytes),
+          maxSeconds: limits.chunkMaxSeconds,
+          audioBitrateKbps: limits.chunkAudioBitrateKbps,
+          maxTotalSeconds: limits.maxDurationSeconds,
+        },
+      );
+
+      durationSeconds = totalDurationSeconds || null;
+      chunkCount = chunks.length;
+      const parts: ChunkTranscript[] = [];
+      for (const chunk of chunks) {
+        await setJobProgress(supabase, jobId, {
+          stage: 'transcribing',
+          progress: 25 + Math.round((chunk.index / chunks.length) * 55),
+        });
+        const partial = await transcribeChunk(provider, chunk.blob, chunk.fileExtension, input.language);
+        parts.push({ startSeconds: chunk.startSeconds, result: partial });
+      }
+      transcript = mergeChunkTranscripts(parts);
+      transcribedVia = 'chunked';
     }
 
     if (transcript.segments.length === 0) {
@@ -181,10 +172,7 @@ export async function runTranscriptionJob(
 
     await setJobProgress(supabase, jobId, { stage: 'transcribing', progress: 82 });
 
-    const title =
-      transcribedVia === 'demo'
-        ? getDemoTranscript(getConfiguredDemoTranscriptLength()).title
-        : source.original_filename ?? 'Audio subido';
+    const title = source.original_filename ?? 'Audio subido';
 
     const saved = await deps.persistTranscript(supabase, {
       projectId: job.project_id,
@@ -266,6 +254,8 @@ class JobError extends Error {
 
 function normalizeErrorCode(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
+  if (message === 'TRANSCRIPTION_NOT_CONFIGURED') return 'TRANSCRIPTION_NOT_CONFIGURED';
+  if (message === 'AI_NOT_CONFIGURED') return 'AI_NOT_CONFIGURED';
   if (message.startsWith('AUDIO_CHUNKER_UNAVAILABLE')) return 'MEDIA_REQUIRES_CHUNKING_UNAVAILABLE';
   if (message.startsWith('MEDIA_DURATION_EXCEEDED')) return 'MEDIA_DURATION_EXCEEDED';
   if (message.startsWith('FFMPEG_EXIT')) return 'AUDIO_EXTRACTION_FAILED';

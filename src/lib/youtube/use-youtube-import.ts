@@ -47,7 +47,7 @@ export function useYoutubeImport() {
     projectId,
     videoUrl,
     language,
-  }: RunParams): Promise<ActionResult<{ transcriptId: string; title: string; isDemo: boolean }>> {
+  }: RunParams): Promise<ActionResult<{ transcriptId: string; title: string }>> {
     // Reinicia cualquier estado que haya quedado de un intento anterior
     // (etapa, timer cosmético) para que un nuevo intento arranque limpio,
     // sin importar cómo haya terminado el anterior.
@@ -68,10 +68,7 @@ export function useYoutubeImport() {
       const data: ImportYoutubeVideoResult = first.data;
       if (data.status === 'completed') {
         setStage('done');
-        // Subtítulos reales de YouTube: nunca es demo, incluso si
-        // TRANSCRIPTION_PROVIDER=demo (ese modo solo afecta al fallback de
-        // audio, que ni siquiera se llegó a necesitar aquí).
-        return ok(data.transcriptId, data.title, false);
+        return ok(data.transcriptId, data.title);
       }
 
       setStage('no_captions_found');
@@ -92,7 +89,7 @@ export function useYoutubeImport() {
       }
 
       setStage('done');
-      return ok(second.data.transcriptId, second.data.title, second.data.isDemo);
+      return ok(second.data.transcriptId, second.data.title);
     } catch (error) {
       // Defensivo: una Server Action no debería lanzar (ambas envuelven
       // todo en try/catch y devuelven `{success: false}`), pero si algo
@@ -116,7 +113,6 @@ export function useYoutubeImport() {
 function ok(
   transcriptId: string,
   title: string,
-  isDemo: boolean,
-): ActionResult<{ transcriptId: string; title: string; isDemo: boolean }> {
-  return { success: true, data: { transcriptId, title, isDemo } };
+): ActionResult<{ transcriptId: string; title: string }> {
+  return { success: true, data: { transcriptId, title } };
 }
