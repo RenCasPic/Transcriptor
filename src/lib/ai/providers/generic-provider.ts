@@ -165,7 +165,10 @@ export class GenericContentGenerationProvider implements ContentGenerationProvid
         this.caller = new OpenAiCaller(apiKey, model || 'gpt-4o-mini');
         break;
       case 'groq':
-        this.caller = new GroqCaller(apiKey, model || 'llama-3.3-70b-versatile');
+        // Modelo open-weight servido por Groq. `llama-3.3-70b-versatile` fue
+        // retirado; `openai/gpt-oss-120b` es el más capaz disponible hoy y
+        // admite el modo JSON. Se puede sobreescribir con AI_MODEL.
+        this.caller = new GroqCaller(apiKey, model || 'openai/gpt-oss-120b');
         break;
       default:
         throw new Error(`UNSUPPORTED_AI_PROVIDER:${providerName}`);
