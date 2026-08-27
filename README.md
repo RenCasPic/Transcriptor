@@ -89,7 +89,8 @@ AI_API_KEY=            # clave específica de IA; opcional si usas Groq (basta G
 AI_MODEL=              # opcional, cada proveedor tiene un default razonable
 ```
 
-- **`groq`** (default): gratis en https://console.groq.com, sin tarjeta de crédito. Una sola `GROQ_API_KEY` sirve para generación **y** transcripción.
+- **`groq`** (default, modelo `openai/gpt-oss-120b`): gratis en https://console.groq.com, sin tarjeta de crédito. Una sola `GROQ_API_KEY` sirve para generación **y** transcripción.
+  - ⚠️ El plan gratuito de Groq limita a ~8000 tokens/minuto por modelo. La transcripción cabe; generar un artículo a partir de un **podcast largo (>15 min)** puede superar ese límite y devolver `413 Request too large`. Solución: espera un minuto y pulsa "Generar artículo", activa el **Dev Tier** de Groq (gratis, solo verifica identidad — sube mucho el límite), o usa `AI_PROVIDER=anthropic|openai`. El tope de salida se ajusta con `AI_ARTICLE_MAX_TOKENS`.
 - **`anthropic`**: usa la API de Mensajes de Anthropic (`AI_API_KEY` = API key de Anthropic).
 - **`openai`**: usa la API de Chat Completions de OpenAI (`AI_API_KEY` = API key de OpenAI).
 

@@ -17,6 +17,14 @@ import { buildSeoPrompt } from '@/lib/prompts/seo';
 const JSON_SYSTEM_PROMPT =
   'Responde EXCLUSIVAMENTE con un objeto JSON válido, sin texto adicional, sin bloques de código markdown.';
 
+// Tope de tokens de salida para la generación del artículo. Se mantiene
+// moderado a propósito: en el plan gratuito de Groq el límite de tokens por
+// minuto (TPM) es bajo y `max_tokens` cuenta contra él, así que un valor alto
+// hace fallar la petición (413) incluso con transcripciones cortas. Un
+// artículo típico cabe de sobra en este margen; se puede subir con AI_MODEL a
+// un proveedor/plan con más TPM si hace falta.
+const ARTICLE_MAX_OUTPUT_TOKENS = Number(process.env.AI_ARTICLE_MAX_TOKENS ?? 5000);
+
 interface ModelCallParams {
   system: string;
   prompt: string;
@@ -188,7 +196,12 @@ Devuelve un JSON con exactamente esta forma:
   "warnings": [{ "blockId": string|null, "type": "unsupported_claim"|"number_verification"|"name_verification"|"date_verification"|"possible_hallucination"|"missing_source", "message": string }]
 }`;
 
-    const raw = await this.caller.call({ system: JSON_SYSTEM_PROMPT, prompt, maxTokens: 8192, jsonMode: true });
+    const raw = await this.caller.call({
+      system: JSON_SYSTEM_PROMPT,
+      prompt,
+      maxTokens: ARTICLE_MAX_OUTPUT_TOKENS,
+      jsonMode: true,
+    });
     let json: unknown;
     try {
       json = extractJson(raw);

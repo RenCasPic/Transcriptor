@@ -256,6 +256,14 @@ function normalizeErrorCode(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   if (message === 'TRANSCRIPTION_NOT_CONFIGURED') return 'TRANSCRIPTION_NOT_CONFIGURED';
   if (message === 'AI_NOT_CONFIGURED') return 'AI_NOT_CONFIGURED';
+  // Errores del proveedor de IA que se propagan desde la generación del
+  // artículo encadenada (autoGenerate). Se mapean a códigos limpios para que
+  // la UI muestre un mensaje útil en vez del genérico.
+  if (message.startsWith('AI_PROVIDER_HTTP_ERROR:413') || message.startsWith('AI_PROVIDER_HTTP_ERROR:429')) {
+    return 'AI_RATE_LIMITED';
+  }
+  if (message.startsWith('AI_PROVIDER_HTTP_ERROR:404')) return 'AI_MODEL_UNAVAILABLE';
+  if (message.startsWith('AI_PROVIDER_')) return 'GENERATION_FAILED';
   if (message.startsWith('AUDIO_CHUNKER_UNAVAILABLE')) return 'MEDIA_REQUIRES_CHUNKING_UNAVAILABLE';
   if (message.startsWith('MEDIA_DURATION_EXCEEDED')) return 'MEDIA_DURATION_EXCEEDED';
   if (message.startsWith('FFMPEG_EXIT')) return 'AUDIO_EXTRACTION_FAILED';

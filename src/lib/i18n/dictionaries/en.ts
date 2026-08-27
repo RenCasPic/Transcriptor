@@ -316,6 +316,10 @@ export const en: Dictionary = {
           'The transcription API key is not configured (TRANSCRIPTION_API_KEY or GROQ_API_KEY).',
         AI_NOT_CONFIGURED:
           'The AI API key is not configured (AI_API_KEY or GROQ_API_KEY) to generate the article.',
+        AI_RATE_LIMITED:
+          'The free AI plan hit its tokens-per-minute limit. The transcript was saved: wait a minute and press "Generate article" from the project, or upgrade your Groq account to Dev Tier.',
+        AI_MODEL_UNAVAILABLE:
+          'The configured AI model does not exist or is not available for your account. Check AI_MODEL.',
         EMPTY_TRANSCRIPT: 'No speech was detected in the file. Make sure it has audio.',
         JOB_FAILED: 'Processing the file failed. Please try again.',
         GENERATION_FAILED:
