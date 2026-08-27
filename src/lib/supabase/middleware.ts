@@ -14,7 +14,15 @@ const PUBLIC_PATHS = [
 
 function isPublicPath(pathname: string) {
   if (PUBLIC_PATHS.includes(pathname)) return true;
-  return pathname.startsWith('/_next') || pathname.startsWith('/api/public') || pathname.startsWith('/embed/');
+  return (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api/public') ||
+    // El worker/cron de jobs se autentica por su propia cabecera secreta
+    // (x-jobs-secret), no por sesión de usuario: el middleware de sesión no
+    // debe redirigirlo a /login.
+    pathname.startsWith('/api/jobs/') ||
+    pathname.startsWith('/embed/')
+  );
 }
 
 /**
