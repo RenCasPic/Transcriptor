@@ -2,14 +2,15 @@
 
 Marcadas como "Próximamente" en la interfaz actual. La arquitectura ya las contempla en el modelo de datos y en las abstracciones; esto describe qué falta para activarlas.
 
-## Subida de audio/video (implementado)
+## Subida de audio/video (implementado, archivos grandes + asíncrono)
 
-Ya implementado: pestaña "Video o audio" en la página de proyecto, sube el archivo a Storage y lo transcribe con `WhisperTranscriptionProvider` (`src/lib/ai/transcription/whisper-provider.ts`) a través de la Server Action `transcribeMediaAction` (`src/lib/actions/transcription.ts`). Limitaciones conocidas de esta primera versión:
+Ya implementado: pestaña "Video o audio" en la página de proyecto y tarjeta "Subir archivo" del Dashboard. El navegador sube el archivo **directo a Supabase Storage** (signed upload URL, `createMediaUploadUrlAction`) y una Server Action encola un job (`enqueueMediaTranscriptionAction` → `generation_jobs`). El procesamiento (extracción de audio + troceado con ffmpeg si excede 25 MB + transcripción de cada chunk + recomposición + generación del artículo) corre en segundo plano en `runTranscriptionJob` (`src/lib/generation/transcription-pipeline.ts`), invocado vía `after()` o por el worker/cron `POST /api/jobs/transcription`. La UI (`MediaProcessingStatus`) hace polling de `generation_jobs` y muestra el estado; el usuario puede cerrar la página y volver.
 
-- **25 MB por archivo** (límite duro de la API de Whisper). No hay compresión ni troceo del lado del servidor.
-- **Sin conversión de formato**: se envía el archivo tal cual en los formatos que Whisper acepta de forma nativa (mp4, mov, webm, mp3, wav, m4a). Un `.mov` con un códec poco común podría ser rechazado por la API.
-- **Síncrono**: la Server Action espera la respuesta completa de Whisper antes de responder: en archivos largos puede acercarse al timeout de la función serverless (ver "Procesamiento en segundo plano" más abajo).
-- **Sin extracción de audio de video**: no se separa la pista de audio antes de enviarla (requeriría ffmpeg); Whisper procesa el contenedor de video completo.
+Estado y siguientes pasos:
+
+- **Límite de subida configurable** (`MEDIA_MAX_UPLOAD_MB`, 500 por defecto). El máximo efectivo también depende del límite global de Storage del proyecto Supabase y del `file_size_limit` del bucket (migración `0020`).
+- **Troceado con ffmpeg** (`src/lib/media/audio-chunker/`): extrae audio mono y segmenta por tiempo; `mergeChunkTranscripts` recompone una transcripción única con timestamps corregidos y `segment_index` correlativo (la trazabilidad bloque→segmento se mantiene). Si ffmpeg no está disponible y el archivo excede el límite del proveedor, el job falla con `MEDIA_REQUIRES_CHUNKING_UNAVAILABLE`.
+- **Falta**: sustituir el polling por Realtime sobre `generation_jobs`; barrido periódico de jobs `processing` colgados sin depender de una llamada externa al endpoint del worker; reintentos automáticos por chunk ante errores transitorios del proveedor; y detección de formato/códec previa (hoy se confía en que ffmpeg pueda demuxear el contenedor).
 
 ## Importar desde YouTube (implementado, sin OAuth)
 
@@ -32,7 +33,8 @@ Implementado: se pega la URL de cualquier video público de YouTube (propio o aj
 ## Procesamiento en segundo plano
 
 - **Ya existe**: la lógica de negocio de generación vive en `src/lib/generation/pipeline.ts`, desacoplada de la Server Action que la invoca (`src/lib/actions/generation.ts`). `generation_jobs` ya registra `queued/processing/completed/failed` y progreso.
-- **Falta**: mover la invocación del pipeline a un worker (cola de Vercel, Supabase Edge Functions con cron, o un servicio como Inngest/Trigger.dev), y que el cliente haga polling o se suscriba a Realtime sobre `generation_jobs` en lugar de esperar la respuesta síncrona de la Server Action.
+- **Ya existe (transcripción)**: `runTranscriptionJob` corre en segundo plano vía `after()` y el cliente hace polling de `generation_jobs` (`MediaProcessingStatus` + `getJobStatusAction`). El seam de worker/cron es `POST /api/jobs/transcription` (`JOBS_WORKER_SECRET`), que drena `queued` y retoma `processing` colgados con el mismo `processTranscriptionJob`.
+- **Falta**: aplicar el mismo patrón a `generateArticleAction` (hoy sigue síncrona); sustituir el polling por Realtime; y un scheduler propio (Vercel Cron / Supabase pg_cron) que llame al endpoint del worker sin intervención manual.
 
 ## Espacios de trabajo con varios usuarios
 

@@ -9,31 +9,24 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ImportErrorPanel } from '@/components/dashboard/import-error-panel';
+import { MediaProcessingStatus } from '@/components/projects/media-processing-status';
 import { importTranscriptAction } from '@/lib/actions/projects';
-import { transcribeMediaAction, importMediaFromUrlAction } from '@/lib/actions/transcription';
+import { importMediaFromUrlAction } from '@/lib/actions/transcription';
 import { generateArticleAction } from '@/lib/actions/generation';
 import { useYoutubeImport } from '@/lib/youtube/use-youtube-import';
+import { useMediaUpload } from '@/lib/media/use-media-upload';
 import { createClient } from '@/lib/supabase/client';
 import { DEMO_TRANSCRIPT_TEXT } from '@/lib/content/demo-transcript';
 import { sanitizeFilename } from '@/lib/content/slug';
+import { MEDIA_ACCEPT_ATTR, validateMediaUpload } from '@/lib/media/formats';
 import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
 const MAX_TEXT_FILE_SIZE_BYTES = 5 * 1024 * 1024;
-const MAX_MEDIA_FILE_SIZE_BYTES = 25 * 1024 * 1024;
 
 const EXTENSION_TO_SOURCE: Record<string, 'txt' | 'srt' | 'vtt'> = {
   txt: 'txt',
   srt: 'srt',
   vtt: 'vtt',
-};
-
-const MEDIA_EXTENSION_TO_TYPE: Record<string, 'video' | 'audio'> = {
-  mp4: 'video',
-  mov: 'video',
-  webm: 'video',
-  mp3: 'audio',
-  wav: 'audio',
-  m4a: 'audio',
 };
 
 const VALID_TABS = ['paste', 'upload', 'media', 'youtube', 'demo'] as const;
@@ -43,11 +36,13 @@ export function ContentSourcePanel({
   projectId,
   workspaceId,
   language,
+  maxUploadBytes,
   initialTab,
 }: {
   projectId: string;
   workspaceId: string;
   language: string;
+  maxUploadBytes: number;
   initialTab?: string;
 }) {
   const router = useRouter();
@@ -58,18 +53,22 @@ export function ContentSourcePanel({
   const [mediaUrl, setMediaUrl] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
   const [isImportingUrl, setIsImportingUrl] = useState(false);
   const [isImportingYoutube, setIsImportingYoutube] = useState(false);
   const [youtubeImportError, setYoutubeImportError] = useState<{ code: string; message: string } | null>(null);
+  const [mediaError, setMediaError] = useState<string | null>(null);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const { stage: youtubeStage, run: runYoutubeImport } = useYoutubeImport();
+  const { phase: uploadPhase, progress: uploadProgress, start: startUpload } = useMediaUpload();
+
+  const maxMb = Math.round(maxUploadBytes / (1024 * 1024));
 
   /**
    * Encadena la generación del artículo (con su SEO) justo después de
-   * importar cualquier fuente, para que el usuario nunca tenga que pulsar
-   * "Generar artículo" a mano. Si la generación falla, se queda en esta
-   * página (con la transcripción ya importada) para reintentar desde
-   * `GenerateArticlePanel`.
+   * importar una fuente de TEXTO. Para audio/video la generación la encadena
+   * el propio job de transcripción (`autoGenerate`), así que ese camino no
+   * llama aquí.
    */
   async function generateAndRedirect() {
     const generationResult = await generateArticleAction(projectId);
@@ -156,55 +155,40 @@ export function ContentSourcePanel({
     }
   }
 
+  function mediaErrorMessage(code: string): string {
+    return (
+      (t.projects.source.mediaErrors as Record<string, string>)[code] ?? t.projects.source.mediaErrors.default
+    );
+  }
+
   async function handleMediaFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
 
-    const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
-    const mediaType = MEDIA_EXTENSION_TO_TYPE[extension];
-    if (!mediaType) {
-      toast.error(t.projects.source.unsupportedMediaFormat);
-      return;
-    }
-    if (file.size > MAX_MEDIA_FILE_SIZE_BYTES) {
-      toast.error(t.projects.source.mediaFileTooLarge);
+    const check = validateMediaUpload({
+      filename: file.name,
+      contentType: file.type || null,
+      sizeBytes: file.size,
+      maxUploadBytes,
+    });
+    if (!check.ok) {
+      toast.error(mediaErrorMessage(check.code));
       return;
     }
 
-    setIsTranscribing(true);
+    setMediaError(null);
+    setActiveJobId(null);
+    setIsUploadingMedia(true);
     try {
-      const storagePath = `${workspaceId}/${projectId}/${Date.now()}-${sanitizeFilename(file.name)}`;
-      const supabase = createClient();
-      const { error: uploadError } = await supabase.storage
-        .from('project-sources')
-        .upload(storagePath, file, { contentType: file.type || 'application/octet-stream' });
-
-      if (uploadError) {
-        console.error('Supabase storage upload error:', uploadError);
-        toast.error(`${t.projects.source.mediaUploadError} (${uploadError.message})`);
-        return;
-      }
-
-      const result = await transcribeMediaAction({
-        projectId,
-        sourceType: mediaType,
-        storagePath,
-        originalFilename: file.name,
-        language,
-      });
-
+      const result = await startUpload({ projectId, file, language, maxUploadBytes });
       if (!result.success) {
-        toast.error(result.error.message);
+        setMediaError(mediaErrorMessage(result.error.code));
         return;
       }
-
-      toast.success(t.projects.source.transcribeSuccess);
-      await generateAndRedirect();
-    } catch {
-      toast.error(t.projects.source.mediaProcessError);
+      setActiveJobId(result.data.jobId);
     } finally {
-      setIsTranscribing(false);
+      setIsUploadingMedia(false);
     }
   }
 
@@ -215,18 +199,17 @@ export function ContentSourcePanel({
   async function handleImportFromUrl() {
     if (!mediaUrl.trim()) return;
 
+    setMediaError(null);
+    setActiveJobId(null);
     setIsImportingUrl(true);
     try {
       const result = await importMediaFromUrlAction({ projectId, sourceUrl: mediaUrl.trim(), language });
-
       if (!result.success) {
-        toast.error(result.error.message);
+        setMediaError(mediaErrorMessage(result.error.code));
         return;
       }
-
-      toast.success(t.projects.source.transcribeSuccess);
       setMediaUrl('');
-      await generateAndRedirect();
+      setActiveJobId(result.data.jobId);
     } finally {
       setIsImportingUrl(false);
     }
@@ -255,6 +238,8 @@ export function ContentSourcePanel({
       setIsImportingYoutube(false);
     }
   }
+
+  const mediaBusy = isUploadingMedia || activeJobId !== null || isImportingUrl;
 
   return (
     <div className="space-y-4">
@@ -296,21 +281,20 @@ export function ContentSourcePanel({
         </TabsContent>
 
         <TabsContent value="media" className="space-y-3">
-          <p className="text-sm text-muted-foreground">{t.projects.source.mediaFormats}</p>
+          <p className="text-sm text-muted-foreground">
+            {t.projects.source.mediaFormats} {t.projects.source.mediaMaxSize}: {maxMb} MB.
+          </p>
+          <p className="text-xs text-muted-foreground">{t.projects.source.mediaAsyncNote}</p>
           <input
             ref={mediaInputRef}
             type="file"
-            accept=".mp4,.mov,.webm,.mp3,.wav,.m4a"
+            accept={MEDIA_ACCEPT_ATTR}
             className="hidden"
             onChange={handleMediaFileChange}
           />
-          <Button
-            variant="outline"
-            onClick={() => mediaInputRef.current?.click()}
-            disabled={isTranscribing}
-          >
-            {isTranscribing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Film className="h-4 w-4" />}
-            {isTranscribing ? t.projects.source.transcribing : t.projects.source.selectMedia}
+          <Button variant="outline" onClick={() => mediaInputRef.current?.click()} disabled={mediaBusy}>
+            {mediaBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Film className="h-4 w-4" />}
+            {t.projects.source.selectMedia}
           </Button>
 
           <div className="flex items-center gap-3 pt-1 text-xs text-muted-foreground">
@@ -324,17 +308,43 @@ export function ContentSourcePanel({
               placeholder={t.projects.source.linkPlaceholder}
               value={mediaUrl}
               onChange={(e) => setMediaUrl(e.target.value)}
-              disabled={isImportingUrl}
+              disabled={mediaBusy}
             />
-            <Button
-              variant="outline"
-              onClick={handleImportFromUrl}
-              disabled={isImportingUrl || !mediaUrl.trim()}
-            >
+            <Button variant="outline" onClick={handleImportFromUrl} disabled={mediaBusy || !mediaUrl.trim()}>
               {isImportingUrl ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
               {t.projects.source.useLink}
             </Button>
           </div>
+
+          {(isUploadingMedia || activeJobId) && (
+            <MediaProcessingStatus
+              jobId={activeJobId}
+              projectId={projectId}
+              isUploading={
+                isUploadingMedia ||
+                uploadPhase === 'uploading' ||
+                uploadPhase === 'preparing' ||
+                uploadPhase === 'enqueuing'
+              }
+              uploadProgress={uploadProgress}
+              onDismiss={() => {
+                setActiveJobId(null);
+                router.refresh();
+              }}
+            />
+          )}
+          {mediaError && (
+            <ImportErrorPanel
+              title={t.projects.source.mediaProcessing.errorTitle}
+              message={mediaError}
+              dismissLabel={t.dashboard.importError.dismiss}
+              onDismiss={() => setMediaError(null)}
+              tips={[
+                t.projects.source.mediaProcessing.errorTip1,
+                t.projects.source.mediaProcessing.errorTip2,
+              ]}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="youtube" className="space-y-3">

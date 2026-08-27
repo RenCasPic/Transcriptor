@@ -97,16 +97,30 @@ Si `AI_PROVIDER` no es `mock` pero falta `AI_API_KEY`, la app recurre automátic
 
 Para añadir un proveedor nuevo: implementa `ContentGenerationProvider` en `src/lib/ai/providers/`, y regístralo en el switch de `src/lib/ai/providers/generic-provider.ts` (o crea una clase independiente y añade el caso en `src/lib/ai/providers/index.ts`).
 
-### Transcripción de video/audio (Whisper)
+### Transcripción de video/audio (Whisper / Groq)
 
-Además de pegar texto o subir TXT/SRT/VTT, se puede subir un archivo de video o audio (mp4, mov, webm, mp3, wav, m4a de hasta 25 MB) para transcribirlo automáticamente:
+Además de pegar texto o subir TXT/SRT/VTT, se puede subir un archivo de video o audio (mp4, mov, webm, mkv, mp3, wav, m4a, aac, ogg, flac) para transcribirlo automáticamente:
 
 ```env
-TRANSCRIPTION_PROVIDER=whisper   # demo | whisper
-TRANSCRIPTION_API_KEY=           # API key de OpenAI
+TRANSCRIPTION_PROVIDER=groq      # demo | groq | whisper
+TRANSCRIPTION_API_KEY=           # API key de Groq u OpenAI
 ```
 
-Usa la API de Whisper de OpenAI (`whisper-1`), que **tiene costo por minuto transcrito**. Sin `TRANSCRIPTION_API_KEY`, la app usa una transcripción de demostración en su lugar.
+`whisper` usa la API de Whisper de OpenAI (`whisper-1`), que **tiene costo por minuto transcrito**; `groq` es gratis dentro de un límite de uso razonable. Sin `TRANSCRIPTION_API_KEY`, la app usa una transcripción de demostración en su lugar.
+
+#### Archivos grandes (> 25 MB)
+
+El archivo se sube **directamente del navegador a Supabase Storage** mediante una _signed upload URL_ — los bytes nunca pasan por una Server Action ni por el límite de payload de Next.js. La transcripción ocurre **en segundo plano** (`generation_jobs`): la UI muestra el progreso (subiendo → procesando → transcribiendo → generando) y puedes cerrar la página y volver.
+
+Cuando el audio supera el límite por petición del proveedor (25 MB en Whisper/Groq), el servidor **extrae el audio con ffmpeg y lo trocea** en fragmentos mono; cada fragmento se transcribe por separado y luego se recompone una única transcripción con los timestamps corregidos (la trazabilidad bloque→segmento del artículo sigue funcionando igual). Los binarios de ffmpeg vienen en `@ffmpeg-installer/ffmpeg` y `@ffprobe-installer/ffprobe` (no requieren instalación en el sistema).
+
+Límites configurables (ver `.env.example`): `MEDIA_MAX_UPLOAD_MB` (500 por defecto), `MEDIA_MAX_DURATION_SECONDS`, `MEDIA_CHUNK_TARGET_MB`, `MEDIA_CHUNK_MAX_SECONDS`, `MEDIA_CHUNK_AUDIO_BITRATE_KBPS`. El tamaño máximo **efectivo** también depende del límite global de Storage de tu proyecto Supabase (Dashboard → Storage → Settings) y del `file_size_limit` del bucket (migración `0020`).
+
+En **modo demo** (`TRANSCRIPTION_PROVIDER=demo` o sin API key) no se descarga ni trocea nada: el flujo completo funciona con una transcripción de ejemplo.
+
+#### Worker / cron (opcional)
+
+Por defecto, el job se procesa vía `after()` dentro de la misma invocación serverless que lo encola. Para archivos muy largos o para mayor robustez, configura `JOBS_WORKER_SECRET` y llama periódicamente a `POST /api/jobs/transcription` (cabecera `x-jobs-secret`) desde un cron (Vercel Cron, GitHub Actions, etc.): drena los jobs `queued` y retoma los `processing` colgados. Mover el procesamiento a un worker dedicado es cambiar quién llama a ese endpoint, no cómo funciona el pipeline.
 
 ### Importar desde YouTube
 
@@ -147,6 +161,7 @@ src/
     (auth)/               # login, register, forgot-password, reset-password
     (app)/                # dashboard, projects, settings (rutas protegidas)
     auth/callback/        # intercambio de código de Supabase Auth
+    api/jobs/transcription/ # Route Handler para el worker/cron de transcripción
   components/
     ui/                   # primitivas shadcn/ui
     layout/                # sidebar, header, tabs de configuración
@@ -154,8 +169,9 @@ src/
   lib/
     supabase/             # clientes browser/server/admin + middleware
     ai/                   # abstracción de proveedores de generación y transcripción
+    media/                # límites configurables, formatos, troceado de audio (ffmpeg), merge de chunks
     prompts/              # prompts versionados, uno por operación
-    generation/           # pipeline de negocio de generación (desacoplado del transporte)
+    generation/           # pipelines de negocio (generación de artículo + transcripción), desacoplados del transporte
     content/              # normalización, métricas, slugs, transform ProseMirror↔HTML/MD
     editor/               # extensión TipTap de blockId, hook de autosave
     validations/          # esquemas Zod

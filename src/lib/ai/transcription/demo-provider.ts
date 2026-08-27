@@ -1,4 +1,9 @@
-import type { TranscriptionInput, TranscriptionProvider, TranscriptResult } from '@/lib/ai/provider';
+import type {
+  TranscriptionInput,
+  TranscriptionProvider,
+  TranscriptionProviderLimits,
+  TranscriptResult,
+} from '@/lib/ai/provider';
 import { getConfiguredDemoTranscriptLength, getDemoTranscript } from '@/lib/content/demo-transcript';
 import { normalizePlainText } from '@/lib/content/normalize';
 
@@ -20,6 +25,14 @@ const SIMULATED_DELAY_MS = 1800;
  * necesita saber cuál de los dos está usando.
  */
 export class DemoTranscriptionProvider implements TranscriptionProvider {
+  // El proveedor demo ignora el audio real: acepta cualquier tamaño y trocear
+  // no tendría sentido (siempre devuelve el mismo texto de ejemplo).
+  readonly limits: TranscriptionProviderLimits = {
+    maxRequestBytes: Number.MAX_SAFE_INTEGER,
+    maxRequestSeconds: null,
+    supportsChunking: false,
+  };
+
   async transcribe(_input: TranscriptionInput): Promise<TranscriptResult> {
     // Sin espera en tests: sería puro tiempo perdido en cada corrida de la
     // suite sin aportar ninguna cobertura adicional.

@@ -14,10 +14,22 @@ const nextConfig = {
   // bundling rompió isomorphic-dompurify/jsdom en el bundle "action-browser"
   // de las Server Actions (ENOENT buscando un asset que no existe ahí).
   // Mantenerla externa evita repetir ese problema.
-  serverExternalPackages: ['@distube/ytdl-core'],
+  // Paquetes con binarios/streams orientados a Node que webpack no debe
+  // intentar empaquetar. @ffmpeg-installer/@ffprobe-installer traen binarios
+  // estáticos que se cargan por ruta en tiempo de ejecución (troceado de
+  // audio de archivos grandes, ver src/lib/media/audio-chunker).
+  serverExternalPackages: [
+    '@distube/ytdl-core',
+    '@ffmpeg-installer/ffmpeg',
+    '@ffprobe-installer/ffprobe',
+  ],
   experimental: {
     serverActions: {
-      bodySizeLimit: '25mb',
+      // Los archivos de audio/video NO pasan por Server Actions: el navegador
+      // los sube directo a Supabase Storage (signed upload URL) y la acción
+      // solo recibe metadata. Este límite cubre payloads normales de
+      // formularios/JSON.
+      bodySizeLimit: '4mb',
     },
   },
   images: {

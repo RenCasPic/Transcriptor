@@ -1,4 +1,10 @@
-import type { TranscriptionInput, TranscriptionProvider, TranscriptResult } from '@/lib/ai/provider';
+import type {
+  TranscriptionInput,
+  TranscriptionProvider,
+  TranscriptionProviderLimits,
+  TranscriptResult,
+} from '@/lib/ai/provider';
+import { PROVIDER_REQUEST_MAX_BYTES } from '@/lib/media/limits';
 
 interface GroqSegment {
   start: number;
@@ -23,6 +29,12 @@ interface GroqVerboseJsonResponse {
  * su extensión real, porque el servicio determina el formato por ahí.
  */
 export class GroqTranscriptionProvider implements TranscriptionProvider {
+  readonly limits: TranscriptionProviderLimits = {
+    maxRequestBytes: PROVIDER_REQUEST_MAX_BYTES,
+    maxRequestSeconds: null,
+    supportsChunking: true,
+  };
+
   constructor(private readonly apiKey: string) {}
 
   async transcribe(input: TranscriptionInput): Promise<TranscriptResult> {
@@ -39,7 +51,7 @@ export class GroqTranscriptionProvider implements TranscriptionProvider {
       throw new Error('TRANSCRIPTION_MISSING_MEDIA_URL');
     }
 
-    if (fileBlob.size > 26_214_400) {
+    if (fileBlob.size > this.limits.maxRequestBytes) {
       throw new Error('TRANSCRIPTION_FILE_TOO_LARGE');
     }
 

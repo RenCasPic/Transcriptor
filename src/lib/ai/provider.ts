@@ -100,7 +100,28 @@ export interface TranscriptResult {
   segments: TranscriptResultSegment[];
 }
 
+/**
+ * Límites que cada proveedor de transcripción declara sobre sí mismo, para que
+ * la lógica de negocio (el procesador de jobs) decida si puede mandar el audio
+ * de una sola vez o si tiene que trocearlo — sin conocer números mágicos de
+ * ninguna API concreta.
+ */
+export interface TranscriptionProviderLimits {
+  /** Tamaño máximo (bytes) que el proveedor acepta en UNA petición. */
+  maxRequestBytes: number;
+  /** Duración máxima (segundos) por petición, o null si no hay un límite práctico. */
+  maxRequestSeconds: number | null;
+  /**
+   * Si es true, trocear el audio en varias peticiones y recomponer la
+   * transcripción es una operación válida para este proveedor. El proveedor
+   * demo lo pone en false: ignora el audio real, así que trocearlo no aporta
+   * nada.
+   */
+  supportsChunking: boolean;
+}
+
 /** Abstracción sobre cualquier proveedor de transcripción de audio/video. */
 export interface TranscriptionProvider {
+  readonly limits: TranscriptionProviderLimits;
   transcribe(input: TranscriptionInput): Promise<TranscriptResult>;
 }

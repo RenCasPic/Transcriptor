@@ -5,12 +5,15 @@ import { ProjectStatusBadge } from '@/components/shared/status-badge';
 import { EditProjectDialog } from '@/components/projects/edit-project-dialog';
 import { DeleteProjectDialog } from '@/components/projects/delete-project-dialog';
 import { ContentSourcePanel } from '@/components/projects/content-source-panel';
+import { MediaProcessingStatus } from '@/components/projects/media-processing-status';
 import { TranscriptPreview } from '@/components/projects/transcript-preview';
 import { GenerateArticlePanel } from '@/components/projects/generate-article-panel';
 import { getProjectById } from '@/lib/data/projects';
 import { getLatestTranscript } from '@/lib/data/transcripts';
+import { getLatestTranscriptionJob } from '@/lib/data/jobs';
 import { getDocumentByProject } from '@/lib/data/documents';
 import { getCurrentWorkspace } from '@/lib/data/workspace';
+import { getMediaLimits } from '@/lib/media/limits';
 import { getDictionary } from '@/lib/i18n/get-dictionary';
 import { getDomainLabels } from '@/lib/i18n/domain-labels';
 
@@ -34,12 +37,15 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
     notFound();
   }
 
-  const [transcript, document, { dictionary: t, locale }] = await Promise.all([
+  const [transcript, document, transcriptionJob, { dictionary: t, locale }] = await Promise.all([
     getLatestTranscript(projectId),
     getDocumentByProject(projectId),
+    getLatestTranscriptionJob(projectId),
     getDictionary(),
   ]);
   const domainLabels = getDomainLabels(locale);
+  const activeTranscriptionJob =
+    transcriptionJob && transcriptionJob.status !== 'completed' ? transcriptionJob : null;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -88,11 +94,19 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
             {transcript ? t.projects.detail.sourceDescriptionHasTranscript : t.projects.detail.sourceDescriptionEmpty}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {activeTranscriptionJob && !transcript && (
+            <MediaProcessingStatus
+              jobId={activeTranscriptionJob.id}
+              projectId={projectId}
+              initialStatus={activeTranscriptionJob}
+            />
+          )}
           <ContentSourcePanel
             projectId={projectId}
             workspaceId={workspace.id}
             language={project.language}
+            maxUploadBytes={getMediaLimits().maxUploadBytes}
             initialTab={tab}
           />
         </CardContent>

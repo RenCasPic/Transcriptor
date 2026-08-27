@@ -29,4 +29,7 @@ enable_confirmations = false
 
 [storage]
 enabled = true
-file_size_limit = "25MiB"
+# Tope global de Storage para desarrollo local. En producción, ajusta el
+# equivalente en el Dashboard de Supabase (Storage → Settings). El bucket
+# project-sources define su propio límite en la migración 0020.
+file_size_limit = "500MiB"

@@ -5,6 +5,7 @@ import { YoutubeUrlCard } from '@/components/dashboard/youtube-url-card';
 import { getCurrentWorkspace } from '@/lib/data/workspace';
 import { getDictionary } from '@/lib/i18n/get-dictionary';
 import { isRealTranscriptionConfigured } from '@/lib/ai/transcription';
+import { getMediaLimits } from '@/lib/media/limits';
 
 export async function generateMetadata(): Promise<Metadata> {
   const { dictionary } = await getDictionary();
@@ -37,7 +38,7 @@ export default async function DashboardPage() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <UploadVideoCard workspaceId={workspace.id} />
+        <UploadVideoCard maxUploadBytes={getMediaLimits().maxUploadBytes} />
         <YoutubeUrlCard />
       </div>
     </div>

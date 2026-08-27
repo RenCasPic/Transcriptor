@@ -1,247 +1,158 @@
 'use server';
 
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
+import { after } from 'next/server';
 import { revalidatePath } from 'next/cache';
-import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
 import { ok, err, type ActionResult } from '@/lib/types/domain';
-import { getTranscriptionProvider } from '@/lib/ai/transcription';
-import { saveTranscript } from '@/lib/generation/save-transcript';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { isUrlSafeToFetch } from '@/lib/security/url-safety';
-import { MAX_MEDIA_BYTES } from '@/lib/media/limits';
-import type { Database } from '@/lib/types/database';
+import { getMediaLimits } from '@/lib/media/limits';
+import {
+  extensionOf,
+  mediaFormatForExtension,
+  SUPPORTED_MEDIA_FORMATS,
+  validateMediaUpload,
+} from '@/lib/media/formats';
+import { translateMediaError } from '@/lib/actions/media-errors';
+import { processTranscriptionJob } from '@/lib/generation/transcription-job-runner';
 
-const SIGNED_URL_TTL_SECONDS = 300;
-const TRANSCRIPTION_RATE_LIMIT = 5;
-const TRANSCRIPTION_RATE_WINDOW_SECONDS = 60 * 60;
+const STORAGE_BUCKET = 'project-sources';
+const ENQUEUE_RATE_LIMIT = 10;
+const ENQUEUE_RATE_WINDOW_SECONDS = 60 * 60;
 
-const MEDIA_MIME_TO_SOURCE_TYPE: Record<string, 'audio' | 'video'> = {
-  'video/mp4': 'video',
-  'video/quicktime': 'video',
-  'video/webm': 'video',
-  'audio/mpeg': 'audio',
-  'audio/mp4': 'audio',
-  'audio/x-m4a': 'audio',
-  'audio/wav': 'audio',
-  'audio/webm': 'audio',
-};
+function limitsContext() {
+  const limits = getMediaLimits();
+  return {
+    maxUploadMb: Math.round(limits.maxUploadBytes / (1024 * 1024)),
+    maxDurationMinutes: Math.round(limits.maxDurationSeconds / 60),
+  };
+}
 
-interface TranscribeCoreParams {
-  projectId: string;
-  sourceType: 'audio' | 'video';
-  storagePath: string;
-  originalFilename: string | null;
-  sourceUrl: string | null;
-  language: string;
-  userId: string;
+// ---------------------------------------------------------------------------
+// 1. Preparar la subida directa navegador → Supabase Storage
+// ---------------------------------------------------------------------------
+
+const CreateUploadUrlSchema = z.object({
+  projectId: z.string().uuid(),
+  filename: z.string().min(1).max(300),
+  contentType: z.string().max(150).nullable().default(null),
+  sizeBytes: z.number().int().positive(),
+});
+
+export type CreateMediaUploadUrlInput = z.input<typeof CreateUploadUrlSchema>;
+
+export interface MediaUploadTarget {
+  bucket: string;
+  path: string;
+  token: string;
+  /** URL absoluta a la que hacer PUT del archivo (permite medir progreso con XHR). */
+  uploadUrl: string;
 }
 
 /**
- * Lógica compartida: crea el media_source, transcribe con el proveedor
- * configurado y guarda la transcripción. Se usa tanto para archivos subidos
- * manualmente como para archivos descargados desde un enlace directo.
+ * Devuelve una signed upload URL para que el navegador suba el archivo
+ * DIRECTAMENTE a Supabase Storage, sin que los bytes pasen por una Server
+ * Action ni por el límite de payload de Next.js. La ruta del objeto la elige
+ * el servidor (`{workspace_id}/{project_id}/{uuid}.{ext}`): el cliente no puede
+ * escribir en la carpeta de otro workspace, y además la política RLS de
+ * `storage.objects` exige rol de edición en ese workspace para crear la URL.
  */
-async function transcribeCore(
-  supabase: SupabaseClient<Database>,
-  params: TranscribeCoreParams,
-): Promise<ActionResult<{ transcriptId: string }>> {
-  const rateLimit = checkRateLimit(
-    `transcribe-media:${params.userId}`,
-    TRANSCRIPTION_RATE_LIMIT,
-    TRANSCRIPTION_RATE_WINDOW_SECONDS,
-  );
-  if (!rateLimit.allowed) {
-    return err(
-      'RATE_LIMITED',
-      `Alcanzaste el límite de transcripciones. Inténtalo de nuevo en ${Math.ceil(rateLimit.retryAfterSeconds / 60)} minutos.`,
-    );
+export async function createMediaUploadUrlAction(
+  input: CreateMediaUploadUrlInput,
+): Promise<ActionResult<MediaUploadTarget>> {
+  const parsed = CreateUploadUrlSchema.safeParse(input);
+  if (!parsed.success) {
+    return err('VALIDATION_ERROR', parsed.error.issues[0]?.message ?? 'Datos inválidos');
   }
+
+  const limits = getMediaLimits();
+  const validation = validateMediaUpload({
+    filename: parsed.data.filename,
+    contentType: parsed.data.contentType,
+    sizeBytes: parsed.data.sizeBytes,
+    maxUploadBytes: limits.maxUploadBytes,
+  });
+  if (!validation.ok) {
+    return err(validation.code, translateMediaError(validation.code, limitsContext()));
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return err('UNAUTHENTICATED', 'Debes iniciar sesión.');
 
   const { data: project } = await supabase
     .from('projects')
-    .select('id, status')
-    .eq('id', params.projectId)
+    .select('id, workspace_id')
+    .eq('id', parsed.data.projectId)
     .maybeSingle();
-  if (!project) {
-    return err('NOT_FOUND', 'Proyecto no encontrado.');
+  if (!project) return err('NOT_FOUND', 'Proyecto no encontrado.');
+
+  const path = `${project.workspace_id}/${project.id}/${randomUUID()}.${validation.extension}`;
+
+  const { data, error } = await supabase.storage.from(STORAGE_BUCKET).createSignedUploadUrl(path);
+  if (error || !data) {
+    return err('MEDIA_UPLOAD_URL_FAILED', translateMediaError('MEDIA_UPLOAD_URL_FAILED', limitsContext()));
   }
 
-  const { data: source, error: sourceError } = await supabase
-    .from('media_sources')
-    .insert({
-      project_id: params.projectId,
-      source_type: params.sourceType,
-      original_filename: params.originalFilename,
-      storage_path: params.storagePath,
-      source_url: params.sourceUrl,
-    })
-    .select('id')
-    .single();
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+  const uploadUrl = data.signedUrl.startsWith('http') ? data.signedUrl : `${base}${data.signedUrl}`;
 
-  if (sourceError || !source) {
-    return err('CREATE_SOURCE_ERROR', 'No se pudo registrar el archivo.');
-  }
-
-  const { data: job } = await supabase
-    .from('generation_jobs')
-    .insert({
-      project_id: params.projectId,
-      job_type: 'transcribe',
-      status: 'processing',
-      started_at: new Date().toISOString(),
-    })
-    .select('id')
-    .single();
-
-  await supabase.from('projects').update({ status: 'processing' }).eq('id', params.projectId);
-
-  try {
-    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-      .from('project-sources')
-      .createSignedUrl(params.storagePath, SIGNED_URL_TTL_SECONDS);
-
-    if (signedUrlError || !signedUrlData) {
-      throw new Error('SIGNED_URL_ERROR');
-    }
-
-    const provider = getTranscriptionProvider();
-    const result = await provider.transcribe({
-      mediaUrl: signedUrlData.signedUrl,
-      fileExtension: params.storagePath.split('.').pop(),
-      language: params.language,
-    });
-
-    const saved = await saveTranscript(supabase, {
-      projectId: params.projectId,
-      sourceId: source.id,
-      language: params.language,
-      fullText: result.fullText,
-      segments: result.segments.map((s) => ({
-        index: s.index,
-        speaker: s.speaker,
-        startSeconds: s.startSeconds,
-        endSeconds: s.endSeconds,
-        text: s.text,
-      })),
-    });
-
-    if ('error' in saved) {
-      throw new Error(saved.error);
-    }
-
-    if (job) {
-      await supabase
-        .from('generation_jobs')
-        .update({ status: 'completed', progress: 100, completed_at: new Date().toISOString() })
-        .eq('id', job.id);
-    }
-    await supabase.from('projects').update({ status: 'draft' }).eq('id', params.projectId);
-
-    revalidatePath(`/projects/${params.projectId}`);
-    return ok({ transcriptId: saved.transcriptId });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'TRANSCRIPTION_FAILED';
-
-    if (job) {
-      await supabase
-        .from('generation_jobs')
-        .update({ status: 'failed', error_message: message, completed_at: new Date().toISOString() })
-        .eq('id', job.id);
-    }
-    await supabase.from('projects').update({ status: 'failed' }).eq('id', params.projectId);
-
-    return err('TRANSCRIPTION_FAILED', translateTranscriptionError(message));
-  }
+  return ok({ bucket: STORAGE_BUCKET, path: data.path, token: data.token, uploadUrl });
 }
 
-const TranscribeMediaSchema = z.object({
+// ---------------------------------------------------------------------------
+// 2. Encolar la transcripción de un archivo ya subido a Storage
+// ---------------------------------------------------------------------------
+
+const EnqueueSchema = z.object({
   projectId: z.string().uuid(),
-  sourceType: z.enum(['audio', 'video']),
-  storagePath: z.string().min(1),
-  originalFilename: z.string().min(1),
+  storagePath: z.string().min(1).max(500),
+  originalFilename: z.string().min(1).max(300),
+  contentType: z.string().max(150).nullable().default(null),
   language: z.string().min(2).max(10).default('es'),
+  autoGenerate: z.boolean().default(true),
 });
 
-export type TranscribeMediaInput = z.infer<typeof TranscribeMediaSchema>;
+export type EnqueueMediaTranscriptionInput = z.input<typeof EnqueueSchema>;
+
+export interface EnqueuedJob {
+  jobId: string;
+  mediaSourceId: string;
+}
 
 /**
- * Transcribe un archivo de audio/video ya subido a Storage (subida manual
- * desde el navegador) usando el proveedor de transcripción configurado.
+ * Registra el archivo subido como `media_source` y encola un job de
+ * transcripción (`generation_jobs`, estado `queued`). El procesamiento pesado
+ * (descarga, extracción de audio, troceado, transcripción, generación) ocurre
+ * en segundo plano vía `after()` — la Server Action responde de inmediato con
+ * el `jobId` para que la UI consulte el progreso. Un worker/cron puede drenar
+ * los jobs `queued` a través de `POST /api/jobs/transcription` sin cambiar
+ * nada de esto.
  */
-export async function transcribeMediaAction(
-  input: TranscribeMediaInput,
-): Promise<ActionResult<{ transcriptId: string }>> {
-  const parsed = TranscribeMediaSchema.safeParse(input);
+export async function enqueueMediaTranscriptionAction(
+  input: EnqueueMediaTranscriptionInput,
+): Promise<ActionResult<EnqueuedJob>> {
+  const parsed = EnqueueSchema.safeParse(input);
   if (!parsed.success) {
     return err('VALIDATION_ERROR', parsed.error.issues[0]?.message ?? 'Datos inválidos');
   }
+
+  const ctx = limitsContext();
+  const limits = getMediaLimits();
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) {
-    return err('UNAUTHENTICATED', 'Debes iniciar sesión.');
-  }
+  if (!user) return err('UNAUTHENTICATED', 'Debes iniciar sesión.');
 
-  return transcribeCore(supabase, {
-    projectId: parsed.data.projectId,
-    sourceType: parsed.data.sourceType,
-    storagePath: parsed.data.storagePath,
-    originalFilename: parsed.data.originalFilename,
-    sourceUrl: null,
-    language: parsed.data.language,
-    userId: user.id,
-  });
-}
-
-const ImportMediaFromUrlSchema = z.object({
-  projectId: z.string().uuid(),
-  sourceUrl: z.string().url('Ingresa una URL válida'),
-  language: z.string().min(2).max(10).default('es'),
-});
-
-export type ImportMediaFromUrlInput = z.infer<typeof ImportMediaFromUrlSchema>;
-
-/**
- * Descarga un archivo de audio/video desde un enlace directo (por ejemplo,
- * un link de descarga directa de Drive/Dropbox o un CDN propio), lo sube a
- * Storage y lo transcribe. NO soporta YouTube ni otras plataformas de
- * streaming: eso requeriría descargar contenido sin autorización, fuera de
- * los términos de servicio de esos sitios. Solo acepta URLs que resuelvan
- * directamente a un archivo de audio/video (Content-Type real).
- */
-export async function importMediaFromUrlAction(
-  input: ImportMediaFromUrlInput,
-): Promise<ActionResult<{ transcriptId: string }>> {
-  const parsed = ImportMediaFromUrlSchema.safeParse(input);
-  if (!parsed.success) {
-    return err('VALIDATION_ERROR', parsed.error.issues[0]?.message ?? 'Datos inválidos');
-  }
-
-  if (!isUrlSafeToFetch(parsed.data.sourceUrl)) {
-    return err('UNSAFE_URL', 'Esa URL no es válida o no está permitida.');
-  }
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return err('UNAUTHENTICATED', 'Debes iniciar sesión.');
-  }
-
-  const rateLimit = checkRateLimit(
-    `import-media-url:${user.id}`,
-    TRANSCRIPTION_RATE_LIMIT,
-    TRANSCRIPTION_RATE_WINDOW_SECONDS,
-  );
+  const rateLimit = checkRateLimit(`enqueue-transcription:${user.id}`, ENQUEUE_RATE_LIMIT, ENQUEUE_RATE_WINDOW_SECONDS);
   if (!rateLimit.allowed) {
-    return err(
-      'RATE_LIMITED',
-      `Alcanzaste el límite de transcripciones. Inténtalo de nuevo en ${Math.ceil(rateLimit.retryAfterSeconds / 60)} minutos.`,
-    );
+    return err('RATE_LIMITED', translateMediaError('RATE_LIMITED', ctx));
   }
 
   const { data: project } = await supabase
@@ -249,74 +160,203 @@ export async function importMediaFromUrlAction(
     .select('id, workspace_id')
     .eq('id', parsed.data.projectId)
     .maybeSingle();
-  if (!project) {
-    return err('NOT_FOUND', 'Proyecto no encontrado.');
+  if (!project) return err('NOT_FOUND', 'Proyecto no encontrado.');
+
+  // Ownership del archivo: la ruta DEBE estar dentro de la carpeta del
+  // workspace + proyecto (la misma convención que valida la RLS de Storage).
+  const expectedPrefix = `${project.workspace_id}/${project.id}/`;
+  if (!parsed.data.storagePath.startsWith(expectedPrefix) || parsed.data.storagePath.includes('..')) {
+    return err('MEDIA_OBJECT_NOT_FOUND', translateMediaError('MEDIA_OBJECT_NOT_FOUND', ctx));
   }
 
-  let response: Response;
-  try {
-    response = await fetch(parsed.data.sourceUrl, { redirect: 'follow' });
-  } catch {
-    return err('FETCH_ERROR', 'No se pudo acceder a esa URL.');
+  // El objeto tiene que existir de verdad (no confiar en que el cliente lo
+  // subió) y su tamaño real se re-valida en servidor.
+  const dir = parsed.data.storagePath.split('/').slice(0, -1).join('/');
+  const name = parsed.data.storagePath.split('/').pop() ?? '';
+  const { data: listed } = await supabase.storage.from(STORAGE_BUCKET).list(dir, { search: name });
+  const object = listed?.find((item) => item.name === name);
+  if (!object) {
+    return err('MEDIA_OBJECT_NOT_FOUND', translateMediaError('MEDIA_OBJECT_NOT_FOUND', ctx));
   }
+  const sizeBytes = Number(object.metadata?.size ?? 0);
 
-  if (!response.ok || !response.body) {
-    return err('FETCH_ERROR', 'No se pudo descargar el archivo desde esa URL.');
-  }
-
-  const contentType = response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase() ?? '';
-  const sourceType = MEDIA_MIME_TO_SOURCE_TYPE[contentType];
-  if (!sourceType) {
-    return err(
-      'UNSUPPORTED_CONTENT_TYPE',
-      'La URL no apunta directamente a un archivo de audio/video soportado (mp4, mov, webm, mp3, wav, m4a). Los enlaces de YouTube u otras plataformas de streaming no son compatibles.',
-    );
-  }
-
-  const contentLength = Number(response.headers.get('content-length') ?? '0');
-  if (contentLength > MAX_MEDIA_BYTES) {
-    return err('TRANSCRIPTION_FILE_TOO_LARGE_URL', 'El archivo supera el límite de 25 MB permitido.');
-  }
-
-  const arrayBuffer = await response.arrayBuffer();
-  if (arrayBuffer.byteLength > MAX_MEDIA_BYTES) {
-    return err('TRANSCRIPTION_FILE_TOO_LARGE_URL', 'El archivo supera el límite de 25 MB permitido.');
-  }
-
-  const extension = sourceType === 'video' ? 'mp4' : 'mp3';
-  const storagePath = `${project.workspace_id}/${parsed.data.projectId}/${Date.now()}-remote.${extension}`;
-
-  const { error: uploadError } = await supabase.storage
-    .from('project-sources')
-    .upload(storagePath, arrayBuffer, { contentType });
-
-  if (uploadError) {
-    return err('UPLOAD_ERROR', 'No se pudo guardar el archivo descargado.');
-  }
-
-  return transcribeCore(supabase, {
-    projectId: parsed.data.projectId,
-    sourceType,
-    storagePath,
-    originalFilename: null,
-    sourceUrl: parsed.data.sourceUrl,
-    language: parsed.data.language,
-    userId: user.id,
+  const validation = validateMediaUpload({
+    filename: parsed.data.originalFilename,
+    contentType: parsed.data.contentType,
+    sizeBytes: sizeBytes || 1,
+    maxUploadBytes: limits.maxUploadBytes,
   });
+  if (!validation.ok) {
+    // El archivo subido no sirve: se borra para no dejar basura en el bucket.
+    await supabase.storage.from(STORAGE_BUCKET).remove([parsed.data.storagePath]);
+    return err(validation.code, translateMediaError(validation.code, ctx));
+  }
+
+  const { data: source, error: sourceError } = await supabase
+    .from('media_sources')
+    .insert({
+      project_id: project.id,
+      source_type: validation.sourceType,
+      original_filename: parsed.data.originalFilename,
+      storage_path: parsed.data.storagePath,
+    })
+    .select('id')
+    .single();
+  if (sourceError || !source) {
+    return err('CREATE_SOURCE_ERROR', 'No se pudo registrar el archivo.');
+  }
+
+  const { data: job, error: jobError } = await supabase
+    .from('generation_jobs')
+    .insert({
+      project_id: project.id,
+      job_type: 'transcribe',
+      status: 'queued',
+      progress: 0,
+      input: {
+        mediaSourceId: source.id,
+        language: parsed.data.language,
+        autoGenerate: parsed.data.autoGenerate,
+      },
+      output: { stage: 'preparing', progress: 0 },
+    })
+    .select('id')
+    .single();
+  if (jobError || !job) {
+    return err('CREATE_JOB_ERROR', 'No se pudo encolar el procesamiento.');
+  }
+
+  await supabase.from('projects').update({ status: 'processing' }).eq('id', project.id);
+  revalidatePath(`/projects/${project.id}`);
+
+  after(() =>
+    processTranscriptionJob(job.id, project.id).catch((error) => {
+      console.error('transcription job crashed', job.id, error);
+    }),
+  );
+
+  return ok({ jobId: job.id, mediaSourceId: source.id });
 }
 
-function translateTranscriptionError(message: string): string {
-  if (message === 'TRANSCRIPTION_FILE_TOO_LARGE') {
-    return 'El archivo supera el límite de 25 MB permitido para transcripción.';
+// ---------------------------------------------------------------------------
+// 3. Importar desde un enlace directo (Drive/Dropbox/CDN) — también asíncrono
+// ---------------------------------------------------------------------------
+
+const MEDIA_MIME_TO_SOURCE_TYPE: Record<string, 'audio' | 'video'> = Object.fromEntries(
+  SUPPORTED_MEDIA_FORMATS.flatMap((f) => f.mimeTypes.map((mime) => [mime, f.sourceType] as const)),
+);
+
+const ImportMediaFromUrlSchema = z.object({
+  projectId: z.string().uuid(),
+  sourceUrl: z.string().url('Ingresa una URL válida'),
+  language: z.string().min(2).max(10).default('es'),
+  autoGenerate: z.boolean().default(true),
+});
+
+export type ImportMediaFromUrlInput = z.input<typeof ImportMediaFromUrlSchema>;
+
+/**
+ * Descarga diferida: en vez de traer el archivo dentro de la Server Action
+ * (que lo cargaría entero y podría exceder el timeout), valida la URL y encola
+ * un job. El procesador hace el streaming del archivo desde `source_url`
+ * directamente hacia el troceador, sin cargarlo completo en memoria. NO
+ * soporta YouTube ni plataformas de streaming.
+ */
+export async function importMediaFromUrlAction(
+  input: ImportMediaFromUrlInput,
+): Promise<ActionResult<EnqueuedJob>> {
+  const parsed = ImportMediaFromUrlSchema.safeParse(input);
+  if (!parsed.success) {
+    return err('VALIDATION_ERROR', parsed.error.issues[0]?.message ?? 'Datos inválidos');
   }
-  if (message === 'TRANSCRIPTION_SOURCE_FETCH_FAILED' || message === 'SIGNED_URL_ERROR') {
-    return 'No se pudo acceder al archivo subido. Inténtalo de nuevo.';
+
+  const ctx = limitsContext();
+  const limits = getMediaLimits();
+
+  if (!isUrlSafeToFetch(parsed.data.sourceUrl)) {
+    return err('UNSAFE_URL', translateMediaError('UNSAFE_URL', ctx));
   }
-  if (message === 'EMPTY_TRANSCRIPT') {
-    return 'No se detectó voz en el archivo. Verifica que tenga audio.';
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return err('UNAUTHENTICATED', 'Debes iniciar sesión.');
+
+  const rateLimit = checkRateLimit(`import-media-url:${user.id}`, ENQUEUE_RATE_LIMIT, ENQUEUE_RATE_WINDOW_SECONDS);
+  if (!rateLimit.allowed) {
+    return err('RATE_LIMITED', translateMediaError('RATE_LIMITED', ctx));
   }
-  if (message.startsWith('TRANSCRIPTION_PROVIDER_HTTP_ERROR')) {
-    return 'El servicio de transcripción no pudo procesar el archivo. Inténtalo de nuevo.';
+
+  const { data: project } = await supabase
+    .from('projects')
+    .select('id')
+    .eq('id', parsed.data.projectId)
+    .maybeSingle();
+  if (!project) return err('NOT_FOUND', 'Proyecto no encontrado.');
+
+  let head: Response;
+  try {
+    head = await fetch(parsed.data.sourceUrl, { method: 'HEAD', redirect: 'follow' });
+  } catch {
+    return err('MEDIA_ACCESS_FAILED', translateMediaError('MEDIA_ACCESS_FAILED', ctx));
   }
-  return 'No se pudo transcribir el archivo. Inténtalo de nuevo.';
+
+  const contentType = head.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase() ?? '';
+  const urlExtension = extensionOf(new URL(parsed.data.sourceUrl).pathname);
+  const sourceType =
+    MEDIA_MIME_TO_SOURCE_TYPE[contentType] ?? mediaFormatForExtension(urlExtension)?.sourceType;
+  if (!sourceType) {
+    return err('UNSUPPORTED_CONTENT_TYPE', translateMediaError('UNSUPPORTED_CONTENT_TYPE', ctx));
+  }
+
+  const contentLength = Number(head.headers.get('content-length') ?? '0');
+  if (contentLength > limits.maxUploadBytes) {
+    return err('MEDIA_FILE_TOO_LARGE', translateMediaError('MEDIA_FILE_TOO_LARGE', ctx));
+  }
+
+  const { data: source, error: sourceError } = await supabase
+    .from('media_sources')
+    .insert({
+      project_id: project.id,
+      source_type: sourceType,
+      source_url: parsed.data.sourceUrl,
+      original_filename: urlExtension ? `remote.${urlExtension}` : null,
+    })
+    .select('id')
+    .single();
+  if (sourceError || !source) {
+    return err('CREATE_SOURCE_ERROR', 'No se pudo registrar el enlace.');
+  }
+
+  const { data: job, error: jobError } = await supabase
+    .from('generation_jobs')
+    .insert({
+      project_id: project.id,
+      job_type: 'transcribe',
+      status: 'queued',
+      progress: 0,
+      input: {
+        mediaSourceId: source.id,
+        language: parsed.data.language,
+        autoGenerate: parsed.data.autoGenerate,
+      },
+      output: { stage: 'preparing', progress: 0 },
+    })
+    .select('id')
+    .single();
+  if (jobError || !job) {
+    return err('CREATE_JOB_ERROR', 'No se pudo encolar el procesamiento.');
+  }
+
+  await supabase.from('projects').update({ status: 'processing' }).eq('id', project.id);
+  revalidatePath(`/projects/${project.id}`);
+
+  after(() =>
+    processTranscriptionJob(job.id, project.id).catch((error) => {
+      console.error('transcription job crashed', job.id, error);
+    }),
+  );
+
+  return ok({ jobId: job.id, mediaSourceId: source.id });
 }
