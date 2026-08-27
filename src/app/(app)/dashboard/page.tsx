@@ -39,7 +39,7 @@ export default async function DashboardPage() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <UploadVideoCard maxUploadBytes={getMediaLimits().maxUploadBytes} />
+        <UploadVideoCard mediaLimits={getMediaLimits()} />
         <YoutubeUrlCard />
       </div>
     </div>

@@ -17,7 +17,8 @@ import { useYoutubeImport } from '@/lib/youtube/use-youtube-import';
 import { useMediaUpload } from '@/lib/media/use-media-upload';
 import { createClient } from '@/lib/supabase/client';
 import { sanitizeFilename } from '@/lib/content/slug';
-import { MEDIA_ACCEPT_ATTR, validateMediaUpload } from '@/lib/media/formats';
+import { MEDIA_ACCEPT_ATTR, mediaFormatForExtension, extensionOf } from '@/lib/media/formats';
+import type { MediaLimits } from '@/lib/media/limits';
 import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
 const MAX_TEXT_FILE_SIZE_BYTES = 5 * 1024 * 1024;
@@ -35,13 +36,13 @@ export function ContentSourcePanel({
   projectId,
   workspaceId,
   language,
-  maxUploadBytes,
+  mediaLimits,
   initialTab,
 }: {
   projectId: string;
   workspaceId: string;
   language: string;
-  maxUploadBytes: number;
+  mediaLimits: MediaLimits;
   initialTab?: string;
 }) {
   const router = useRouter();
@@ -61,7 +62,7 @@ export function ContentSourcePanel({
   const { stage: youtubeStage, run: runYoutubeImport } = useYoutubeImport();
   const { phase: uploadPhase, progress: uploadProgress, start: startUpload } = useMediaUpload();
 
-  const maxMb = Math.round(maxUploadBytes / (1024 * 1024));
+  const maxMb = Math.round(mediaLimits.maxSourceBytes / (1024 * 1024));
 
   /**
    * Encadena la generación del artículo (con su SEO) justo después de
@@ -165,14 +166,12 @@ export function ContentSourcePanel({
     e.target.value = '';
     if (!file) return;
 
-    const check = validateMediaUpload({
-      filename: file.name,
-      contentType: file.type || null,
-      sizeBytes: file.size,
-      maxUploadBytes,
-    });
-    if (!check.ok) {
-      toast.error(mediaErrorMessage(check.code));
+    if (!mediaFormatForExtension(extensionOf(file.name))) {
+      toast.error(mediaErrorMessage('UNSUPPORTED_MEDIA_FORMAT'));
+      return;
+    }
+    if (file.size > mediaLimits.maxSourceBytes) {
+      toast.error(mediaErrorMessage('MEDIA_SOURCE_TOO_LARGE'));
       return;
     }
 
@@ -180,7 +179,14 @@ export function ContentSourcePanel({
     setActiveJobId(null);
     setIsUploadingMedia(true);
     try {
-      const result = await startUpload({ projectId, file, language, maxUploadBytes });
+      const result = await startUpload({
+        projectId,
+        file,
+        language,
+        maxUploadBytes: mediaLimits.maxUploadBytes,
+        maxSourceBytes: mediaLimits.maxSourceBytes,
+        clientExtractThresholdBytes: mediaLimits.clientExtractThresholdBytes,
+      });
       if (!result.success) {
         setMediaError(mediaErrorMessage(result.error.code));
         return;
@@ -311,12 +317,7 @@ export function ContentSourcePanel({
             <MediaProcessingStatus
               jobId={activeJobId}
               projectId={projectId}
-              isUploading={
-                isUploadingMedia ||
-                uploadPhase === 'uploading' ||
-                uploadPhase === 'preparing' ||
-                uploadPhase === 'enqueuing'
-              }
+              clientPhase={isUploadingMedia ? uploadPhase : undefined}
               uploadProgress={uploadProgress}
               onDismiss={() => {
                 setActiveJobId(null);

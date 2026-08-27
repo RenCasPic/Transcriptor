@@ -6,29 +6,46 @@ import {
   createMediaUploadUrlAction,
   enqueueMediaTranscriptionAction,
 } from '@/lib/actions/transcription';
-import { validateMediaUpload } from '@/lib/media/formats';
+import { validateMediaUpload, mediaFormatForExtension, extensionOf } from '@/lib/media/formats';
+import { prepareMediaForUpload } from '@/lib/media/extract-audio-client';
 import type { ActionResult } from '@/lib/types/domain';
 
-export type UploadPhase = 'idle' | 'preparing' | 'uploading' | 'enqueuing' | 'done' | 'error';
+export type UploadPhase =
+  | 'idle'
+  | 'preparing'
+  | 'loading_converter'
+  | 'extracting'
+  | 'uploading'
+  | 'enqueuing'
+  | 'done'
+  | 'error';
 
 interface StartParams {
   projectId: string;
   file: File;
   language: string;
-  /** Límite de subida (bytes), pasado desde un Server Component que sí lee la config. */
+  /** Tamaño máx. del archivo QUE SE SUBE (tras extraer audio). */
   maxUploadBytes: number;
+  /** Tamaño máx. del archivo que el usuario puede elegir (antes de extraer). */
+  maxSourceBytes: number;
+  /** Audio por debajo de esto se sube sin pasar por ffmpeg.wasm. */
+  clientExtractThresholdBytes: number;
   autoGenerate?: boolean;
 }
 
 /**
- * Sube un archivo de medios DIRECTAMENTE a Supabase Storage (signed upload
- * URL) midiendo el progreso, y luego encola su transcripción. Ningún byte del
- * archivo pasa por una Server Action: la acción solo recibe metadata.
+ * Prepara y sube un archivo de medios:
+ * 1. Si es video o audio grande, extrae el audio EN EL NAVEGADOR (ffmpeg.wasm)
+ *    a un MP3 compacto — así un podcast de 50 min entra en el límite de Storage.
+ * 2. Sube ese archivo DIRECTO a Supabase Storage (signed upload URL) con
+ *    progreso. Ningún byte pasa por una Server Action.
+ * 3. Encola la transcripción.
  */
 export function useMediaUpload() {
   const [phase, setPhase] = useState<UploadPhase>('idle');
   const [progress, setProgress] = useState(0);
   const xhrRef = useRef<XMLHttpRequest | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const reset = useCallback(() => {
     setPhase('idle');
@@ -38,6 +55,8 @@ export function useMediaUpload() {
   const cancel = useCallback(() => {
     xhrRef.current?.abort();
     xhrRef.current = null;
+    abortRef.current?.abort();
+    abortRef.current = null;
     reset();
   }, [reset]);
 
@@ -47,27 +66,65 @@ export function useMediaUpload() {
       file,
       language,
       maxUploadBytes,
+      maxSourceBytes,
+      clientExtractThresholdBytes,
       autoGenerate = true,
     }: StartParams): Promise<ActionResult<{ jobId: string }>> => {
       setProgress(0);
       setPhase('preparing');
 
-      const localCheck = validateMediaUpload({
-        filename: file.name,
-        contentType: file.type || null,
-        sizeBytes: file.size,
-        maxUploadBytes,
-      });
-      if (!localCheck.ok) {
+      const fail = (code: string): ActionResult<{ jobId: string }> => {
         setPhase('error');
-        return { success: false, error: { code: localCheck.code, message: localCheck.code } };
+        return { success: false, error: { code, message: code } };
+      };
+
+      // Formato: se valida el archivo ORIGINAL (extensión soportada).
+      const ext = extensionOf(file.name);
+      if (!mediaFormatForExtension(ext)) return fail('UNSUPPORTED_MEDIA_FORMAT');
+      if (!Number.isFinite(file.size) || file.size <= 0) return fail('INVALID_MEDIA_FILE');
+      if (file.size > maxSourceBytes) return fail('MEDIA_SOURCE_TOO_LARGE');
+
+      // Extracción de audio en el navegador (si hace falta).
+      const abort = new AbortController();
+      abortRef.current = abort;
+      let uploadFile = file;
+      try {
+        const prepared = await prepareMediaForUpload(file, {
+          skipExtractBelowBytes: clientExtractThresholdBytes,
+          onStage: (stage) => setPhase(stage === 'loading' ? 'loading_converter' : 'extracting'),
+          onProgress: (pct) => setProgress(pct),
+          signal: abort.signal,
+        });
+        uploadFile = prepared.file;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'AUDIO_EXTRACTION_CLIENT_FAILED';
+        if (message === 'ABORTED') return fail('ABORTED');
+        // ffmpeg.wasm no disponible o falló: si el original ya cabe, se sube tal
+        // cual; si no, no hay forma de subirlo.
+        if (file.size <= maxUploadBytes) {
+          uploadFile = file;
+        } else {
+          return fail('AUDIO_EXTRACTION_CLIENT_FAILED');
+        }
+      } finally {
+        abortRef.current = null;
       }
 
+      const localCheck = validateMediaUpload({
+        filename: uploadFile.name,
+        contentType: uploadFile.type || null,
+        sizeBytes: uploadFile.size,
+        maxUploadBytes,
+      });
+      if (!localCheck.ok) return fail(localCheck.code);
+
+      setProgress(0);
+      setPhase('preparing');
       const target = await createMediaUploadUrlAction({
         projectId,
-        filename: file.name,
-        contentType: file.type || null,
-        sizeBytes: file.size,
+        filename: uploadFile.name,
+        contentType: uploadFile.type || null,
+        sizeBytes: uploadFile.size,
       });
       if (!target.success) {
         setPhase('error');
@@ -77,36 +134,25 @@ export function useMediaUpload() {
       setPhase('uploading');
       try {
         try {
-          await putWithProgress(target.data.uploadUrl, file, (pct) => setProgress(pct), (xhr) => {
+          await putWithProgress(target.data.uploadUrl, uploadFile, (pct) => setProgress(pct), (xhr) => {
             xhrRef.current = xhr;
           });
         } catch (putError) {
-          // 413 = Storage rechazó por tamaño (límite del bucket o, sobre todo,
-          // el límite GLOBAL del proyecto Supabase — 50 MB en el plan gratuito).
-          // Reintentar con el SDK daría el mismo 413, así que se corta aquí con
-          // un mensaje claro.
+          // 413 = Storage rechazó por tamaño (límite global del proyecto Supabase).
+          // Reintentar con el SDK daría el mismo 413.
           if (putError instanceof Error && putError.message === 'UPLOAD_HTTP_413') {
-            setPhase('error');
-            return { success: false, error: { code: 'MEDIA_FILE_TOO_LARGE', message: 'MEDIA_FILE_TOO_LARGE' } };
+            return fail('MEDIA_FILE_TOO_LARGE');
           }
-          // Otro fallo (CORS, red, particularidad del entorno): reintento con el
-          // SDK, que hace el upload por otra vía (sin barra de progreso).
+          // Otro fallo (CORS, red): reintento con el SDK (sin barra de progreso).
           const supabase = createClient();
           const { error } = await supabase.storage
             .from(target.data.bucket)
-            .uploadToSignedUrl(target.data.path, target.data.token, file, {
-              contentType: file.type || 'application/octet-stream',
+            .uploadToSignedUrl(target.data.path, target.data.token, uploadFile, {
+              contentType: uploadFile.type || 'application/octet-stream',
             });
           if (error) {
-            setPhase('error');
             const tooLarge = /exceeded|too large|maximum allowed size/i.test(error.message);
-            return {
-              success: false,
-              error: {
-                code: tooLarge ? 'MEDIA_FILE_TOO_LARGE' : 'MEDIA_UPLOAD_FAILED',
-                message: tooLarge ? 'MEDIA_FILE_TOO_LARGE' : 'MEDIA_UPLOAD_FAILED',
-              },
-            };
+            return fail(tooLarge ? 'MEDIA_FILE_TOO_LARGE' : 'MEDIA_UPLOAD_FAILED');
           }
           setProgress(100);
         }
@@ -118,8 +164,8 @@ export function useMediaUpload() {
       const enqueued = await enqueueMediaTranscriptionAction({
         projectId,
         storagePath: target.data.path,
-        originalFilename: file.name,
-        contentType: file.type || null,
+        originalFilename: uploadFile.name,
+        contentType: uploadFile.type || null,
         language,
         autoGenerate,
       });

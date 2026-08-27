@@ -282,6 +282,8 @@ export const es = {
       selectMedia: 'Seleccionar video o audio',
       transcribing: 'Transcribiendo...',
       mediaProcessing: {
+        loading_converter: 'Cargando el conversor de audio... (primera vez, ~32 MB)',
+        extracting: 'Extrayendo el audio del archivo...',
         uploading: 'Subiendo archivo...',
         queued: 'En cola...',
         preparing: 'Preparando el archivo...',
@@ -301,7 +303,10 @@ export const es = {
       mediaErrors: {
         default: 'No se pudo procesar el archivo. Inténtalo de nuevo.',
         UNSUPPORTED_MEDIA_FORMAT: 'Formato de archivo no soportado.',
-        MEDIA_FILE_TOO_LARGE: 'El archivo supera el tamaño máximo permitido.',
+        MEDIA_FILE_TOO_LARGE: 'El audio resultante supera el límite de subida de tu proyecto Supabase.',
+        MEDIA_SOURCE_TOO_LARGE: 'El archivo es demasiado grande para procesarlo en el navegador. Prueba con uno más corto.',
+        AUDIO_EXTRACTION_CLIENT_FAILED:
+          'No se pudo extraer el audio del archivo en el navegador. Prueba con otro formato, o sube directamente un archivo de audio de menos de 50 MB.',
         INVALID_MEDIA_FILE: 'El archivo no es válido.',
         MEDIA_UPLOAD_URL_FAILED: 'No se pudo preparar la subida. Inténtalo de nuevo.',
         MEDIA_UPLOAD_FAILED: 'No se pudo subir el archivo. Revisa tu conexión e inténtalo de nuevo.',

@@ -279,6 +279,8 @@ export const en: Dictionary = {
       selectMedia: 'Select video or audio',
       transcribing: 'Transcribing...',
       mediaProcessing: {
+        loading_converter: 'Loading the audio converter... (first time, ~32 MB)',
+        extracting: 'Extracting audio from the file...',
         uploading: 'Uploading file...',
         queued: 'Queued...',
         preparing: 'Preparing the file...',
@@ -297,7 +299,10 @@ export const en: Dictionary = {
       mediaErrors: {
         default: 'Could not process the file. Please try again.',
         UNSUPPORTED_MEDIA_FORMAT: 'Unsupported file format.',
-        MEDIA_FILE_TOO_LARGE: 'The file exceeds the maximum allowed size.',
+        MEDIA_FILE_TOO_LARGE: "The resulting audio exceeds your Supabase project's upload limit.",
+        MEDIA_SOURCE_TOO_LARGE: 'The file is too large to process in the browser. Try a shorter one.',
+        AUDIO_EXTRACTION_CLIENT_FAILED:
+          'Could not extract audio from the file in the browser. Try a different format, or upload an audio file under 50 MB directly.',
         INVALID_MEDIA_FILE: 'The file is not valid.',
         MEDIA_UPLOAD_URL_FAILED: 'Could not prepare the upload. Please try again.',
         MEDIA_UPLOAD_FAILED: 'Could not upload the file. Check your connection and try again.',

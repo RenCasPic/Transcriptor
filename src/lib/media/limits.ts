@@ -25,8 +25,19 @@ function envInt(name: string, fallback: number): number {
 }
 
 export interface MediaLimits {
-  /** Tamaño máximo (bytes) de un archivo subido a Storage. */
+  /** Tamaño máximo (bytes) del archivo QUE SE SUBE a Storage (tras extraer audio en el navegador). */
   maxUploadBytes: number;
+  /**
+   * Tamaño máximo (bytes) del archivo que el usuario puede SELECCIONAR (antes de
+   * extraer el audio en el navegador). Un video de 50 min puede pesar cientos de
+   * MB; solo se sube el audio comprimido resultante, que sí cabe en `maxUploadBytes`.
+   */
+  maxSourceBytes: number;
+  /**
+   * Si el archivo elegido es AUDIO y pesa menos que esto, se sube tal cual sin
+   * pasar por la extracción con ffmpeg.wasm (camino simple para archivos chicos).
+   */
+  clientExtractThresholdBytes: number;
   /** Duración máxima (segundos) aceptada para procesar. Evita procesar streams de horas. */
   maxDurationSeconds: number;
   /** Tamaño objetivo (bytes) de cada chunk de audio al trocear. */
@@ -44,6 +55,8 @@ export interface MediaLimits {
 export function getMediaLimits(): MediaLimits {
   return {
     maxUploadBytes: envInt('MEDIA_MAX_UPLOAD_MB', 500) * MB,
+    maxSourceBytes: envInt('MEDIA_MAX_SOURCE_MB', 2000) * MB,
+    clientExtractThresholdBytes: envInt('MEDIA_CLIENT_EXTRACT_THRESHOLD_MB', 15) * MB,
     maxDurationSeconds: envInt('MEDIA_MAX_DURATION_SECONDS', 6 * 60 * 60),
     chunkTargetBytes: envInt('MEDIA_CHUNK_TARGET_MB', 20) * MB,
     chunkMaxSeconds: envInt('MEDIA_CHUNK_MAX_SECONDS', 600),

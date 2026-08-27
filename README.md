@@ -109,20 +109,21 @@ TRANSCRIPTION_API_KEY=           # opcional si usas Groq (basta GROQ_API_KEY)
 
 `groq` es gratis dentro de un límite de uso razonable; `whisper` usa la API de Whisper de OpenAI (`whisper-1`), que **tiene costo por minuto transcrito**. **La transcripción requiere una API key** (`TRANSCRIPTION_API_KEY` o `GROQ_API_KEY`): sin ella, subir audio/video o el fallback de audio de YouTube devuelven un error explícito (`TRANSCRIPTION_NOT_CONFIGURED`).
 
-#### Archivos grandes (> 25 MB)
+#### Archivos grandes (podcasts / videos de 40-50 min)
 
 > Requiere la migración `0020` aplicada (`supabase db push`, o pega
-> `supabase/migrations/0020_large_media_uploads.sql` en el SQL Editor). Sin ella
-> el bucket sigue topado en 25 MB y las subidas más grandes fallan.
+> `supabase/migrations/0020_large_media_uploads.sql` en el SQL Editor).
 
-El archivo se sube **directamente del navegador a Supabase Storage** mediante una _signed upload URL_ — los bytes nunca pasan por una Server Action ni por el límite de payload de Next.js. La transcripción ocurre **en segundo plano** (`generation_jobs`): la UI muestra el progreso (subiendo → procesando → transcribiendo → generando) y puedes cerrar la página y volver.
+**1. Extracción de audio en el navegador (antes de subir).** Si eliges un video, o un audio grande, el navegador extrae y comprime el audio a un MP3 mono de 16 kHz / 32 kbps con **ffmpeg.wasm** — un podcast de 50 min queda en ~12 MB. El video original nunca se sube. Los audios pequeños (< `MEDIA_CLIENT_EXTRACT_THRESHOLD_MB`, 15 por defecto) se suben tal cual sin pasar por el conversor. El core de ffmpeg.wasm (~32 MB) se sirve desde `/public/ffmpeg/` (lo copia `scripts/setup-ffmpeg-assets.mjs` en `postinstall` / `prebuild`; no se versiona) y se descarga una sola vez por navegador.
 
-Cuando el audio supera el límite por petición del proveedor (25 MB en Whisper/Groq), el servidor **extrae el audio con ffmpeg y lo trocea** en fragmentos mono; cada fragmento se transcribe por separado y luego se recompone una única transcripción con los timestamps corregidos (la trazabilidad bloque→segmento del artículo sigue funcionando igual). Los binarios de ffmpeg vienen en `@ffmpeg-installer/ffmpeg` y `@ffprobe-installer/ffprobe` (no requieren instalación en el sistema).
+**2. Subida directa a Storage.** Ese audio se sube **directamente del navegador a Supabase Storage** con una _signed upload URL_ — los bytes nunca pasan por una Server Action ni por el límite de payload de Next.js.
 
-Límites configurables (ver `.env.example`): `MEDIA_MAX_UPLOAD_MB`, `MEDIA_MAX_DURATION_SECONDS`, `MEDIA_CHUNK_TARGET_MB`, `MEDIA_CHUNK_MAX_SECONDS`, `MEDIA_CHUNK_AUDIO_BITRATE_KBPS`.
+**3. Transcripción en segundo plano** (`generation_jobs`): la UI muestra el progreso (cargando conversor → extrayendo audio → subiendo → transcribiendo → generando) y puedes cerrar la página y volver. Si el audio subido aún supera el límite por petición del proveedor (25 MB en Whisper/Groq), el servidor lo **trocea** con ffmpeg y recompone una transcripción única con timestamps corregidos (la trazabilidad bloque→segmento se mantiene).
 
-> **Límite real de subida = min(`MEDIA_MAX_UPLOAD_MB`, límite global de Storage del proyecto Supabase).**
-> El plan **gratuito** de Supabase topa en **50 MB por archivo** y no se puede subir; los planes de pago llegan a 50 GB (Dashboard → Storage → Settings → *Upload file size limit*). La migración `0020` deja el `file_size_limit` del bucket en `NULL` para heredar ese límite global. Pon `MEDIA_MAX_UPLOAD_MB` acorde a tu plan para que la UI rechace archivos demasiado grandes con un mensaje claro en vez de un fallo de subida.
+Límites configurables (ver `.env.example`): `MEDIA_MAX_SOURCE_MB` (2000, lo que el usuario puede elegir), `MEDIA_MAX_UPLOAD_MB` (lo que se sube tras extraer), `MEDIA_CLIENT_EXTRACT_THRESHOLD_MB`, `MEDIA_MAX_DURATION_SECONDS`, `MEDIA_CHUNK_*`.
+
+> **Límite de subida a Storage = min(`MEDIA_MAX_UPLOAD_MB`, límite global de Storage del proyecto Supabase).**
+> El plan **gratuito** de Supabase topa en **50 MB por archivo**; los planes de pago llegan a 50 GB (Dashboard → Storage → Settings → *Upload file size limit*). Gracias a la extracción de audio en el navegador, 50 MB de audio comprimido alcanzan para varias horas de contenido. La migración `0020` deja el `file_size_limit` del bucket en `NULL` para heredar el límite global.
 
 #### Worker / cron (opcional)
 

@@ -32,3 +32,6 @@ supabase/.temp
 
 # claude code (config local de la máquina, no compartido en el repo)
 .claude/settings.local.json
+
+# ffmpeg.wasm core (copiado por scripts/setup-ffmpeg-assets.mjs)
+/public/ffmpeg/

@@ -13,16 +13,17 @@ import { MediaProcessingStatus } from '@/components/projects/media-processing-st
 import { ArticleConfigSchema, type ArticleConfigInput } from '@/lib/validations/project';
 import { createQuickProjectAction, deleteProjectAction } from '@/lib/actions/projects';
 import { useMediaUpload } from '@/lib/media/use-media-upload';
-import { MEDIA_ACCEPT_ATTR, MEDIA_EXTENSIONS_LABEL, validateMediaUpload } from '@/lib/media/formats';
+import { MEDIA_ACCEPT_ATTR, MEDIA_EXTENSIONS_LABEL, mediaFormatForExtension, extensionOf } from '@/lib/media/formats';
+import type { MediaLimits } from '@/lib/media/limits';
 import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
-export function UploadVideoCard({ maxUploadBytes }: { maxUploadBytes: number }) {
+export function UploadVideoCard({ mediaLimits }: { mediaLimits: MediaLimits }) {
   const t = useDictionary();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [active, setActive] = useState<{ projectId: string; jobId: string | null } | null>(null);
   const { phase, progress, start } = useMediaUpload();
-  const maxMb = Math.round(maxUploadBytes / (1024 * 1024));
+  const maxMb = Math.round(mediaLimits.maxSourceBytes / (1024 * 1024));
 
   const {
     register,
@@ -41,15 +42,13 @@ export function UploadVideoCard({ maxUploadBytes }: { maxUploadBytes: number }) 
     e.target.value = '';
     if (!file) return;
 
-    const check = validateMediaUpload({
-      filename: file.name,
-      contentType: file.type || null,
-      sizeBytes: file.size,
-      maxUploadBytes,
-    });
-    if (!check.ok) {
+    if (!mediaFormatForExtension(extensionOf(file.name))) {
+      toast.error(t.projects.source.mediaErrors.UNSUPPORTED_MEDIA_FORMAT);
+      return;
+    }
+    if (file.size > mediaLimits.maxSourceBytes) {
       toast.error(
-        (t.projects.source.mediaErrors as Record<string, string>)[check.code] ??
+        (t.projects.source.mediaErrors as Record<string, string>).MEDIA_SOURCE_TOO_LARGE ??
           t.projects.source.mediaErrors.default,
       );
       return;
@@ -64,7 +63,14 @@ export function UploadVideoCard({ maxUploadBytes }: { maxUploadBytes: number }) 
     const projectId = projectResult.data.id;
     setActive({ projectId, jobId: null });
 
-    const result = await start({ projectId, file, language: 'es', maxUploadBytes });
+    const result = await start({
+      projectId,
+      file,
+      language: 'es',
+      maxUploadBytes: mediaLimits.maxUploadBytes,
+      maxSourceBytes: mediaLimits.maxSourceBytes,
+      clientExtractThresholdBytes: mediaLimits.clientExtractThresholdBytes,
+    });
     if (!result.success) {
       await deleteProjectAction(projectId);
       setActive(null);
@@ -107,7 +113,7 @@ export function UploadVideoCard({ maxUploadBytes }: { maxUploadBytes: number }) 
           <MediaProcessingStatus
             jobId={active.jobId}
             projectId={active.projectId}
-            isUploading={phase === 'uploading' || phase === 'preparing' || phase === 'enqueuing'}
+            clientPhase={phase}
             uploadProgress={progress}
             onDismiss={() => setActive(null)}
           />

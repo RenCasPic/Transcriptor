@@ -106,7 +106,7 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
             projectId={projectId}
             workspaceId={workspace.id}
             language={project.language}
-            maxUploadBytes={getMediaLimits().maxUploadBytes}
+            mediaLimits={getMediaLimits()}
             initialTab={tab}
           />
         </CardContent>

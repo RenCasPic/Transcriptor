@@ -9,6 +9,8 @@ const MB = 1024 * 1024;
 
 const LIMITS: MediaLimits = {
   maxUploadBytes: 500 * MB,
+  maxSourceBytes: 2000 * MB,
+  clientExtractThresholdBytes: 15 * MB,
   maxDurationSeconds: 6 * 60 * 60,
   chunkTargetBytes: 20 * MB,
   chunkMaxSeconds: 600,

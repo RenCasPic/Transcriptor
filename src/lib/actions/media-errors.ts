@@ -13,6 +13,8 @@
 export const MEDIA_ERROR_CODES = [
   'UNSUPPORTED_MEDIA_FORMAT',
   'MEDIA_FILE_TOO_LARGE',
+  'MEDIA_SOURCE_TOO_LARGE',
+  'AUDIO_EXTRACTION_CLIENT_FAILED',
   'INVALID_MEDIA_FILE',
   'MEDIA_UPLOAD_URL_FAILED',
   'MEDIA_UPLOAD_FAILED',
@@ -57,6 +59,10 @@ export function translateMediaError(message: string, ctx: MediaErrorContext): st
       return 'Formato de archivo no soportado.';
     case 'MEDIA_FILE_TOO_LARGE':
       return `El archivo supera el tamaño máximo permitido (${ctx.maxUploadMb} MB).`;
+    case 'MEDIA_SOURCE_TOO_LARGE':
+      return 'El archivo es demasiado grande para procesarlo en el navegador. Prueba con uno más corto.';
+    case 'AUDIO_EXTRACTION_CLIENT_FAILED':
+      return 'No se pudo extraer el audio del archivo en el navegador. Prueba con otro formato.';
     case 'INVALID_MEDIA_FILE':
       return 'El archivo no es válido.';
     case 'MEDIA_UPLOAD_URL_FAILED':
