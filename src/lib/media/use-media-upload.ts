@@ -76,23 +76,40 @@ export function useMediaUpload() {
 
       setPhase('uploading');
       try {
-        await putWithProgress(target.data.uploadUrl, file, (pct) => setProgress(pct), (xhr) => {
-          xhrRef.current = xhr;
-        });
-      } catch {
-        // Reintento con el SDK (sin barra de progreso) por si el PUT directo
-        // falló por CORS u otra particularidad del entorno.
-        const supabase = createClient();
-        const { error } = await supabase.storage
-          .from(target.data.bucket)
-          .uploadToSignedUrl(target.data.path, target.data.token, file, {
-            contentType: file.type || 'application/octet-stream',
+        try {
+          await putWithProgress(target.data.uploadUrl, file, (pct) => setProgress(pct), (xhr) => {
+            xhrRef.current = xhr;
           });
-        if (error) {
-          setPhase('error');
-          return { success: false, error: { code: 'MEDIA_UPLOAD_FAILED', message: 'MEDIA_UPLOAD_FAILED' } };
+        } catch (putError) {
+          // 413 = Storage rechazó por tamaño (límite del bucket o, sobre todo,
+          // el límite GLOBAL del proyecto Supabase — 50 MB en el plan gratuito).
+          // Reintentar con el SDK daría el mismo 413, así que se corta aquí con
+          // un mensaje claro.
+          if (putError instanceof Error && putError.message === 'UPLOAD_HTTP_413') {
+            setPhase('error');
+            return { success: false, error: { code: 'MEDIA_FILE_TOO_LARGE', message: 'MEDIA_FILE_TOO_LARGE' } };
+          }
+          // Otro fallo (CORS, red, particularidad del entorno): reintento con el
+          // SDK, que hace el upload por otra vía (sin barra de progreso).
+          const supabase = createClient();
+          const { error } = await supabase.storage
+            .from(target.data.bucket)
+            .uploadToSignedUrl(target.data.path, target.data.token, file, {
+              contentType: file.type || 'application/octet-stream',
+            });
+          if (error) {
+            setPhase('error');
+            const tooLarge = /exceeded|too large|maximum allowed size/i.test(error.message);
+            return {
+              success: false,
+              error: {
+                code: tooLarge ? 'MEDIA_FILE_TOO_LARGE' : 'MEDIA_UPLOAD_FAILED',
+                message: tooLarge ? 'MEDIA_FILE_TOO_LARGE' : 'MEDIA_UPLOAD_FAILED',
+              },
+            };
+          }
+          setProgress(100);
         }
-        setProgress(100);
       } finally {
         xhrRef.current = null;
       }

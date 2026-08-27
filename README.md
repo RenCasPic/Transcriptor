@@ -111,11 +111,18 @@ TRANSCRIPTION_API_KEY=           # opcional si usas Groq (basta GROQ_API_KEY)
 
 #### Archivos grandes (> 25 MB)
 
+> Requiere la migración `0020` aplicada (`supabase db push`, o pega
+> `supabase/migrations/0020_large_media_uploads.sql` en el SQL Editor). Sin ella
+> el bucket sigue topado en 25 MB y las subidas más grandes fallan.
+
 El archivo se sube **directamente del navegador a Supabase Storage** mediante una _signed upload URL_ — los bytes nunca pasan por una Server Action ni por el límite de payload de Next.js. La transcripción ocurre **en segundo plano** (`generation_jobs`): la UI muestra el progreso (subiendo → procesando → transcribiendo → generando) y puedes cerrar la página y volver.
 
 Cuando el audio supera el límite por petición del proveedor (25 MB en Whisper/Groq), el servidor **extrae el audio con ffmpeg y lo trocea** en fragmentos mono; cada fragmento se transcribe por separado y luego se recompone una única transcripción con los timestamps corregidos (la trazabilidad bloque→segmento del artículo sigue funcionando igual). Los binarios de ffmpeg vienen en `@ffmpeg-installer/ffmpeg` y `@ffprobe-installer/ffprobe` (no requieren instalación en el sistema).
 
-Límites configurables (ver `.env.example`): `MEDIA_MAX_UPLOAD_MB` (500 por defecto), `MEDIA_MAX_DURATION_SECONDS`, `MEDIA_CHUNK_TARGET_MB`, `MEDIA_CHUNK_MAX_SECONDS`, `MEDIA_CHUNK_AUDIO_BITRATE_KBPS`. El tamaño máximo **efectivo** también depende del límite global de Storage de tu proyecto Supabase (Dashboard → Storage → Settings) y del `file_size_limit` del bucket (migración `0020`).
+Límites configurables (ver `.env.example`): `MEDIA_MAX_UPLOAD_MB`, `MEDIA_MAX_DURATION_SECONDS`, `MEDIA_CHUNK_TARGET_MB`, `MEDIA_CHUNK_MAX_SECONDS`, `MEDIA_CHUNK_AUDIO_BITRATE_KBPS`.
+
+> **Límite real de subida = min(`MEDIA_MAX_UPLOAD_MB`, límite global de Storage del proyecto Supabase).**
+> El plan **gratuito** de Supabase topa en **50 MB por archivo** y no se puede subir; los planes de pago llegan a 50 GB (Dashboard → Storage → Settings → *Upload file size limit*). La migración `0020` deja el `file_size_limit` del bucket en `NULL` para heredar ese límite global. Pon `MEDIA_MAX_UPLOAD_MB` acorde a tu plan para que la UI rechace archivos demasiado grandes con un mensaje claro en vez de un fallo de subida.
 
 #### Worker / cron (opcional)
 
