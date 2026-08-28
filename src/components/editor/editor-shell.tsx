@@ -2,14 +2,17 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, FileText, PanelRight } from 'lucide-react';
+import { ArrowLeft, Eye, PanelRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
-import { TranscriptPanel } from './transcript-panel';
 import { ArticleEditor } from './article-editor';
 import { EditorDrawerTabs } from './editor-drawer-tabs';
+import { EditorPreview } from './editor-preview';
+import { RegenerateButton } from './regenerate-button';
+import { SaveStatusIndicator } from './save-status-indicator';
 import { ExportMenu } from './export-menu';
 import { EmbedButton } from './embed-button';
+import type { AutosaveStatus } from '@/lib/editor/use-autosave';
 import type { TranscriptSegmentItem } from '@/lib/data/transcripts';
 import type { ContentDocumentRecord } from '@/lib/data/documents';
 import type { DocumentVersionItem } from '@/lib/data/versions';
@@ -53,8 +56,9 @@ export function EditorShell({
 }) {
   const t = useDictionary();
   const [selectedSegmentId, setSelectedSegmentId] = useState<string | null>(null);
-  const [transcriptSheetOpen, setTranscriptSheetOpen] = useState(false);
-  const [drawerSheetOpen, setDrawerSheetOpen] = useState(false);
+  const [panelSheetOpen, setPanelSheetOpen] = useState(false);
+  const [previewMode, setPreviewMode] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<AutosaveStatus>('idle');
   const [snapshot, setSnapshot] = useState({
     plainText: '',
     html: document.contentHtml,
@@ -82,132 +86,104 @@ export function EditorShell({
     secondaryKeywords: seo?.secondary_keywords ?? [],
   };
 
+  const panel = (
+    <EditorDrawerTabs
+      documentId={document.id}
+      projectId={project.id}
+      documentTitle={document.title}
+      excerpt={document.excerpt ?? ''}
+      seo={seoData}
+      wordCount={snapshot.wordCount}
+      html={snapshot.html}
+      contentJson={snapshot.json}
+      warnings={warnings}
+      sourceLinksByBlock={sourceLinksByBlock}
+      segments={segments}
+      usedSegmentIds={usedSegmentIds}
+      selectedSegmentId={selectedSegmentId}
+      onSelectSegment={setSelectedSegmentId}
+      versions={versions}
+      currentUserId={currentUserId}
+    />
+  );
+
   return (
-    // Ya NO se fija a 100vh: min-h asegura que ocupe al menos la pantalla,
-    // pero puede crecer más allá y la página completa hace scroll (scroll
+    // min-h asegura ocupar al menos la pantalla; la PÁGINA hace scroll (scroll
     // del navegador, no de una caja interna). La barra superior y los
-    // encabezados de cada columna son sticky para seguir visibles.
-    <div className="-m-4 min-h-[calc(100vh-var(--app-header-h))] bg-gradient-to-br from-indigo-100 via-violet-50 to-amber-50 dark:from-indigo-950/30 dark:via-violet-950/20 dark:to-amber-950/20 lg:-m-8">
-      <div className="sticky top-0 z-40 flex h-11 items-center justify-between border-b bg-background/95 px-3 shadow-sm backdrop-blur">
-        <div className="flex min-w-0 items-center gap-2">
-          <Button variant="ghost" size="icon" asChild>
+    // encabezados de columna son sticky. Fondo neutro y tranquilo: el
+    // protagonista es el artículo.
+    <div className="-m-4 min-h-[calc(100vh-var(--app-header-h))] bg-muted/40 lg:-m-8">
+      <div className="sticky top-0 z-40 flex h-11 items-center justify-between gap-2 border-b bg-background/95 px-3 shadow-sm backdrop-blur">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" asChild>
             <Link href={`/projects/${project.id}`}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
           <span className="truncate text-sm font-medium">{project.name}</span>
+          <span className="ml-1 hidden sm:block">
+            <SaveStatusIndicator status={saveStatus} iconOnly />
+          </span>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="lg:hidden" onClick={() => setTranscriptSheetOpen(true)}>
-            <FileText className="h-4 w-4" />
+
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="hidden sm:inline-flex"
+            onClick={() => setPreviewMode((v) => !v)}
+          >
+            <Eye className="h-4 w-4" />
+            {t.editor.preview.enter}
           </Button>
-          <Button variant="outline" size="sm" className="lg:hidden" onClick={() => setDrawerSheetOpen(true)}>
+          <RegenerateButton projectId={project.id} />
+          <ExportMenu title={document.title} html={snapshot.html} json={snapshot.json} />
+          <EmbedButton documentId={document.id} initialIsPublic={document.isPublic} />
+          <Button variant="outline" size="icon" className="h-8 w-8 lg:hidden" onClick={() => setPanelSheetOpen(true)}>
             <PanelRight className="h-4 w-4" />
           </Button>
-          <EmbedButton documentId={document.id} initialIsPublic={document.isPublic} />
-          <ExportMenu title={document.title} html={snapshot.html} json={snapshot.json} />
         </div>
       </div>
 
-      {/*
-        Layout: Publicación a la izquierda (~69% del ancho), Transcripción y
-        SEO apiladas a la derecha (~31%). A propósito NO se usa
-        grid-rows-2 + row-span-2: eso estira Transcripción y SEO para que
-        cada una mida exactamente la mitad del alto de Publicación,
-        infla el alto de esas dos columnas al ritmo del artículo (si es
-        largo, se inflan con él), aunque su propio contenido sea corto.
-        Con esta estructura, cada panel mide lo que su propio contenido
-        necesita: la columna derecha es un simple flex-col con las dos
-        tarjetas apiladas y un gap, sin depender del alto de Publicación.
-        Cada panel (ArticleEditor, TranscriptPanel, EditorDrawerTabs) trae su
-        propio encabezado "sticky top-11" por dentro (11 = altura de la barra
-        superior de arriba, en unidades Tailwind), así queda pegado justo
-        debajo sin superponerse. Ya no hay overflow-hidden/min-h-0/flex-1 en
-        este nivel: el alto real ahora lo decide el contenido, y si supera la
-        pantalla, se hace scroll de la página completa.
-      */}
-      <div className="grid gap-4 p-3 lg:grid-cols-[minmax(560px,2.2fr)_minmax(280px,1fr)]">
-        {/* Sin overflow-hidden aquí: rompería los encabezados sticky de abajo
-            (sticky necesita que ningún ancestro recorte/scrollee por su
-            cuenta). El redondeado lo aportan los propios hijos (rounded-t-2xl
-            en su encabezado; el fondo del contenido ya coincide con el de
-            esta tarjeta, así que no hace falta recortar nada abajo). */}
-        <div className="rounded-2xl bg-background shadow-2xl ring-1 ring-black/5">
-          <ArticleEditor
-            documentId={document.id}
-            projectId={project.id}
-            initialTitle={document.title}
-            initialContentJson={document.contentJson}
-            initialVersion={document.version}
-            initialWordCount={document.wordCount}
-            coverImageUrl={document.coverImageUrl}
-            coverImageAlt={document.coverImageAlt}
-            onContentSnapshot={(next) => setSnapshot(next)}
-          />
-        </div>
-
-        <div className="hidden lg:flex lg:flex-col lg:gap-4">
-          <div className="rounded-2xl bg-background shadow-lg ring-1 ring-black/5">
-            <TranscriptPanel
-              segments={segments}
-              usedSegmentIds={usedSegmentIds}
-              selectedSegmentId={selectedSegmentId}
-              onSelectSegment={setSelectedSegmentId}
-            />
-          </div>
-
-          <div className="rounded-2xl bg-background shadow-lg ring-1 ring-black/5">
-            <EditorDrawerTabs
+      {previewMode ? (
+        <EditorPreview
+          title={document.title}
+          html={snapshot.html}
+          wordCount={snapshot.wordCount}
+          coverImageUrl={document.coverImageUrl}
+          coverImageAlt={document.coverImageAlt}
+          onClose={() => setPreviewMode(false)}
+        />
+      ) : (
+        <div className="mx-auto grid max-w-[1400px] gap-4 p-3 lg:grid-cols-[minmax(0,1fr)_340px] lg:p-4">
+          {/* El editor es el contenido principal. Sin overflow-hidden: rompería
+              los encabezados sticky internos. */}
+          <div className="min-w-0 rounded-2xl bg-background shadow-sm ring-1 ring-border/60">
+            <ArticleEditor
               documentId={document.id}
               projectId={project.id}
-              project={project}
-              documentTitle={document.title}
-              excerpt={document.excerpt ?? ''}
-              seo={seoData}
-              wordCount={snapshot.wordCount}
-              html={snapshot.html}
-              warnings={warnings}
-              sourceLinksByBlock={sourceLinksByBlock}
-              onNavigateToSegment={setSelectedSegmentId}
-              versions={versions}
-              currentUserId={currentUserId}
+              initialTitle={document.title}
+              initialContentJson={document.contentJson}
+              initialVersion={document.version}
+              initialWordCount={document.wordCount}
+              updatedAt={document.updatedAt}
+              coverImageUrl={document.coverImageUrl}
+              coverImageAlt={document.coverImageAlt}
+              onContentSnapshot={(next) => setSnapshot(next)}
+              onSaveStatusChange={setSaveStatus}
             />
           </div>
+
+          <aside className="hidden lg:block">
+            <div className="rounded-2xl bg-background shadow-sm ring-1 ring-border/60">{panel}</div>
+          </aside>
         </div>
-      </div>
+      )}
 
-      <Sheet open={transcriptSheetOpen} onOpenChange={setTranscriptSheetOpen}>
-        <SheetContent side="left" className="w-[85vw] max-w-sm p-0">
-          <SheetTitle className="sr-only">{t.editor.columns.transcript}</SheetTitle>
-          <TranscriptPanel
-            segments={segments}
-            usedSegmentIds={usedSegmentIds}
-            selectedSegmentId={selectedSegmentId}
-            onSelectSegment={(id) => {
-              setSelectedSegmentId(id);
-            }}
-          />
-        </SheetContent>
-      </Sheet>
-
-      <Sheet open={drawerSheetOpen} onOpenChange={setDrawerSheetOpen}>
-        <SheetContent side="right" className="w-[85vw] max-w-sm p-0">
-          <SheetTitle className="sr-only">{t.editor.articlePanelTitle}</SheetTitle>
-          <EditorDrawerTabs
-            documentId={document.id}
-            projectId={project.id}
-            project={project}
-            documentTitle={document.title}
-            excerpt={document.excerpt ?? ''}
-            seo={seoData}
-            wordCount={snapshot.wordCount}
-            html={snapshot.html}
-            warnings={warnings}
-            sourceLinksByBlock={sourceLinksByBlock}
-            onNavigateToSegment={setSelectedSegmentId}
-            versions={versions}
-            currentUserId={currentUserId}
-          />
+      <Sheet open={panelSheetOpen} onOpenChange={setPanelSheetOpen}>
+        <SheetContent side="right" className="w-[88vw] max-w-sm overflow-y-auto p-0">
+          <SheetTitle className="sr-only">{t.editor.panelTitle}</SheetTitle>
+          {panel}
         </SheetContent>
       </Sheet>
     </div>

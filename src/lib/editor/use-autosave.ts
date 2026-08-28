@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { saveDocumentAction } from '@/lib/actions/editor';
 import type { Json } from '@/lib/types/database';
 
-export type AutosaveStatus = 'idle' | 'saving' | 'saved' | 'error' | 'conflict';
+export type AutosaveStatus = 'idle' | 'dirty' | 'saving' | 'saved' | 'error' | 'conflict';
 
 export interface DocumentSnapshot {
   title: string;
@@ -66,7 +66,8 @@ export function useAutosave(documentId: string, initialVersion: number) {
   const scheduleSave = useCallback(
     (snapshot: DocumentSnapshot) => {
       pendingRef.current = snapshot;
-      setStatus('idle');
+      // Hay cambios locales aún sin guardar (durante la ventana de debounce).
+      if (!savingRef.current) setStatus('dirty');
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => {
         void flush();

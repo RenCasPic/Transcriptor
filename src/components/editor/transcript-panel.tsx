@@ -46,14 +46,18 @@ export function TranscriptPanel({
 
   return (
     <div className="flex flex-col">
-      <div className="sticky top-11 z-20 bg-background">
+      <div className="border-b bg-background/95 p-3">
         <button
           type="button"
           onClick={() => setCollapsed((prev) => !prev)}
-          className="flex w-full items-center justify-between rounded-t-2xl bg-primary px-4 py-2 text-sm font-bold uppercase tracking-wide text-primary-foreground"
+          className="flex w-full items-center justify-between text-xs font-semibold uppercase tracking-wide text-muted-foreground"
         >
-          <span className="w-4" aria-hidden="true" />
-          <span>{t.editor.columns.transcript}</span>
+          <span>
+            {t.editor.columns.transcript}
+            <span className="ml-1.5 font-normal normal-case tracking-normal text-muted-foreground/70">
+              {segments.length}
+            </span>
+          </span>
           <ChevronDown
             className={cn('h-4 w-4 transition-transform', collapsed && '-rotate-90')}
             aria-hidden="true"
@@ -61,16 +65,14 @@ export function TranscriptPanel({
           <span className="sr-only">{collapsed ? t.editor.transcript.expand : t.editor.transcript.collapse}</span>
         </button>
         {!collapsed && (
-          <div className="border-b p-3">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder={t.editor.transcript.searchPlaceholder}
-                className="h-8 pl-8 text-xs"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
+          <div className="relative mt-2">
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder={t.editor.transcript.searchPlaceholder}
+              className="h-8 pl-8 text-xs"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
         )}
       </div>

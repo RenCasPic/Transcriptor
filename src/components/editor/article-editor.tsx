@@ -7,8 +7,8 @@ import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import { toast } from 'sonner';
 import { BlockId } from '@/lib/editor/block-id-extension';
-import { useAutosave } from '@/lib/editor/use-autosave';
-import { countWords } from '@/lib/content/metrics';
+import { useAutosave, type AutosaveStatus } from '@/lib/editor/use-autosave';
+import { countWords, estimateReadingTimeMinutes } from '@/lib/content/metrics';
 import { rewriteSectionAction } from '@/lib/actions/editor';
 import { createVersionAction } from '@/lib/actions/versions';
 import type { RewriteInstruction } from '@/lib/ai/provider';
@@ -16,9 +16,9 @@ import type { Json } from '@/lib/types/database';
 import { EditorToolbar } from './editor-toolbar';
 import { AiActionMenu } from './ai-action-menu';
 import { RewritePreviewDialog } from './rewrite-preview-dialog';
-import { EditorFooter } from './editor-footer';
+import { SaveStatusIndicator } from './save-status-indicator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useDictionary } from '@/lib/i18n/dictionary-provider';
+import { useDictionary, useLocale } from '@/lib/i18n/dictionary-provider';
 
 interface RewriteState {
   from: number;
@@ -36,9 +36,11 @@ export function ArticleEditor({
   initialContentJson,
   initialVersion,
   initialWordCount,
+  updatedAt,
   coverImageUrl,
   coverImageAlt,
   onContentSnapshot,
+  onSaveStatusChange,
 }: {
   documentId: string;
   projectId: string;
@@ -46,11 +48,14 @@ export function ArticleEditor({
   initialContentJson: Json;
   initialVersion: number;
   initialWordCount: number;
+  updatedAt?: string;
   coverImageUrl?: string | null;
   coverImageAlt?: string | null;
   onContentSnapshot?: (snapshot: { plainText: string; html: string; json: Json; wordCount: number }) => void;
+  onSaveStatusChange?: (status: AutosaveStatus) => void;
 }) {
   const t = useDictionary();
+  const locale = useLocale();
   const INSTRUCTION_LABELS: Record<RewriteInstruction, string> = {
     rewrite: t.editor.aiMenu.rewrite,
     shorten: t.editor.aiMenu.shorten,
@@ -67,6 +72,10 @@ export function ArticleEditor({
   const [liveWordCount, setLiveWordCount] = useState(initialWordCount);
   const [rewriteState, setRewriteState] = useState<RewriteState | null>(null);
   const { status, scheduleSave } = useAutosave(documentId, initialVersion);
+
+  useEffect(() => {
+    onSaveStatusChange?.(status);
+  }, [status, onSaveStatusChange]);
 
   const editor = useEditor({
     extensions: [
@@ -99,7 +108,7 @@ export function ArticleEditor({
         wordCount: liveWordCount,
       });
     }
-    // Solo al montar: sincroniza el estado inicial con el panel SEO.
+    // Solo al montar: sincroniza el estado inicial con el panel.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);
 
@@ -151,8 +160,10 @@ export function ArticleEditor({
 
   if (!editor) {
     return (
-      <div className="space-y-3 p-6">
-        <Skeleton className="h-8 w-2/3" />
+      <div className="mx-auto max-w-[44rem] space-y-4 px-5 py-10 sm:px-6">
+        <Skeleton className="h-9 w-2/3" />
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-px w-full" />
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-3/4" />
@@ -161,41 +172,61 @@ export function ArticleEditor({
   }
 
   return (
-    // Ya no está clavado a la altura del panel (h-full/min-h-0/overflow):
-    // crece con su contenido y es la PÁGINA la que hace scroll. El grupo de
-    // abajo (encabezado + título + toolbar) es sticky top-11: 11 = la altura
-    // (h-11) de la barra superior del EditorShell, así queda pegado justo
-    // debajo de ella sin tapar nada ni dejar un hueco.
+    // Crece con su contenido; la PÁGINA hace scroll. La toolbar es sticky
+    // (top-11 = altura de la barra superior del EditorShell) para seguir a mano
+    // mientras se edita; el título y sus metadatos van en el flujo del artículo.
     <div className="flex flex-col">
-      <div className="sticky top-11 z-20 bg-background shadow-sm">
-        <div className="rounded-t-2xl bg-primary px-4 py-2 text-center text-sm font-bold uppercase tracking-wide text-primary-foreground">
-          {t.editor.columns.publication}
-        </div>
-        <div className="border-b px-4 py-2 sm:px-8">
-          <input
-            value={title}
-            onChange={(e) => handleTitleChange(e.target.value)}
-            placeholder={t.editor.titlePlaceholder}
-            className="mx-auto block w-full max-w-3xl bg-transparent text-2xl font-bold tracking-tight outline-none placeholder:text-muted-foreground"
-          />
-        </div>
-        <EditorToolbar editor={editor} />
-      </div>
-
-      <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-8">
+      <div className="mx-auto w-full max-w-[44rem] px-5 pt-8 sm:px-6">
         {coverImageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={coverImageUrl}
             alt={coverImageAlt ?? ''}
-            className="mb-6 h-40 w-full rounded-lg object-cover shadow-sm sm:h-48"
+            className="mb-6 aspect-[16/7] w-full rounded-xl object-cover"
           />
         )}
+        <textarea
+          value={title}
+          onChange={(e) => handleTitleChange(e.target.value)}
+          placeholder={t.editor.titlePlaceholder}
+          rows={1}
+          spellCheck
+          className="block w-full resize-none overflow-hidden bg-transparent text-3xl font-bold leading-tight tracking-tight outline-none placeholder:text-muted-foreground/60 sm:text-4xl"
+          onInput={(e) => {
+            const el = e.currentTarget;
+            el.style.height = 'auto';
+            el.style.height = `${el.scrollHeight}px`;
+          }}
+        />
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted-foreground">
+          <span className="tabular-nums">
+            {liveWordCount.toLocaleString(locale)} {t.common.words}
+          </span>
+          <Dot />
+          <span>
+            {estimateReadingTimeMinutes(liveWordCount)} {t.common.minutesReading}
+          </span>
+          <Dot />
+          <SaveStatusIndicator status={status} />
+          {updatedAt && (
+            <>
+              <Dot />
+              <span>
+                {t.editor.meta.updated} {formatUpdated(updatedAt, locale)}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="sticky top-11 z-20 mt-4">
+        <EditorToolbar editor={editor} />
+      </div>
+
+      <div className="mx-auto w-full max-w-[44rem] px-5 pb-16 pt-6 sm:px-6">
         <AiActionMenu editor={editor} onAction={handleAction} />
         <EditorContent editor={editor} />
       </div>
-
-      <EditorFooter wordCount={liveWordCount} status={status} />
 
       <RewritePreviewDialog
         open={!!rewriteState}
@@ -207,4 +238,20 @@ export function ArticleEditor({
       />
     </div>
   );
+}
+
+function Dot() {
+  return <span aria-hidden="true">·</span>;
+}
+
+function formatUpdated(iso: string, locale: string): string {
+  const then = new Date(iso).getTime();
+  const diffMin = Math.round((Date.now() - then) / 60000);
+  if (Number.isNaN(diffMin)) return '';
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+  if (diffMin < 1) return rtf.format(0, 'minute');
+  if (diffMin < 60) return rtf.format(-diffMin, 'minute');
+  const diffH = Math.round(diffMin / 60);
+  if (diffH < 24) return rtf.format(-diffH, 'hour');
+  return rtf.format(-Math.round(diffH / 24), 'day');
 }

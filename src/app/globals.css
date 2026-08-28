@@ -99,7 +99,20 @@
 }
 
 .tiptap-editor {
-  @apply prose prose-slate max-w-none focus:outline-none dark:prose-invert;
+  @apply prose prose-slate max-w-none text-[1.05rem] leading-[1.75] focus:outline-none dark:prose-invert
+    prose-headings:font-semibold prose-headings:tracking-tight
+    prose-h2:mb-3 prose-h2:mt-10 prose-h2:text-2xl
+    prose-h3:mb-2 prose-h3:mt-8 prose-h3:text-xl
+    prose-p:my-4
+    prose-a:text-primary prose-a:underline-offset-2
+    prose-blockquote:border-l-primary/40 prose-blockquote:not-italic prose-blockquote:text-muted-foreground
+    prose-li:my-1;
+}
+
+/* Compensa la toolbar sticky (top-11 = 2.75rem) al saltar a un encabezado
+   desde el índice del artículo, para que no quede oculto debajo. */
+.tiptap-editor :is(h1, h2, h3) {
+  scroll-margin-top: 4.5rem;
 }
 
 .tiptap-editor p.is-editor-empty:first-child::before {
@@ -108,6 +121,21 @@
   height: 0;
   pointer-events: none;
   @apply text-muted-foreground;
+}
+
+/* Destello breve al navegar a un encabezado desde el índice. */
+@keyframes outline-flash {
+  0% {
+    background-color: hsl(var(--primary) / 0.16);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.tiptap-editor .outline-flash {
+  animation: outline-flash 1.2s ease-out;
+  border-radius: 0.25rem;
 }
 
 /* Movimiento sutil y continuo para el degradado decorativo del hero de la landing. */

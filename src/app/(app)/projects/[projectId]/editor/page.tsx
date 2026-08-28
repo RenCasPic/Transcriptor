@@ -14,6 +14,11 @@ import { createClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'Editor' };
 
+// El botón "Regenerar" del editor dispara la generación multi-etapa del
+// artículo (varias llamadas al proveedor de IA); necesita el mismo límite
+// ampliado que el resto de rutas que generan contenido en Vercel.
+export const maxDuration = 300;
+
 interface EditorPageProps {
   params: Promise<{ projectId: string }>;
 }

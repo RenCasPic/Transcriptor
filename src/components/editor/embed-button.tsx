@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Share2, Copy, Loader2 } from 'lucide-react';
+import { Globe, Copy, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -56,9 +56,9 @@ export function EmbedButton({ documentId, initialIsPublic }: { documentId: strin
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Share2 className="h-4 w-4" />
-          {t.editor.embedButton}
+        <Button variant={isPublic ? 'outline' : 'default'} size="sm">
+          <Globe className="h-4 w-4" />
+          {isPublic ? t.editor.actions.published : t.editor.actions.publish}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg">
