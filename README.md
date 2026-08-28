@@ -89,10 +89,13 @@ AI_API_KEY=            # clave específica de IA; opcional si usas Groq (basta G
 AI_MODEL=              # opcional, cada proveedor tiene un default razonable
 ```
 
-- **`groq`** (default, modelo `openai/gpt-oss-120b`): gratis en https://console.groq.com, sin tarjeta de crédito. Una sola `GROQ_API_KEY` sirve para generación **y** transcripción.
-  - ⚠️ El plan gratuito de Groq limita a ~8000 tokens/minuto por modelo. La transcripción cabe; generar un artículo a partir de un **podcast largo (>15 min)** puede superar ese límite y devolver `413 Request too large`. Solución: espera un minuto y pulsa "Generar artículo", activa el **Dev Tier** de Groq (gratis, solo verifica identidad — sube mucho el límite), o usa `AI_PROVIDER=anthropic|openai`. El tope de salida se ajusta con `AI_ARTICLE_MAX_TOKENS`.
-- **`anthropic`**: usa la API de Mensajes de Anthropic (`AI_API_KEY` = API key de Anthropic).
-- **`openai`**: usa la API de Chat Completions de OpenAI (`AI_API_KEY` = API key de OpenAI).
+- **`groq`** (default, modelo `openai/gpt-oss-120b`): gratis en https://console.groq.com. Una sola `GROQ_API_KEY` sirve para transcripción **y** generación.
+- **`anthropic`**: API de Mensajes de Anthropic (`AI_API_KEY` = key de Anthropic).
+- **`openai`**: API de Chat Completions de OpenAI (`AI_API_KEY` = key de OpenAI; `gpt-4o-mini` cuesta fracciones de céntimo por artículo).
+
+> ⚠️ **El plan GRATUITO de Groq no alcanza para generar artículos de contenido real.** Limita a ~8000 tokens/minuto por modelo; la transcripción cabe, pero generar el artículo a partir de una transcripción de más de ~5-6 min supera ese límite (`413 Request too large`) y **no hay workaround** en ese plan. La transcripción **sí se guarda**: la app lo indica y puedes reintentar "Generar artículo" tras cambiar de plan/proveedor.
+> Opciones: **(a)** activa el **Dev Tier** de Groq (gratis, solo verifica identidad — sube el límite ~25×); **(b)** `AI_PROVIDER=openai`; **(c)** `AI_PROVIDER=anthropic`.
+> El prompt de generación ya usa etiquetas de segmento cortas (`s0`, `s1`…) en vez de UUIDs para minimizar los tokens, y reintenta automáticamente los `429`. El tope de salida se ajusta con `AI_ARTICLE_MAX_TOKENS`.
 
 **La generación de artículos requiere una API key.** Sin `AI_API_KEY` ni `GROQ_API_KEY`, `generateArticleAction` devuelve un `ActionResult` de error explícito (`AI_NOT_CONFIGURED`) — no hay proveedor "mock" ni contenido de ejemplo.
 

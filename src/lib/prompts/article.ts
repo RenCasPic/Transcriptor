@@ -34,13 +34,14 @@ Genera:
 - title: título principal del artículo.
 - excerpt: extracto de 1-2 frases que resuma el artículo.
 - content: lista de bloques (heading nivel 2/3, paragraph, list, quote), cada uno con un id único
-  y sourceSegmentIds: la lista de los "id:" de los segmentos de la transcripción que lo respaldan
-  (copia el valor EXACTO que aparece después de "id:" en cada segmento, no inventes ni uses el número de orden).
+  y sourceSegmentIds: la lista de las etiquetas de segmento (p. ej. "s0", "s12") de la transcripción
+  que respaldan ese bloque. Copia la etiqueta EXACTA que aparece entre corchetes al inicio de cada
+  línea de la transcripción; no inventes etiquetas.
 - faq: 2-5 preguntas frecuentes derivadas del contenido, cada una con sourceSegmentIds (mismo criterio).
 - seo: título SEO, slug, meta description, palabra clave principal y palabras clave secundarias.
 - warnings: cualquier afirmación (cifra, nombre, fecha) que no esté completamente respaldada por la fuente,
   indicando el id del bloque afectado y un mensaje explicando la incertidumbre.
 
-Transcripción (cada segmento muestra su "id:" real, úsalo tal cual en sourceSegmentIds):
-${transcript.segments.map((s) => `[id:${s.id}] ${s.speaker ? `${s.speaker}: ` : ''}${s.text}`).join('\n')}`;
+Transcripción (cada línea empieza con su etiqueta de segmento entre corchetes; úsala tal cual en sourceSegmentIds):
+${transcript.segments.map((s) => `[s${s.index}] ${s.speaker ? `${s.speaker}: ` : ''}${s.text}`).join('\n')}`;
 }

@@ -76,8 +76,11 @@ function translateGenerationError(message: string): string {
   if (message === 'AI_NOT_CONFIGURED') {
     return 'Falta configurar la API key de IA (AI_API_KEY o GROQ_API_KEY) para generar el artículo.';
   }
-  if (message.startsWith('AI_PROVIDER_HTTP_ERROR:413') || message.startsWith('AI_PROVIDER_HTTP_ERROR:429')) {
-    return 'El plan gratuito del proveedor de IA alcanzó su límite de tokens por minuto. Espera un minuto y reintenta, usa una transcripción más corta, o sube tu cuenta de Groq a Dev Tier (gratis, más límite).';
+  if (message.startsWith('AI_PROVIDER_HTTP_ERROR:413')) {
+    return 'La transcripción es demasiado larga para el plan GRATUITO de Groq (límite de ~8000 tokens/min). Activa el Dev Tier de Groq (gratis, solo verifica identidad) o usa AI_PROVIDER=anthropic u openai.';
+  }
+  if (message.startsWith('AI_PROVIDER_HTTP_ERROR:429')) {
+    return 'Se alcanzó el límite de peticiones del proveedor de IA. Espera un minuto y vuelve a pulsar "Generar artículo".';
   }
   if (message.startsWith('AI_PROVIDER_HTTP_ERROR:404')) {
     return 'El modelo de IA configurado no existe o no está disponible para tu cuenta. Revisa AI_MODEL.';

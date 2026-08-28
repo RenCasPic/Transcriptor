@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Film, Loader2 } from 'lucide-react';
@@ -19,6 +20,7 @@ import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
 export function UploadVideoCard({ mediaLimits }: { mediaLimits: MediaLimits }) {
   const t = useDictionary();
+  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [active, setActive] = useState<{ projectId: string; jobId: string | null } | null>(null);
@@ -115,7 +117,13 @@ export function UploadVideoCard({ mediaLimits }: { mediaLimits: MediaLimits }) {
             projectId={active.projectId}
             clientPhase={phase}
             uploadProgress={progress}
-            onDismiss={() => setActive(null)}
+            onDismiss={() => {
+              // Al fallar la generación (p. ej. límite de IA) la transcripción
+              // sí quedó guardada: se lleva al usuario al proyecto para reintentar.
+              const projectId = active.projectId;
+              setActive(null);
+              router.push(`/projects/${projectId}`);
+            }}
           />
         )}
 

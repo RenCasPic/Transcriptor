@@ -326,7 +326,9 @@ export const es = {
         AI_NOT_CONFIGURED:
           'Falta configurar la API key de IA (AI_API_KEY o GROQ_API_KEY) para generar el artículo.',
         AI_RATE_LIMITED:
-          'El plan gratuito de IA alcanzó su límite de tokens por minuto. La transcripción se guardó: espera un minuto y pulsa "Generar artículo" desde el proyecto, o sube tu cuenta de Groq a Dev Tier.',
+          'Se alcanzó el límite de peticiones del proveedor de IA. La transcripción se guardó: espera un minuto y pulsa "Generar artículo" desde el proyecto.',
+        AI_REQUEST_TOO_LARGE:
+          'La transcripción es demasiado larga para el plan GRATUITO de Groq (límite de ~8000 tokens/min). La transcripción se guardó. Activa el Dev Tier de Groq (gratis, solo verifica identidad) o usa AI_PROVIDER=anthropic|openai, y pulsa "Generar artículo".',
         AI_MODEL_UNAVAILABLE:
           'El modelo de IA configurado no existe o no está disponible para tu cuenta. Revisa AI_MODEL.',
         EMPTY_TRANSCRIPT: 'No se detectó voz en el archivo. Verifica que tenga audio.',

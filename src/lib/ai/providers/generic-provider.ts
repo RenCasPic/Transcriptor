@@ -25,6 +25,33 @@ const JSON_SYSTEM_PROMPT =
 // un proveedor/plan con más TPM si hace falta.
 const ARTICLE_MAX_OUTPUT_TOKENS = Number(process.env.AI_ARTICLE_MAX_TOKENS ?? 5000);
 
+const MAX_RETRY_WAIT_MS = 20_000;
+const MAX_RETRIES = 2;
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * POST con reintento ante 429 (límite de tokens/minuto). Respeta `retry-after`
+ * o el "try again in Xs" que devuelve Groq. NO reintenta un 413 ("request too
+ * large"): ahí el problema es que la petición no cabe en la ventana ni con
+ * espera, así que reintentar solo perdería tiempo.
+ */
+async function postWithRetry(url: string, init: RequestInit): Promise<Response> {
+  for (let attempt = 0; ; attempt++) {
+    const response = await fetch(url, init);
+    if (response.status !== 429 || attempt >= MAX_RETRIES) return response;
+
+    const body = await response.clone().text().catch(() => '');
+    const headerWait = Number(response.headers.get('retry-after')) * 1000;
+    const bodyWait = Number(/try again in ([\d.]+)s/i.exec(body)?.[1]) * 1000;
+    const wait = Math.min(
+      MAX_RETRY_WAIT_MS,
+      Math.max(1000, Number.isFinite(headerWait) && headerWait > 0 ? headerWait : bodyWait || 3000),
+    );
+    await sleep(wait);
+  }
+}
+
 interface ModelCallParams {
   system: string;
   prompt: string;
@@ -44,7 +71,7 @@ class AnthropicCaller implements ModelCaller {
   ) {}
 
   async call({ system, prompt, maxTokens }: ModelCallParams): Promise<string> {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await postWithRetry('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -77,7 +104,7 @@ class OpenAiCaller implements ModelCaller {
   ) {}
 
   async call({ system, prompt, maxTokens, jsonMode }: ModelCallParams): Promise<string> {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await postWithRetry('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -119,7 +146,7 @@ class GroqCaller implements ModelCaller {
   ) {}
 
   async call({ system, prompt, maxTokens, jsonMode }: ModelCallParams): Promise<string> {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const response = await postWithRetry('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -129,6 +156,14 @@ class GroqCaller implements ModelCaller {
         model: this.model,
         max_tokens: maxTokens,
         ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
+        // Los sistemas "groq/compound*" pueden usar herramientas (búsqueda web,
+        // ejecución de código) por su cuenta. Para la generación de artículos
+        // eso rompería la fidelidad a la fuente, así que se deshabilitan: se usa
+        // solo como un LLM normal (con más límite de tokens/minuto que el resto
+        // de modelos del plan gratuito de Groq).
+        ...(this.model.startsWith('groq/compound')
+          ? { compound_custom: { tools: { enabled_tools: [] } } }
+          : {}),
         messages: [
           { role: 'system', content: system },
           { role: 'user', content: prompt },
@@ -146,6 +181,35 @@ class GroqCaller implements ModelCaller {
     if (!text) throw new Error('AI_PROVIDER_EMPTY_RESPONSE');
     return text;
   }
+}
+
+/**
+ * En el prompt los segmentos se etiquetan como "s0", "s1", ... (índice) en vez
+ * de con su UUID real, para no gastar ~15 tokens por segmento en la petición
+ * (una transcripción de 30 min tiene cientos de segmentos). Aquí se traduce
+ * cada etiqueta de vuelta al UUID del segmento antes de devolver el artículo,
+ * de modo que el pipeline (`content_source_links`) sigue funcionando igual.
+ */
+function remapSegmentRefs(article: GeneratedArticle, input: GenerateArticleInput): GeneratedArticle {
+  const byIndex = new Map<number, string>();
+  for (const seg of input.transcript.segments) byIndex.set(seg.index, seg.id);
+  const validIds = new Set(input.transcript.segments.map((s) => s.id));
+
+  const resolve = (ref: string): string | null => {
+    if (validIds.has(ref)) return ref; // el modelo devolvió el UUID directamente
+    const match = /^s?(\d+)$/i.exec(ref.trim());
+    if (!match) return null;
+    return byIndex.get(Number(match[1])) ?? null;
+  };
+
+  const mapRefs = (refs: string[]): string[] =>
+    Array.from(new Set(refs.map(resolve).filter((id): id is string => id !== null)));
+
+  return {
+    ...article,
+    content: article.content.map((node) => ({ ...node, sourceSegmentIds: mapRefs(node.sourceSegmentIds) })),
+    faq: article.faq.map((item) => ({ ...item, sourceSegmentIds: mapRefs(item.sourceSegmentIds) })),
+  };
 }
 
 function extractJson(text: string): unknown {
@@ -173,9 +237,13 @@ export class GenericContentGenerationProvider implements ContentGenerationProvid
         this.caller = new OpenAiCaller(apiKey, model || 'gpt-4o-mini');
         break;
       case 'groq':
-        // Modelo open-weight servido por Groq. `llama-3.3-70b-versatile` fue
-        // retirado; `openai/gpt-oss-120b` es el más capaz disponible hoy y
-        // admite el modo JSON. Se puede sobreescribir con AI_MODEL.
+        // El plan GRATUITO de Groq (`on_demand`) limita a ~8000 tokens/minuto
+        // por modelo, lo que NO alcanza para generar un artículo a partir de una
+        // transcripción de más de ~5-6 min (la petición entera —prompt + salida—
+        // supera esa ventana y devuelve 413). Para usar la app con contenido
+        // real hay que activar el **Dev Tier** de Groq (gratis, solo verifica
+        // identidad) o usar AI_PROVIDER=anthropic|openai. `openai/gpt-oss-120b`
+        // es el mejor modelo disponible en Groq; se puede cambiar con AI_MODEL.
         this.caller = new GroqCaller(apiKey, model || 'openai/gpt-oss-120b');
         break;
       default:
@@ -213,7 +281,7 @@ Devuelve un JSON con exactamente esta forma:
     if (!parsed.success) {
       throw new Error(`AI_PROVIDER_INVALID_ARTICLE_RESPONSE:${parsed.error.issues[0]?.message ?? 'SCHEMA_ERROR'}`);
     }
-    return parsed.data;
+    return remapSegmentRefs(parsed.data, input);
   }
 
   async rewriteSection(input: RewriteSectionInput): Promise<string> {

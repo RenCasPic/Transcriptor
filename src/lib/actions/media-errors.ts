@@ -29,6 +29,7 @@ export const MEDIA_ERROR_CODES = [
   'TRANSCRIPTION_NOT_CONFIGURED',
   'AI_NOT_CONFIGURED',
   'AI_RATE_LIMITED',
+  'AI_REQUEST_TOO_LARGE',
   'AI_MODEL_UNAVAILABLE',
   'EMPTY_TRANSCRIPT',
   'JOB_FAILED',
@@ -90,7 +91,9 @@ export function translateMediaError(message: string, ctx: MediaErrorContext): st
     case 'AI_NOT_CONFIGURED':
       return 'Falta configurar la API key de IA (AI_API_KEY o GROQ_API_KEY) para generar el artículo.';
     case 'AI_RATE_LIMITED':
-      return 'El plan gratuito del proveedor de IA alcanzó su límite de tokens por minuto. Espera un minuto y reintenta la generación, o sube tu cuenta de Groq a Dev Tier.';
+      return 'Se alcanzó el límite de peticiones del proveedor de IA. La transcripción se guardó: espera un minuto y pulsa "Generar artículo".';
+    case 'AI_REQUEST_TOO_LARGE':
+      return 'La transcripción es demasiado larga para el plan GRATUITO de Groq. La transcripción se guardó. Activa el Dev Tier de Groq (gratis) o usa AI_PROVIDER=anthropic|openai, y pulsa "Generar artículo".';
     case 'AI_MODEL_UNAVAILABLE':
       return 'El modelo de IA configurado no existe o no está disponible para tu cuenta. Revisa AI_MODEL.';
     case 'EMPTY_TRANSCRIPT':
