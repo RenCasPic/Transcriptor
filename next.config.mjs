@@ -23,6 +23,15 @@ const nextConfig = {
     '@ffmpeg-installer/ffmpeg',
     '@ffprobe-installer/ffprobe',
   ],
+  // El binario de yt-dlp (bin/yt-dlp, descargado por scripts/setup-ytdlp.mjs)
+  // se invoca por spawn, no por import: Next.js no lo detecta con el trazado
+  // automático, así que hay que incluirlo a mano en el bundle de las rutas
+  // que extraen audio de YouTube (la Server Action transcribeYoutubeAudioAction
+  // se usa desde el Dashboard y desde la página de un proyecto).
+  outputFileTracingIncludes: {
+    '/dashboard': ['./bin/**'],
+    '/projects/**': ['./bin/**'],
+  },
   experimental: {
     serverActions: {
       // Los archivos de audio/video NO pasan por Server Actions: el navegador

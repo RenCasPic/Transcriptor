@@ -147,6 +147,12 @@ export const es = {
       extractorIncompatibleTitle: 'YouTube cambió algo que todavía no soportamos',
       extractorIncompatibleTip1: 'Puedes intentarlo de nuevo más tarde: suele resolverse en unos días.',
       extractorIncompatibleTip2: 'Mientras tanto, usa "Subir archivo" para transcribir el video o audio directamente.',
+      extractorBlockedTitle: 'YouTube rechazó la descarga del audio',
+      extractorBlockedTip1: 'YouTube está bloqueando la obtención automática del audio para este video.',
+      extractorBlockedTip2: 'Descarga el audio del video y súbelo con "Subir archivo" para transcribirlo.',
+      restrictedTitle: 'No podemos acceder a este video',
+      restrictedTip1: 'Los videos privados, solo para miembros o con restricción de edad no se pueden procesar automáticamente.',
+      restrictedTip2: 'Usa un video público, o descarga el audio y súbelo con "Subir archivo".',
     },
     stats: {
       projects: 'Proyectos',

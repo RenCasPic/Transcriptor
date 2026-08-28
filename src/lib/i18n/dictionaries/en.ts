@@ -145,6 +145,12 @@ export const en: Dictionary = {
       extractorIncompatibleTitle: "YouTube changed something we don't support yet",
       extractorIncompatibleTip1: 'You can try again later: this usually resolves within a few days.',
       extractorIncompatibleTip2: 'In the meantime, use "Upload file" to transcribe the video or audio directly.',
+      extractorBlockedTitle: 'YouTube blocked the audio download',
+      extractorBlockedTip1: 'YouTube is currently blocking automatic audio retrieval for this video.',
+      extractorBlockedTip2: 'Download the video audio and add it with "Upload file" to transcribe it.',
+      restrictedTitle: "We can't access this video",
+      restrictedTip1: "Private, members-only, or age-restricted videos can't be processed automatically.",
+      restrictedTip2: 'Use a public video, or download the audio and add it with "Upload file".',
     },
     stats: {
       projects: 'Projects',

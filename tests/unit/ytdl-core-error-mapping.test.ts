@@ -18,6 +18,40 @@ describe('mapYtdlError', () => {
     expect(mapYtdlError(new Error('Not available in your country')).message).toBe('YOUTUBE_REGION_BLOCKED');
   });
 
+  it('mapea contenido solo para miembros a YOUTUBE_MEMBERS_ONLY', () => {
+    expect(mapYtdlError(new Error('Join this channel to get access to members-only content')).message).toBe(
+      'YOUTUBE_MEMBERS_ONLY',
+    );
+    expect(mapYtdlError(new Error('This video is available to this channel\'s members on level: ...')).message).toBe(
+      'YOUTUBE_MEMBERS_ONLY',
+    );
+  });
+
+  describe('YouTube rechaza al extractor (403 en el CDN)', () => {
+    // Distinto de "la librería no sabe leer el reproductor actual"
+    // (YOUTUBE_EXTRACTOR_INCOMPATIBLE): aquí YouTube devolvió explícitamente
+    // un 403 al pedir el archivo de audio.
+    const blockedMessages = [
+      'Status code: 403',
+      'Server returned HTTP error 403 Forbidden',
+      'Request failed: 403 Forbidden',
+    ];
+
+    for (const message of blockedMessages) {
+      it(`clasifica "${message}" como YOUTUBE_EXTRACTOR_BLOCKED`, () => {
+        expect(mapYtdlError(new Error(message)).message).toBe('YOUTUBE_EXTRACTOR_BLOCKED');
+      });
+    }
+
+    it('un 403 no se confunde con una incompatibilidad de descifrado', () => {
+      expect(mapYtdlError(new Error('Status code: 403')).message).not.toContain('YOUTUBE_EXTRACTOR_INCOMPATIBLE');
+    });
+
+    it('deja pasar YOUTUBE_EXTRACTOR_BLOCKED ya codificado', () => {
+      expect(mapYtdlError(new Error('YOUTUBE_EXTRACTOR_BLOCKED')).message).toBe('YOUTUBE_EXTRACTOR_BLOCKED');
+    });
+  });
+
   it('deja pasar sin cambios los errores ya codificados internamente (p. ej. de un timeout)', () => {
     expect(mapYtdlError(new Error('YOUTUBE_AUDIO_EXTRACTION_TIMEOUT')).message).toBe(
       'YOUTUBE_AUDIO_EXTRACTION_TIMEOUT',

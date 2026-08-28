@@ -147,7 +147,14 @@ Por defecto, el job se procesa vía `after()` dentro de la misma invocación ser
 
 ### Importar desde YouTube
 
-Se puede pegar el enlace de cualquier video público de YouTube (propio o ajeno) y la app importa sus subtítulos ya existentes como transcripción — no hace falta conectar ninguna cuenta ni configurar credenciales. Ver `src/lib/integrations/youtube-transcript.ts` para el detalle: no usa la Data API oficial de YouTube (que no permite descargar video/audio ni siquiera para el canal propio), sino que lee la página pública del video igual que hace el reproductor web, así que depende de un endpoint no documentado que YouTube podría cambiar sin aviso. Si el video no tiene subtítulos, hay que subirlo manualmente (pestaña "Video o audio").
+Se puede pegar el enlace de cualquier video público de YouTube (propio o ajeno) y la app importa sus subtítulos ya existentes como transcripción — no hace falta conectar ninguna cuenta ni configurar credenciales. Ver `src/lib/integrations/youtube-transcript.ts` para el detalle: no usa la Data API oficial de YouTube (que no permite descargar video/audio ni siquiera para el canal propio), sino que lee la página pública del video igual que hace el reproductor web, así que depende de un endpoint no documentado que YouTube podría cambiar sin aviso.
+
+Si el video **no tiene subtítulos**, se extrae su audio con **yt-dlp** y se transcribe (`transcribeYoutubeAudioAction` → `src/lib/integrations/audio-extractor/`). Las librerías JS puras (`@distube/ytdl-core`, `youtubei.js`) ya no sirven para descargar: YouTube pasó la entrega a SABR y un PO Token no lo arregla.
+
+- **Binario**: lo descarga `scripts/setup-ytdlp.mjs` a `bin/yt-dlp` en `postinstall`/`prebuild` (no se versiona). En Vercel viaja en el bundle de la función vía `outputFileTracingIncludes` (`next.config.mjs`).
+- **`YTDLP_VERSION`**: fija qué release de yt-dlp instalar. Por defecto usa una versión fijada en el script. **Cuando YouTube rompa la extracción de audio** (pasa cada pocas semanas), sube esta variable a la última release de <https://github.com/yt-dlp/yt-dlp/releases> y vuelve a desplegar — o ponla en `latest` para resolver la última automáticamente desde la API de GitHub en cada build. Borra `bin/.yt-dlp-version` (o `bin/` entero) para forzar la re-descarga en local.
+- **`YTDLP_PATH`**: ruta a un binario propio (p. ej. un worker con `pip install -U yt-dlp`). **`AUDIO_EXTRACTOR=ytdl-core`**: vuelve al extractor JS anterior (archivado, casi siempre falla hoy).
+- La abstracción `AudioExtractor` aísla el mecanismo: mover la extracción a un worker independiente (con proxy residencial, PO Token, etc.) es implementar esa interfaz contra un endpoint remoto, sin tocar el resto del flujo.
 
 ## Ejecutar pruebas
 

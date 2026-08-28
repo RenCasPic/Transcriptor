@@ -32,6 +32,10 @@ describe('translateAudioFallbackError', () => {
     expect(translate('YOUTUBE_PRIVATE_VIDEO')).toMatch(/privado/i);
   });
 
+  it('traduce contenido solo para miembros', () => {
+    expect(translate('YOUTUBE_MEMBERS_ONLY')).toMatch(/cuenta|miembros/i);
+  });
+
   it('traduce video no encontrado', () => {
     expect(translate('YOUTUBE_VIDEO_NOT_FOUND')).toMatch(/no se encontró/i);
   });
@@ -65,11 +69,22 @@ describe('translateAudioFallbackError', () => {
     expect(translate('YOUTUBE_AUDIO_EXTRACTION_TIMEOUT')).toMatch(/tardó demasiado/i);
   });
 
-  it('traduce fallos de descarga/extracción, preservando el detalle original cuando lo hay', () => {
+  it('traduce fallos de descarga (código legado con detalle)', () => {
     expect(translate('YOUTUBE_AUDIO_DOWNLOAD_FAILED')).toMatch(/no se pudo descargar/i);
-    expect(translate('YOUTUBE_AUDIO_EXTRACTION_FAILED:algo raro de play-dl')).toMatch(
-      /no se pudo descargar.*algo raro de play-dl/is,
-    );
+  });
+
+  it('traduce un fallo transitorio de extracción como reintentable, sin volcar el detalle técnico', () => {
+    const message = translate('YOUTUBE_AUDIO_EXTRACTION_FAILED:socket hang up');
+    expect(message).toMatch(/no hemos podido obtener el audio de youtube/i);
+    expect(message).toMatch(/intentarlo nuevamente/i);
+    expect(message).not.toContain('socket hang up');
+  });
+
+  it('traduce el rechazo del extractor por YouTube (403)', () => {
+    const message = translate('YOUTUBE_EXTRACTOR_BLOCKED');
+    expect(message).toMatch(/rechazado por youtube/i);
+    expect(message).toMatch(/subirlo manualmente/i);
+    expect(message).not.toMatch(/verifica|inválid/i);
   });
 
   it('traduce transcripción vacía', () => {

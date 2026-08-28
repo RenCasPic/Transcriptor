@@ -37,14 +37,20 @@ export function translateAudioFallbackError(message: string, maxDurationSeconds:
   if (message === 'TRANSCRIPTION_NOT_CONFIGURED') {
     return 'Este video no tiene subtítulos y falta configurar la API key de transcripción (TRANSCRIPTION_API_KEY o GROQ_API_KEY) para transcribir su audio.';
   }
+  if (message === 'AUDIO_EXTRACTOR_UNAVAILABLE') {
+    return 'La transcripción automática de audio de YouTube no está disponible ahora mismo (falta el componente yt-dlp en el servidor). Sube el archivo directamente con "Subir archivo".';
+  }
   if (message === 'YOUTUBE_PRIVATE_VIDEO') {
-    return 'Este video es privado y no se puede transcribir automáticamente.';
+    return 'Este video es privado o requiere acceso. Usa un video público o sube el archivo directamente.';
+  }
+  if (message === 'YOUTUBE_MEMBERS_ONLY') {
+    return 'Este video requiere acceso con una cuenta (contenido solo para miembros del canal) y no podemos acceder a él automáticamente.';
   }
   if (message === 'YOUTUBE_VIDEO_NOT_FOUND') {
     return 'No se encontró ese video. Puede haber sido eliminado o la URL ser incorrecta.';
   }
   if (message === 'YOUTUBE_AGE_RESTRICTED') {
-    return 'Este video tiene restricción de edad y no se puede procesar automáticamente.';
+    return 'Este video tiene restricción de edad: YouTube exige iniciar sesión con una cuenta y no podemos acceder a él automáticamente.';
   }
   if (message === 'YOUTUBE_REGION_BLOCKED') {
     return 'Este video no está disponible en la región de nuestro servidor.';
@@ -67,6 +73,14 @@ export function translateAudioFallbackError(message: string, maxDurationSeconds:
   if (message === 'YOUTUBE_AUDIO_DOWNLOAD_FAILED') {
     return 'No se pudo descargar el audio de ese video. Inténtalo de nuevo más tarde.';
   }
+  if (message.startsWith('YOUTUBE_EXTRACTOR_BLOCKED')) {
+    // YouTube rechazó explícitamente la petición del extractor (403 al pedir
+    // el archivo de audio). No es un problema de la URL ni del vídeo: es un
+    // bloqueo activo de YouTube contra el extractor. El frontend ofrece
+    // "reintentar" y "Subir archivo" según este código (ver
+    // youtube-import-error-presentation.ts).
+    return 'Actualmente no podemos obtener el audio de este video de YouTube. El extractor ha sido rechazado por YouTube. Puedes descargar el audio y subirlo manualmente mientras tanto.';
+  }
   if (message.startsWith('YOUTUBE_EXTRACTOR_INCOMPATIBLE')) {
     // A propósito NO redactado como si el usuario hubiera hecho algo mal
     // (no es una URL inválida, ni un video privado/eliminado, ni un límite
@@ -77,8 +91,10 @@ export function translateAudioFallbackError(message: string, maxDurationSeconds:
     return 'No podemos obtener automáticamente el audio de este video en este momento. YouTube cambió recientemente la forma en que entrega sus archivos de audio y nuestro extractor todavía no es compatible con ese cambio.';
   }
   if (message.startsWith('YOUTUBE_AUDIO_EXTRACTION_FAILED')) {
-    const detail = message.slice('YOUTUBE_AUDIO_EXTRACTION_FAILED:'.length);
-    return `No se pudo descargar el audio de ese video. Inténtalo de nuevo más tarde. (${detail})`;
+    // Fallo transitorio (red / respuesta inesperada del CDN), no un bloqueo
+    // ni una incompatibilidad: se ofrece reintentar sin volcar el detalle
+    // técnico crudo al usuario.
+    return 'No hemos podido obtener el audio de YouTube en este momento. Puedes intentarlo nuevamente.';
   }
   if (message === 'EMPTY_TRANSCRIPT') {
     return 'No se detectó voz en el audio extraído del video.';

@@ -35,3 +35,6 @@ supabase/.temp
 
 # ffmpeg.wasm core (copiado por scripts/setup-ffmpeg-assets.mjs)
 /public/ffmpeg/
+
+# binario de yt-dlp (descargado por scripts/setup-ytdlp.mjs)
+/bin/

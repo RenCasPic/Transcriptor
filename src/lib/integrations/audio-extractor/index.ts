@@ -1,4 +1,5 @@
 import type { AudioExtractor } from './types';
+import { YtDlpAudioExtractor } from './ytdlp-extractor';
 import { YtdlCoreAudioExtractor } from './ytdl-core-extractor';
 
 export type { AudioExtractor, ExtractedAudio, ExtractAudioOptions } from './types';
@@ -6,14 +7,22 @@ export type { AudioExtractor, ExtractedAudio, ExtractAudioOptions } from './type
 /**
  * Fábrica del extractor de audio, con el mismo patrón que
  * `getTranscriptionProvider()`: un único punto de construcción para poder
- * sustituir la implementación (hoy `@distube/ytdl-core`, no oficial) por
- * otra futura sin tocar el código que la usa
- * (`transcribeYoutubeAudioAction`). Se probó primero con `play-dl`, pero esa
- * librería lleva sin publicar cambios desde 2023 y falla contra el
- * reproductor actual de YouTube; `@distube/ytdl-core` se mantiene activo
- * justo para este tipo de roturas, aunque no está garantizado que siempre
- * esté al día (ver comentarios en `ytdl-core-extractor.ts`).
+ * sustituir la implementación sin tocar el código que la usa
+ * (`transcribeYoutubeAudioAction`).
+ *
+ * Por defecto usa **yt-dlp** (`YtDlpAudioExtractor`): a fecha de 2026 es la
+ * única vía que sigue funcionando para bajar audio de YouTube — las
+ * librerías JS puras (`@distube/ytdl-core`, `youtubei.js`) quedaron obsoletas
+ * cuando YouTube pasó la entrega a SABR, y un PO Token no lo arregla (probado
+ * empíricamente).
+ *
+ * `AUDIO_EXTRACTOR=ytdl-core` fuerza el extractor JS anterior (archivado, casi
+ * siempre falla hoy) — solo como escape de emergencia si el binario de yt-dlp
+ * no estuviera disponible en algún entorno.
  */
 export function getAudioExtractor(): AudioExtractor {
-  return new YtdlCoreAudioExtractor();
+  if (process.env.AUDIO_EXTRACTOR === 'ytdl-core') {
+    return new YtdlCoreAudioExtractor();
+  }
+  return new YtDlpAudioExtractor();
 }

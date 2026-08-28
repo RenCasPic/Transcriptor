@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArticleConfigFields } from './article-config-fields';
 import { ImportErrorPanel } from './import-error-panel';
+import { youtubeImportErrorPresentation } from './youtube-import-error-presentation';
 import { ArticleConfigSchema, type ArticleConfigInput } from '@/lib/validations/project';
 import { createQuickProjectAction, updateProjectAction, deleteProjectAction } from '@/lib/actions/projects';
 import { generateArticleAction } from '@/lib/actions/generation';
@@ -103,27 +104,19 @@ export function YoutubeUrlCard() {
             {t.projects.source.youtubeStages[stage]}
           </p>
         )}
-        {importError && (
-          <ImportErrorPanel
-            title={
-              importError.code === 'YOUTUBE_EXTRACTOR_INCOMPATIBLE'
-                ? t.dashboard.importError.extractorIncompatibleTitle
-                : t.dashboard.importError.title
-            }
-            message={importError.message}
-            dismissLabel={t.dashboard.importError.dismiss}
-            onDismiss={() => setImportError(null)}
-            tips={
-              importError.code === 'YOUTUBE_EXTRACTOR_INCOMPATIBLE'
-                ? [t.dashboard.importError.extractorIncompatibleTip1, t.dashboard.importError.extractorIncompatibleTip2]
-                : [
-                    t.dashboard.importError.youtubeTip1,
-                    t.dashboard.importError.youtubeTip2,
-                    t.dashboard.importError.youtubeTip3,
-                  ]
-            }
-          />
-        )}
+        {importError &&
+          (() => {
+            const { title, tips } = youtubeImportErrorPresentation(importError.code, t.dashboard.importError);
+            return (
+              <ImportErrorPanel
+                title={title}
+                message={importError.message}
+                dismissLabel={t.dashboard.importError.dismiss}
+                onDismiss={() => setImportError(null)}
+                tips={tips}
+              />
+            );
+          })()}
       </CardContent>
     </Card>
   );
