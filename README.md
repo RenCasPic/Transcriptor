@@ -95,11 +95,22 @@ AI_MAX_PROMPT_TOKENS=  # opcional; tope de tokens de entrada (default 110000)
 
 **La generación de artículos requiere una API key.** Sin `AI_API_KEY` (ni `GROQ_API_KEY` cuando `AI_PROVIDER=groq`), `generateArticleAction` devuelve un `ActionResult` de error explícito (`AI_NOT_CONFIGURED`) — no hay proveedor "mock" ni contenido de ejemplo.
 
+**Longitud del artículo (transcripciones largas).** gpt-4o-mini no desarrolla bien una transcripción larga en una sola llamada: la comprime en un resumen corto aunque le quepa en contexto. Para transcripciones de más de `AI_SINGLE_PASS_MAX_SEGMENTS` segmentos (~70, ≈ 8 min) la generación pasa a **varias etapas**:
+
+1. **Extracción** — la transcripción se parte en bloques de ~45 segmentos y de cada uno se extraen notas estructuradas (ideas, argumentos, ejemplos, cifras, nombres, citas) sin resumir, en paralelo.
+2. **Esqueleto** — una llamada agrupa todas las notas en 6-16 secciones temáticas ordenadas.
+3. **Redacción por secciones** — cada sección se redacta en su propia llamada (tarea acotada → el modelo la desarrolla a fondo), en paralelo.
+4. **Metadatos** — excerpt, FAQ, SEO y alertas.
+5. **Ensamblado** — se unen las secciones; los `sourceSegmentIds` de cada bloque se calculan de las notas que desarrolla (traza `s0`,`s1`… → UUID real).
+
+Resultado típico: un audio de 26 min pasa de ~550 palabras a ~4.500-6.000 (proporcional al contenido, no a un ratio fijo). Coste con gpt-4o-mini: ~$0,02 por artículo. Ajustable con `AI_EXTRACT_BLOCK_SEGMENTS`, `AI_EXTRACT_CONCURRENCY`, `AI_SECTION_CONCURRENCY`. Transcripciones cortas siguen el camino de una sola llamada.
+
 **Robustez y coste:**
-- El prompt usa etiquetas de segmento cortas (`s0`, `s1`…) en vez de UUIDs (~30% menos tokens); el proveedor las traduce de vuelta al persistir, la trazabilidad no cambia.
-- Reintento automático ante `429` (rate limit) y `5xx`, respetando `retry-after`. No reintenta `401`/`413`/cuota agotada.
-- Guarda de tamaño: si `prompt + transcripción` supera `AI_MAX_PROMPT_TOKENS`, falla antes de llamar con `AI_TRANSCRIPT_TOO_LONG` (pide dividir el audio) en vez de gastar una petición. Con gpt-4o-mini (128k) esto solo ocurre con audios excepcionalmente largos.
+- El prompt usa etiquetas de segmento cortas (`s0`, `s1`…) en vez de UUIDs; el proveedor las traduce de vuelta al persistir, la trazabilidad no cambia.
+- Reintento automático ante `429` (rate limit) y `5xx`, respetando `retry-after`. No reintenta `401`/`413`/cuota agotada. Cada etapa reintenta y tiene un fallback para no perder contenido si una llamada falla.
+- Guarda de tamaño: si el prompt supera `AI_MAX_PROMPT_TOKENS`, falla antes de llamar con `AI_TRANSCRIPT_TOO_LONG`.
 - Errores diferenciados y accionables: API key inválida, sin créditos, rate limit, petición demasiado grande, error temporal del proveedor, respuesta con formato inesperado. La transcripción **siempre se conserva**: el mensaje indica reintentar "Generar artículo" desde el proyecto.
+- Las páginas que disparan la generación declaran `maxDuration = 300` (la variante en varias etapas para un audio largo tarda ~1-2 min).
 
 Para añadir un proveedor nuevo: implementa `ContentGenerationProvider` en `src/lib/ai/providers/`, y regístralo en el switch de `src/lib/ai/providers/generic-provider.ts` (o crea una clase independiente y añade el caso en `src/lib/ai/providers/index.ts`).
 

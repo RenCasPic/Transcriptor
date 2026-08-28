@@ -18,6 +18,15 @@ Tres capas independientes:
 2. **Pipeline de negocio** (`src/lib/generation/pipeline.ts`): implementa los 11 pasos del flujo de generación (validar transcripción → normalizar → segmentar → estructurar → redactar → SEO → alertas → relacionar fuentes → guardar documento → crear versión → cambiar estado del proyecto). Recibe un cliente Supabase inyectado, no crea el suyo — así puede ejecutarse igual desde una Server Action (hoy) o desde un worker en segundo plano (futuro) sin cambios.
 3. **Transporte** (`src/lib/actions/generation.ts`): la Server Action que expone el pipeline a la UI. Aquí vive el rate limiting, el registro en `generation_jobs` y la traducción de errores a mensajes en español.
 
+### Generación de artículos en varias etapas (transcripciones largas)
+
+`GenericContentGenerationProvider.generateArticle` bifurca según el número de segmentos:
+
+- **≤ `AI_SINGLE_PASS_MAX_SEGMENTS` (~70):** una sola llamada (`buildArticlePrompt`).
+- **Más:** gpt-4o-mini comprime una transcripción larga en un resumen corto aunque le quepa en contexto, así que se hace: (1) **extracción** de notas por bloques de segmentos, en paralelo (`buildExtractionPrompt`, sin resumir); (2) **esqueleto** — agrupar las notas en secciones (`buildOutlinePrompt`); (3) **redacción por sección**, una llamada acotada por sección en paralelo (`buildSectionPrompt`) — al ser una tarea pequeña el modelo la desarrolla a fondo; (4) **metadatos** (`buildArticleMetaPrompt`); (5) **ensamblado** local. Los `sourceSegmentIds` de cada bloque se calculan de forma determinista a partir de los `noteRefs` que devuelve el modelo → notas → etiquetas `s{index}` → UUID (`remapSegmentRefs`). Cada etapa reintenta y tiene un fallback (notas crudas / párrafo con las notas / SEO mínimo) para no perder contenido ni romper el esquema.
+
+Efecto: la longitud del artículo es proporcional a la riqueza de la conversación (un audio de 26 min ≈ 4.5-6k palabras) en vez de un resumen fijo de ~600. Las páginas que disparan `generateArticleAction` declaran `export const maxDuration = 300`.
+
 ## 3. Prompts versionados y separados por operación
 
 `src/lib/prompts/` tiene un archivo por operación (estructura, artículo, reescritura, SEO, detección de afirmaciones, relación con fuentes) más un `rules.ts` con las reglas comunes (no inventar datos, señalar incertidumbre, respetar idioma/tono/audiencia). Cambiar una regla de política en un solo lugar la propaga a todos los prompts. El paso de "creación de estructura" tiene su propio prompt listo (`structure.ts`) aunque el pipeline actual genera estructura + redacción en una sola llamada por simplicidad y costo — separarlo en dos llamadas es un cambio aislado al pipeline, no a los proveedores.

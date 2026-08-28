@@ -1,5 +1,11 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+
+// La Server Action `generateArticleAction` (botón "Generar artículo" y
+// encadenado tras importar texto) puede tardar 1-2 min para transcripciones
+// largas por la generación en dos etapas. Se ejecuta en la función de esta
+// ruta; se sube el límite para que no la corte el timeout serverless.
+export const maxDuration = 300;
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProjectStatusBadge } from '@/components/shared/status-badge';
 import { EditProjectDialog } from '@/components/projects/edit-project-dialog';

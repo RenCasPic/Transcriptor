@@ -8,6 +8,10 @@ import { isTranscriptionConfigured } from '@/lib/ai/transcription';
 import { isContentGenerationConfigured } from '@/lib/ai/providers';
 import { getMediaLimits } from '@/lib/media/limits';
 
+// Las tarjetas "Subir archivo" / "Pegar enlace" encadenan `generateArticleAction`,
+// que para transcripciones largas puede tardar 1-2 min (generación en dos etapas).
+export const maxDuration = 300;
+
 export async function generateMetadata(): Promise<Metadata> {
   const { dictionary } = await getDictionary();
   return { title: dictionary.dashboard.title };

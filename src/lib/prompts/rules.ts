@@ -10,8 +10,10 @@ export const COMMON_RULES = `Reglas obligatorias:
 - No afirmes que una recomendación garantiza resultados; usa lenguaje probabilístico y matizado cuando corresponda.
 - Escribe siempre en el idioma solicitado.
 - Respeta estrictamente la audiencia, el tono y el objetivo indicados.
-- Evita introducciones genéricas ("En el mundo actual...", "Hoy en día...") y frases de relleno.
-- No repitas la misma idea con distintas palabras dentro del mismo artículo.
+- Evita introducciones genéricas ("En el mundo actual...", "Hoy en día...") y frases de relleno vacías.
+- Elimina muletillas, titubeos y repeticiones LITERALES de la transcripción. Pero NO condenses ideas
+  distintas ni elimines ejemplos, cifras, matices o explicaciones que aporten valor: reformúlalos con
+  claridad, no los borres. Cada idea sustantiva de la fuente debe aparecer en el artículo.
 - Devuelve siempre el resultado en el formato estructurado solicitado, sin texto adicional fuera de esa estructura.`;
 
 export function toneInstruction(tone: string): string {

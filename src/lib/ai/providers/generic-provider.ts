@@ -7,23 +7,67 @@ import type {
 import {
   GeneratedArticleSchema,
   SeoMetadataSchema,
+  ExtractionResultSchema,
+  ArticleOutlineSchema,
+  SectionResultSchema,
+  ArticleMetaSchema,
+  type ExtractedNote,
+  type ArticleOutline,
   type GeneratedArticle,
   type SeoMetadata,
 } from '@/lib/validations/article';
-import { buildArticlePrompt } from '@/lib/prompts/article';
+import {
+  buildArticlePrompt,
+  buildOutlinePrompt,
+  buildSectionPrompt,
+  buildArticleMetaPrompt,
+} from '@/lib/prompts/article';
+import { buildExtractionPrompt } from '@/lib/prompts/extraction';
 import { buildRewritePrompt } from '@/lib/prompts/rewrite';
 import { buildSeoPrompt } from '@/lib/prompts/seo';
+import type { z } from 'zod';
+
+type ArticleMeta = z.infer<typeof ArticleMetaSchema>;
 
 const JSON_SYSTEM_PROMPT =
   'Responde EXCLUSIVAMENTE con un objeto JSON válido, sin texto adicional, sin bloques de código markdown.';
 
-// Tope de tokens de salida para la generación del artículo. Se mantiene
-// moderado a propósito: en el plan gratuito de Groq el límite de tokens por
-// minuto (TPM) es bajo y `max_tokens` cuenta contra él, así que un valor alto
-// hace fallar la petición (413) incluso con transcripciones cortas. Un
-// artículo típico cabe de sobra en este margen; se puede subir con AI_MODEL a
-// un proveedor/plan con más TPM si hace falta.
-const ARTICLE_MAX_OUTPUT_TOKENS = Number(process.env.AI_ARTICLE_MAX_TOKENS ?? 5000);
+// Tope de tokens de SALIDA del artículo. Generoso a propósito: el prompt pide
+// un artículo completo y proporcional al contenido de la transcripción, así que
+// una conversación rica de 30-60 min puede producir 3000-6000 palabras
+// (~5000-9000 tokens). El modelo termina solo cuando ha cubierto el material;
+// este tope solo evita una respuesta desbocada. gpt-4o-mini admite hasta 16384.
+const ARTICLE_MAX_OUTPUT_TOKENS = Number(process.env.AI_ARTICLE_MAX_TOKENS ?? 12000);
+
+// Generación en dos etapas: por debajo de este número de segmentos, un solo
+// modelo redacta el artículo directamente de la transcripción (funciona bien
+// para audios cortos). Por encima, gpt-4o-mini deja de aprovechar la parte
+// central/final de una transcripción larga aunque le quepa en contexto, así
+// que se hace: (1) extraer notas por bloques -> (2) redactar desde las notas.
+const SINGLE_PASS_MAX_SEGMENTS = Number(process.env.AI_SINGLE_PASS_MAX_SEGMENTS ?? 70);
+const EXTRACT_BLOCK_SEGMENTS = Number(process.env.AI_EXTRACT_BLOCK_SEGMENTS ?? 45);
+const EXTRACT_MAX_OUTPUT_TOKENS = 4000;
+const EXTRACT_CONCURRENCY = Number(process.env.AI_EXTRACT_CONCURRENCY ?? 4);
+const SECTION_CONCURRENCY = Number(process.env.AI_SECTION_CONCURRENCY ?? 4);
+
+async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T, index: number) => Promise<R>): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+  async function worker() {
+    while (cursor < items.length) {
+      const i = cursor++;
+      results[i] = await fn(items[i]!, i);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
+}
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
 
 // Tope de tokens de ENTRADA (prompt + transcripción) para la generación del
 // artículo. Por defecto 110k: cabe de sobra en el contexto de gpt-4o-mini
@@ -243,6 +287,31 @@ function extractJson(text: string): unknown {
   return JSON.parse(jsonText);
 }
 
+const ARTICLE_JSON_SHAPE = `Devuelve un JSON con exactamente esta forma:
+{
+  "title": string,
+  "excerpt": string,
+  "content": [{ "id": string, "type": "heading"|"paragraph"|"list"|"quote", "level"?: 2|3, "ordered"?: boolean, "items"?: string[], "text"?: string, "sourceSegmentIds": string[] }],
+  "faq": [{ "question": string, "answer": string, "sourceSegmentIds": string[] }],
+  "seo": { "title": string, "slug": string, "metaDescription": string, "primaryKeyword"?: string, "secondaryKeywords": string[] },
+  "warnings": [{ "blockId": string|null, "type": "unsupported_claim"|"number_verification"|"name_verification"|"date_verification"|"possible_hallucination"|"missing_source", "message": string }]
+}`;
+
+function parseArticle(raw: string): GeneratedArticle {
+  let json: unknown;
+  try {
+    json = extractJson(raw);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'JSON_PARSE_ERROR';
+    throw new Error(`AI_PROVIDER_INVALID_ARTICLE_RESPONSE:${message}:${raw.slice(0, 300)}`);
+  }
+  const parsed = GeneratedArticleSchema.safeParse(json);
+  if (!parsed.success) {
+    throw new Error(`AI_PROVIDER_INVALID_ARTICLE_RESPONSE:${parsed.error.issues[0]?.message ?? 'SCHEMA_ERROR'}`);
+  }
+  return parsed.data;
+}
+
 /**
  * Proveedor real configurable mediante variables de entorno (AI_PROVIDER,
  * AI_API_KEY, AI_MODEL). Soporta Anthropic, OpenAI y Groq (este último gratis
@@ -277,17 +346,142 @@ export class GenericContentGenerationProvider implements ContentGenerationProvid
   }
 
   async generateArticle(input: GenerateArticleInput): Promise<GeneratedArticle> {
+    if (input.transcript.segments.length <= SINGLE_PASS_MAX_SEGMENTS) {
+      return this.generateArticleSinglePass(input);
+    }
+    return this.generateArticleMultiStage(input);
+  }
+
+  /**
+   * Transcripción larga: extraer notas -> esqueleto -> redactar cada sección
+   * por separado -> excerpt/FAQ/SEO/warnings -> ensamblar. Cada sección es una
+   * tarea acotada, así que gpt-4o-mini la desarrolla a fondo y la longitud del
+   * artículo acaba siendo proporcional al contenido de la conversación.
+   */
+  private async generateArticleMultiStage(input: GenerateArticleInput): Promise<GeneratedArticle> {
+    const notes = await this.extractNotes(input);
+    const noteSegmentIds = (refs: number[]): string[] =>
+      Array.from(new Set(refs.flatMap((r) => notes[r - 1]?.sourceSegmentIds ?? [])));
+
+    const outline = await this.buildOutline(input, notes);
+
+    const written = await mapWithConcurrency(outline.sections, SECTION_CONCURRENCY, async (section, index) => {
+      const sectionNotes = section.noteRefs.map((r) => notes[r - 1]).filter((n): n is ExtractedNote => !!n);
+      const blocks = await this.writeSection(input, section.heading, sectionNotes, {
+        index,
+        total: outline.sections.length,
+      });
+      return { section, blocks };
+    });
+
+    const meta = await this.buildArticleMeta(input, outline, notes);
+
+    const content: GeneratedArticle['content'] = [];
+    written.forEach(({ section, blocks }, sIdx) => {
+      const sourceSegmentIds = noteSegmentIds(section.noteRefs);
+      content.push({ id: `s${sIdx}-h`, type: 'heading', level: 2, text: section.heading, sourceSegmentIds });
+      blocks.forEach((b, bIdx) => {
+        content.push({
+          id: `s${sIdx}-b${bIdx}`,
+          type: b.type,
+          level: b.level,
+          ordered: b.ordered,
+          items: b.items,
+          text: b.text,
+          sourceSegmentIds,
+        });
+      });
+    });
+
+    const article: GeneratedArticle = {
+      title: outline.title,
+      excerpt: meta.excerpt,
+      content,
+      faq: meta.faq.map((f) => ({
+        question: f.question,
+        answer: f.answer,
+        sourceSegmentIds: noteSegmentIds(f.noteRefs),
+      })),
+      seo: meta.seo,
+      warnings: meta.warnings,
+    };
+
+    return remapSegmentRefs(GeneratedArticleSchema.parse(article), input);
+  }
+
+  private async buildOutline(input: GenerateArticleInput, notes: ExtractedNote[]) {
+    const prompt = buildOutlinePrompt(input, notes);
+    if (prompt.length > MAX_PROMPT_TOKENS * CHARS_PER_TOKEN) throw new Error('AI_TRANSCRIPT_TOO_LONG');
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const raw = await this.caller.call({ system: JSON_SYSTEM_PROMPT, prompt, maxTokens: 3000, jsonMode: true });
+        const parsed = ArticleOutlineSchema.safeParse(extractJson(raw));
+        if (parsed.success) return parsed.data;
+      } catch {
+        /* reintento */
+      }
+    }
+    throw new Error('AI_PROVIDER_INVALID_ARTICLE_RESPONSE:outline');
+  }
+
+  private async writeSection(
+    input: GenerateArticleInput,
+    heading: string,
+    sectionNotes: ExtractedNote[],
+    position: { index: number; total: number },
+  ) {
+    const notesForPrompt = sectionNotes.length > 0 ? sectionNotes : [{ point: heading, sourceSegmentIds: [] }];
+    const prompt = buildSectionPrompt(input, heading, notesForPrompt, position);
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const raw = await this.caller.call({ system: JSON_SYSTEM_PROMPT, prompt, maxTokens: 3500, jsonMode: true });
+        const parsed = SectionResultSchema.safeParse(extractJson(raw));
+        if (parsed.success) return parsed.data.blocks;
+      } catch {
+        /* reintento */
+      }
+    }
+    // Fallback: un párrafo con las notas de la sección, para no perderla.
+    return [{ type: 'paragraph' as const, text: notesForPrompt.map((n) => n.point).join(' ') }];
+  }
+
+  private async buildArticleMeta(input: GenerateArticleInput, outline: ArticleOutline, notes: ExtractedNote[]) {
+    const prompt = buildArticleMetaPrompt(input, outline, notes);
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const raw = await this.caller.call({ system: JSON_SYSTEM_PROMPT, prompt, maxTokens: 2500, jsonMode: true });
+        const parsed = ArticleMetaSchema.safeParse(extractJson(raw));
+        if (parsed.success) return parsed.data;
+      } catch {
+        /* reintento */
+      }
+    }
+    // Fallback mínimo: la app necesita excerpt + seo válidos sí o sí.
+    const slug = outline.title
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 80);
+    return {
+      excerpt: outline.sections.map((s) => s.heading).join('. '),
+      faq: [] as ArticleMeta['faq'],
+      seo: {
+        title: outline.title.slice(0, 60),
+        slug: slug || 'articulo',
+        metaDescription: outline.sections.map((s) => s.heading).join(', ').slice(0, 155),
+        secondaryKeywords: [] as string[],
+      },
+      warnings: [] as GeneratedArticle['warnings'],
+    };
+  }
+
+  /** Camino directo para transcripciones cortas: una sola llamada. */
+  private async generateArticleSinglePass(input: GenerateArticleInput): Promise<GeneratedArticle> {
     const prompt = `${buildArticlePrompt(input)}
 
-Devuelve un JSON con exactamente esta forma:
-{
-  "title": string,
-  "excerpt": string,
-  "content": [{ "id": string, "type": "heading"|"paragraph"|"list"|"quote", "level"?: 2|3, "ordered"?: boolean, "items"?: string[], "text"?: string, "sourceSegmentIds": string[] }],
-  "faq": [{ "question": string, "answer": string, "sourceSegmentIds": string[] }],
-  "seo": { "title": string, "slug": string, "metaDescription": string, "primaryKeyword"?: string, "secondaryKeywords": string[] },
-  "warnings": [{ "blockId": string|null, "type": "unsupported_claim"|"number_verification"|"name_verification"|"date_verification"|"possible_hallucination"|"missing_source", "message": string }]
-}`;
+${ARTICLE_JSON_SHAPE}`;
 
     if (prompt.length > MAX_PROMPT_TOKENS * CHARS_PER_TOKEN) {
       throw new Error('AI_TRANSCRIPT_TOO_LONG');
@@ -299,18 +493,42 @@ Devuelve un JSON con exactamente esta forma:
       maxTokens: ARTICLE_MAX_OUTPUT_TOKENS,
       jsonMode: true,
     });
-    let json: unknown;
-    try {
-      json = extractJson(raw);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'JSON_PARSE_ERROR';
-      throw new Error(`AI_PROVIDER_INVALID_ARTICLE_RESPONSE:${message}:${raw.slice(0, 300)}`);
+    return remapSegmentRefs(parseArticle(raw), input);
+  }
+
+  /** Etapa 1: extrae notas estructuradas de cada bloque de segmentos, en paralelo limitado. */
+  private async extractNotes(input: GenerateArticleInput): Promise<ExtractedNote[]> {
+    const blocks = chunk(input.transcript.segments, EXTRACT_BLOCK_SEGMENTS);
+
+    // Guarda de tamaño sobre el bloque más grande (todos son iguales salvo el último).
+    const sampleLen = buildExtractionPrompt(blocks[0]!, input.transcript.language).length;
+    if (sampleLen > MAX_PROMPT_TOKENS * CHARS_PER_TOKEN) {
+      throw new Error('AI_TRANSCRIPT_TOO_LONG');
     }
-    const parsed = GeneratedArticleSchema.safeParse(json);
-    if (!parsed.success) {
-      throw new Error(`AI_PROVIDER_INVALID_ARTICLE_RESPONSE:${parsed.error.issues[0]?.message ?? 'SCHEMA_ERROR'}`);
-    }
-    return remapSegmentRefs(parsed.data, input);
+
+    const perBlock = await mapWithConcurrency(blocks, EXTRACT_CONCURRENCY, async (block) => {
+      const prompt = `${buildExtractionPrompt(block, input.transcript.language)}`;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const raw = await this.caller.call({
+            system: JSON_SYSTEM_PROMPT,
+            prompt,
+            maxTokens: EXTRACT_MAX_OUTPUT_TOKENS,
+            jsonMode: true,
+          });
+          const parsed = ExtractionResultSchema.safeParse(extractJson(raw));
+          if (parsed.success && parsed.data.notes.length > 0) return parsed.data.notes;
+        } catch {
+          /* reintento */
+        }
+      }
+      // Fallback: si la extracción de un bloque falla, se conserva su contenido
+      // como notas crudas (una por segmento) para NO perder esa parte de la
+      // conversación.
+      return block.map((s) => ({ point: s.text, sourceSegmentIds: [`s${s.index}`] }));
+    });
+
+    return perBlock.flat();
   }
 
   async rewriteSection(input: RewriteSectionInput): Promise<string> {
