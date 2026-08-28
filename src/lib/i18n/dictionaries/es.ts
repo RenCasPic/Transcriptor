@@ -324,13 +324,23 @@ export const es = {
         TRANSCRIPTION_NOT_CONFIGURED:
           'Falta configurar la API key de transcripción (TRANSCRIPTION_API_KEY o GROQ_API_KEY).',
         AI_NOT_CONFIGURED:
-          'Falta configurar la API key de IA (AI_API_KEY o GROQ_API_KEY) para generar el artículo.',
+          'Falta configurar la API key de IA (AI_API_KEY). Añádela en tu archivo .env y reinicia el servidor.',
+        AI_PROVIDER_AUTH_ERROR:
+          'La API key de IA es inválida o no tiene permisos. La transcripción se guardó: revisa AI_API_KEY (para OpenAI empieza por "sk-") y pulsa "Generar artículo".',
+        AI_PROVIDER_QUOTA_ERROR:
+          'La cuenta del proveedor de IA se quedó sin créditos. La transcripción se guardó: añade saldo en tu cuenta de OpenAI (Billing) y pulsa "Generar artículo".',
         AI_RATE_LIMITED:
           'Se alcanzó el límite de peticiones del proveedor de IA. La transcripción se guardó: espera un minuto y pulsa "Generar artículo" desde el proyecto.',
         AI_REQUEST_TOO_LARGE:
-          'La transcripción es demasiado larga para el plan GRATUITO de Groq (límite de ~8000 tokens/min). La transcripción se guardó. Activa el Dev Tier de Groq (gratis, solo verifica identidad) o usa AI_PROVIDER=anthropic|openai, y pulsa "Generar artículo".',
+          'La transcripción supera la capacidad de contexto del modelo de IA. La transcripción se guardó: usa un modelo con más contexto (AI_MODEL) o divide el audio en partes más cortas.',
+        AI_TRANSCRIPT_TOO_LONG:
+          'La transcripción es excepcionalmente larga y supera el límite configurado (AI_MAX_PROMPT_TOKENS). La transcripción se guardó: divide el audio en partes más cortas.',
         AI_MODEL_UNAVAILABLE:
           'El modelo de IA configurado no existe o no está disponible para tu cuenta. Revisa AI_MODEL.',
+        AI_PROVIDER_TEMPORARY_ERROR:
+          'El servicio de IA tuvo un error temporal. La transcripción se guardó: espera unos minutos y pulsa "Generar artículo".',
+        AI_INVALID_RESPONSE:
+          'El proveedor de IA devolvió una respuesta con un formato inesperado. La transcripción se guardó: pulsa "Generar artículo" para reintentar.',
         EMPTY_TRANSCRIPT: 'No se detectó voz en el archivo. Verifica que tenga audio.',
         JOB_FAILED: 'El procesamiento del archivo falló. Inténtalo de nuevo.',
         GENERATION_FAILED:

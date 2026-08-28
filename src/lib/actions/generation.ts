@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { runArticleGenerationPipeline } from '@/lib/generation/pipeline';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { classifyAiError, aiErrorMessageEs } from '@/lib/ai/errors';
 import { ok, err, type ActionResult } from '@/lib/types/domain';
 
 const GENERATION_RATE_LIMIT = 5;
@@ -65,28 +66,12 @@ export async function generateArticleAction(projectId: string): Promise<ActionRe
     }
     await supabase.from('projects').update({ status: 'failed' }).eq('id', projectId);
 
-    return err('GENERATION_FAILED', translateGenerationError(message));
+    const transcriptMissing = message === 'TRANSCRIPT_NOT_FOUND' || message === 'TRANSCRIPT_EMPTY';
+    return err(
+      transcriptMissing ? 'TRANSCRIPT_MISSING' : classifyAiError(message),
+      transcriptMissing
+        ? 'Necesitas añadir una transcripción antes de generar el artículo.'
+        : aiErrorMessageEs(classifyAiError(message)),
+    );
   }
-}
-
-function translateGenerationError(message: string): string {
-  if (message === 'TRANSCRIPT_NOT_FOUND' || message === 'TRANSCRIPT_EMPTY') {
-    return 'Necesitas añadir una transcripción antes de generar el artículo.';
-  }
-  if (message === 'AI_NOT_CONFIGURED') {
-    return 'Falta configurar la API key de IA (AI_API_KEY o GROQ_API_KEY) para generar el artículo.';
-  }
-  if (message.startsWith('AI_PROVIDER_HTTP_ERROR:413')) {
-    return 'La transcripción es demasiado larga para el plan GRATUITO de Groq (límite de ~8000 tokens/min). Activa el Dev Tier de Groq (gratis, solo verifica identidad) o usa AI_PROVIDER=anthropic u openai.';
-  }
-  if (message.startsWith('AI_PROVIDER_HTTP_ERROR:429')) {
-    return 'Se alcanzó el límite de peticiones del proveedor de IA. Espera un minuto y vuelve a pulsar "Generar artículo".';
-  }
-  if (message.startsWith('AI_PROVIDER_HTTP_ERROR:404')) {
-    return 'El modelo de IA configurado no existe o no está disponible para tu cuenta. Revisa AI_MODEL.';
-  }
-  if (message.startsWith('AI_PROVIDER_')) {
-    return `El proveedor de IA no devolvió una respuesta válida. Inténtalo de nuevo. (${message.slice(0, 200)})`;
-  }
-  return `No se pudo generar el artículo. Inténtalo de nuevo. (${message.slice(0, 200)})`;
 }

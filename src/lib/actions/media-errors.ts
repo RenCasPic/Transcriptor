@@ -7,8 +7,11 @@
  * El mensaje localizado que ve el usuario lo resuelve la UI a partir del
  * CÓDIGO (`t.projects.source.mediaErrors[code]`, en es/en); esta función solo
  * da el texto de respaldo que acompaña al código para logs y para consumidores
- * que no son la UI.
+ * que no son la UI. Los códigos de IA (`AI_*`) se delegan a `@/lib/ai/errors`
+ * para no duplicar sus mensajes.
  */
+
+import { aiErrorMessageEs, classifyAiError, type AiErrorCode } from '@/lib/ai/errors';
 
 export const MEDIA_ERROR_CODES = [
   'UNSUPPORTED_MEDIA_FORMAT',
@@ -27,10 +30,6 @@ export const MEDIA_ERROR_CODES = [
   'MEDIA_DURATION_EXCEEDED',
   'TRANSCRIPTION_PROVIDER_ERROR',
   'TRANSCRIPTION_NOT_CONFIGURED',
-  'AI_NOT_CONFIGURED',
-  'AI_RATE_LIMITED',
-  'AI_REQUEST_TOO_LARGE',
-  'AI_MODEL_UNAVAILABLE',
   'EMPTY_TRANSCRIPT',
   'JOB_FAILED',
   'GENERATION_FAILED',
@@ -55,6 +54,9 @@ export interface MediaErrorContext {
 
 export function translateMediaError(message: string, ctx: MediaErrorContext): string {
   const code = extractMediaErrorCode(message);
+  if (code.startsWith('AI_')) {
+    return aiErrorMessageEs(classifyAiError(code as AiErrorCode));
+  }
   switch (code) {
     case 'UNSUPPORTED_MEDIA_FORMAT':
       return 'Formato de archivo no soportado.';
@@ -88,14 +90,6 @@ export function translateMediaError(message: string, ctx: MediaErrorContext): st
       return 'El servicio de transcripción no pudo procesar el audio. Inténtalo de nuevo en unos minutos.';
     case 'TRANSCRIPTION_NOT_CONFIGURED':
       return 'Falta configurar la API key de transcripción (TRANSCRIPTION_API_KEY o GROQ_API_KEY).';
-    case 'AI_NOT_CONFIGURED':
-      return 'Falta configurar la API key de IA (AI_API_KEY o GROQ_API_KEY) para generar el artículo.';
-    case 'AI_RATE_LIMITED':
-      return 'Se alcanzó el límite de peticiones del proveedor de IA. La transcripción se guardó: espera un minuto y pulsa "Generar artículo".';
-    case 'AI_REQUEST_TOO_LARGE':
-      return 'La transcripción es demasiado larga para el plan GRATUITO de Groq. La transcripción se guardó. Activa el Dev Tier de Groq (gratis) o usa AI_PROVIDER=anthropic|openai, y pulsa "Generar artículo".';
-    case 'AI_MODEL_UNAVAILABLE':
-      return 'El modelo de IA configurado no existe o no está disponible para tu cuenta. Revisa AI_MODEL.';
     case 'EMPTY_TRANSCRIPT':
       return 'No se detectó voz en el archivo. Verifica que tenga audio.';
     case 'JOB_FAILED':

@@ -320,13 +320,23 @@ export const en: Dictionary = {
         TRANSCRIPTION_NOT_CONFIGURED:
           'The transcription API key is not configured (TRANSCRIPTION_API_KEY or GROQ_API_KEY).',
         AI_NOT_CONFIGURED:
-          'The AI API key is not configured (AI_API_KEY or GROQ_API_KEY) to generate the article.',
+          'The AI API key is not configured (AI_API_KEY). Add it to your .env file and restart the server.',
+        AI_PROVIDER_AUTH_ERROR:
+          'The AI API key is invalid or lacks permissions. The transcript was saved: check AI_API_KEY (starts with "sk-" for OpenAI) and press "Generate article".',
+        AI_PROVIDER_QUOTA_ERROR:
+          'The AI provider account is out of credits. The transcript was saved: add funds in your OpenAI account (Billing) and press "Generate article".',
         AI_RATE_LIMITED:
           'The AI provider request limit was reached. The transcript was saved: wait a minute and press "Generate article" from the project.',
         AI_REQUEST_TOO_LARGE:
-          "The transcript is too long for Groq's FREE tier (~8000 tokens/min limit). The transcript was saved. Enable Groq Dev Tier (free, identity verification only) or use AI_PROVIDER=anthropic|openai, then press \"Generate article\".",
+          'The transcript exceeds the AI model context capacity. The transcript was saved: use a model with a larger context (AI_MODEL) or split the audio into shorter parts.',
+        AI_TRANSCRIPT_TOO_LONG:
+          'The transcript is exceptionally long and exceeds the configured limit (AI_MAX_PROMPT_TOKENS). The transcript was saved: split the audio into shorter parts.',
         AI_MODEL_UNAVAILABLE:
           'The configured AI model does not exist or is not available for your account. Check AI_MODEL.',
+        AI_PROVIDER_TEMPORARY_ERROR:
+          'The AI service had a temporary error. The transcript was saved: wait a few minutes and press "Generate article".',
+        AI_INVALID_RESPONSE:
+          'The AI provider returned an unexpectedly formatted response. The transcript was saved: press "Generate article" to retry.',
         EMPTY_TRANSCRIPT: 'No speech was detected in the file. Make sure it has audio.',
         JOB_FAILED: 'Processing the file failed. Please try again.',
         GENERATION_FAILED:

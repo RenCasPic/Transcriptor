@@ -83,21 +83,23 @@ Todas las tablas privadas tienen RLS habilitado (ver `supabase/migrations/0003_w
 La generación de contenido está detrás de la interfaz `ContentGenerationProvider` (`src/lib/ai/provider.ts`). El proveedor activo se elige con variables de entorno, **nunca se llama a un proveedor de IA desde el navegador**.
 
 ```env
-GROQ_API_KEY=          # clave única que cubre IA + transcripción (recomendada, gratis)
-AI_PROVIDER=groq       # groq | anthropic | openai
-AI_API_KEY=            # clave específica de IA; opcional si usas Groq (basta GROQ_API_KEY)
-AI_MODEL=              # opcional, cada proveedor tiene un default razonable
+AI_PROVIDER=openai     # openai (default) | anthropic | groq
+AI_API_KEY=            # key del proveedor de IA (para OpenAI empieza por "sk-")
+AI_MODEL=              # opcional; default: openai -> gpt-4o-mini
+AI_MAX_PROMPT_TOKENS=  # opcional; tope de tokens de entrada (default 110000)
 ```
 
-- **`groq`** (default, modelo `openai/gpt-oss-120b`): gratis en https://console.groq.com. Una sola `GROQ_API_KEY` sirve para transcripción **y** generación.
-- **`anthropic`**: API de Mensajes de Anthropic (`AI_API_KEY` = key de Anthropic).
-- **`openai`**: API de Chat Completions de OpenAI (`AI_API_KEY` = key de OpenAI; `gpt-4o-mini` cuesta fracciones de céntimo por artículo).
+- **`openai`** (default, modelo `gpt-4o-mini`): barato (fracciones de céntimo por artículo) y con 128k de contexto — **cabe cualquier transcripción realista de una sola pasada** (hasta varias horas). Necesitas una cuenta con saldo.
+- **`anthropic`**: API de Mensajes de Anthropic (`AI_API_KEY` = key de Anthropic; modelo por defecto `claude-sonnet-5`).
+- **`groq`**: `AI_API_KEY` (o `GROQ_API_KEY`). ⚠️ El plan **gratuito** de Groq limita a ~8000 tokens/min por modelo: sirve para transcripción pero **no** para generar artículos de contenido real (`413`). Solo úsalo para generación con el **Dev Tier** de Groq.
 
-> ⚠️ **El plan GRATUITO de Groq no alcanza para generar artículos de contenido real.** Limita a ~8000 tokens/minuto por modelo; la transcripción cabe, pero generar el artículo a partir de una transcripción de más de ~5-6 min supera ese límite (`413 Request too large`) y **no hay workaround** en ese plan. La transcripción **sí se guarda**: la app lo indica y puedes reintentar "Generar artículo" tras cambiar de plan/proveedor.
-> Opciones: **(a)** activa el **Dev Tier** de Groq (gratis, solo verifica identidad — sube el límite ~25×); **(b)** `AI_PROVIDER=openai`; **(c)** `AI_PROVIDER=anthropic`.
-> El prompt de generación ya usa etiquetas de segmento cortas (`s0`, `s1`…) en vez de UUIDs para minimizar los tokens, y reintenta automáticamente los `429`. El tope de salida se ajusta con `AI_ARTICLE_MAX_TOKENS`.
+**La generación de artículos requiere una API key.** Sin `AI_API_KEY` (ni `GROQ_API_KEY` cuando `AI_PROVIDER=groq`), `generateArticleAction` devuelve un `ActionResult` de error explícito (`AI_NOT_CONFIGURED`) — no hay proveedor "mock" ni contenido de ejemplo.
 
-**La generación de artículos requiere una API key.** Sin `AI_API_KEY` ni `GROQ_API_KEY`, `generateArticleAction` devuelve un `ActionResult` de error explícito (`AI_NOT_CONFIGURED`) — no hay proveedor "mock" ni contenido de ejemplo.
+**Robustez y coste:**
+- El prompt usa etiquetas de segmento cortas (`s0`, `s1`…) en vez de UUIDs (~30% menos tokens); el proveedor las traduce de vuelta al persistir, la trazabilidad no cambia.
+- Reintento automático ante `429` (rate limit) y `5xx`, respetando `retry-after`. No reintenta `401`/`413`/cuota agotada.
+- Guarda de tamaño: si `prompt + transcripción` supera `AI_MAX_PROMPT_TOKENS`, falla antes de llamar con `AI_TRANSCRIPT_TOO_LONG` (pide dividir el audio) en vez de gastar una petición. Con gpt-4o-mini (128k) esto solo ocurre con audios excepcionalmente largos.
+- Errores diferenciados y accionables: API key inválida, sin créditos, rate limit, petición demasiado grande, error temporal del proveedor, respuesta con formato inesperado. La transcripción **siempre se conserva**: el mensaje indica reintentar "Generar artículo" desde el proyecto.
 
 Para añadir un proveedor nuevo: implementa `ContentGenerationProvider` en `src/lib/ai/providers/`, y regístralo en el switch de `src/lib/ai/providers/generic-provider.ts` (o crea una clase independiente y añade el caso en `src/lib/ai/providers/index.ts`).
 

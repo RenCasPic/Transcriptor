@@ -25,29 +25,52 @@ const JSON_SYSTEM_PROMPT =
 // un proveedor/plan con más TPM si hace falta.
 const ARTICLE_MAX_OUTPUT_TOKENS = Number(process.env.AI_ARTICLE_MAX_TOKENS ?? 5000);
 
+// Tope de tokens de ENTRADA (prompt + transcripción) para la generación del
+// artículo. Por defecto 110k: cabe de sobra en el contexto de gpt-4o-mini
+// (128k) incluso para una transcripción de varias horas, dejando margen para la
+// respuesta. Solo se supera con transcripciones excepcionalmente largas (más
+// que el propio MEDIA_MAX_DURATION_SECONDS por defecto). Estimación por
+// caracteres (~4 por token) para no depender de un tokenizador.
+const MAX_PROMPT_TOKENS = Number(process.env.AI_MAX_PROMPT_TOKENS ?? 110_000);
+const CHARS_PER_TOKEN = 4;
+
 const MAX_RETRY_WAIT_MS = 20_000;
 const MAX_RETRIES = 2;
+const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 529]);
+const QUOTA_BODY_HINT = /insufficient_quota|exceeded your current quota|credit balance is too low/i;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
- * POST con reintento ante 429 (límite de tokens/minuto). Respeta `retry-after`
- * o el "try again in Xs" que devuelve Groq. NO reintenta un 413 ("request too
- * large"): ahí el problema es que la petición no cabe en la ventana ni con
- * espera, así que reintentar solo perdería tiempo.
+ * POST con reintento ante errores transitorios: 429 (rate limit) y 5xx. NO
+ * reintenta:
+ *  - 401/403/404/413 ni 400: no se arreglan esperando.
+ *  - 429 cuando el cuerpo indica falta de saldo (`insufficient_quota`): OpenAI
+ *    usa 429 tanto para rate limit como para cuota agotada; solo lo segundo NO
+ *    debe reintentarse.
+ * Respeta `retry-after` (o el "try again in Xs" del cuerpo) para el tiempo de
+ * espera, con un tope.
  */
 async function postWithRetry(url: string, init: RequestInit): Promise<Response> {
   for (let attempt = 0; ; attempt++) {
-    const response = await fetch(url, init);
-    if (response.status !== 429 || attempt >= MAX_RETRIES) return response;
+    let response: Response;
+    try {
+      response = await fetch(url, init);
+    } catch (networkError) {
+      if (attempt >= MAX_RETRIES) throw networkError;
+      await sleep(2000);
+      continue;
+    }
+
+    if (!RETRYABLE_STATUS.has(response.status) || attempt >= MAX_RETRIES) return response;
 
     const body = await response.clone().text().catch(() => '');
+    if (response.status === 429 && QUOTA_BODY_HINT.test(body)) return response;
+
     const headerWait = Number(response.headers.get('retry-after')) * 1000;
     const bodyWait = Number(/try again in ([\d.]+)s/i.exec(body)?.[1]) * 1000;
-    const wait = Math.min(
-      MAX_RETRY_WAIT_MS,
-      Math.max(1000, Number.isFinite(headerWait) && headerWait > 0 ? headerWait : bodyWait || 3000),
-    );
+    const hinted = Number.isFinite(headerWait) && headerWait > 0 ? headerWait : bodyWait;
+    const wait = Math.min(MAX_RETRY_WAIT_MS, Math.max(250, Number.isFinite(hinted) && hinted > 0 ? hinted : 2000));
     await sleep(wait);
   }
 }
@@ -87,7 +110,8 @@ class AnthropicCaller implements ModelCaller {
     });
 
     if (!response.ok) {
-      throw new Error(`AI_PROVIDER_HTTP_ERROR:${response.status}`);
+      const errorBody = await response.text().catch(() => '');
+      throw new Error(`AI_PROVIDER_HTTP_ERROR:${response.status}:${errorBody.slice(0, 300)}`);
     }
 
     const data = (await response.json()) as { content?: Array<{ type: string; text?: string }> };
@@ -234,16 +258,17 @@ export class GenericContentGenerationProvider implements ContentGenerationProvid
         this.caller = new AnthropicCaller(apiKey, model || 'claude-sonnet-5');
         break;
       case 'openai':
+        // gpt-4o-mini: barato (fracciones de céntimo por artículo), contexto de
+        // 128k tokens (cabe cualquier transcripción realista de una sola vez) y
+        // modo JSON nativo. Cambiable con AI_MODEL.
         this.caller = new OpenAiCaller(apiKey, model || 'gpt-4o-mini');
         break;
       case 'groq':
-        // El plan GRATUITO de Groq (`on_demand`) limita a ~8000 tokens/minuto
-        // por modelo, lo que NO alcanza para generar un artículo a partir de una
-        // transcripción de más de ~5-6 min (la petición entera —prompt + salida—
-        // supera esa ventana y devuelve 413). Para usar la app con contenido
-        // real hay que activar el **Dev Tier** de Groq (gratis, solo verifica
-        // identidad) o usar AI_PROVIDER=anthropic|openai. `openai/gpt-oss-120b`
-        // es el mejor modelo disponible en Groq; se puede cambiar con AI_MODEL.
+        // OJO: el plan GRATUITO de Groq (`on_demand`) limita a ~8000 tokens/min
+        // por modelo — NO alcanza para generar un artículo de una transcripción
+        // real (la petición entera devuelve 413). Sirve para transcripción, no
+        // para generación. Para generar usa AI_PROVIDER=openai|anthropic, o el
+        // Dev Tier de Groq. `openai/gpt-oss-120b` es el mejor modelo en Groq.
         this.caller = new GroqCaller(apiKey, model || 'openai/gpt-oss-120b');
         break;
       default:
@@ -263,6 +288,10 @@ Devuelve un JSON con exactamente esta forma:
   "seo": { "title": string, "slug": string, "metaDescription": string, "primaryKeyword"?: string, "secondaryKeywords": string[] },
   "warnings": [{ "blockId": string|null, "type": "unsupported_claim"|"number_verification"|"name_verification"|"date_verification"|"possible_hallucination"|"missing_source", "message": string }]
 }`;
+
+    if (prompt.length > MAX_PROMPT_TOKENS * CHARS_PER_TOKEN) {
+      throw new Error('AI_TRANSCRIPT_TOO_LONG');
+    }
 
     const raw = await this.caller.call({
       system: JSON_SYSTEM_PROMPT,

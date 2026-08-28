@@ -133,3 +133,99 @@ describe('GenericContentGenerationProvider.generateArticle — remapeo de segmen
     expect(fetchMock).toHaveBeenCalledOnce();
   });
 });
+
+function jsonResponse(status: number, body: unknown, text = '') {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    headers: new Headers(),
+    clone() {
+      return this;
+    },
+    text: async () => text,
+    json: async () => body,
+  };
+}
+
+describe('GenericContentGenerationProvider — OpenAI + robustez', () => {
+  it('OpenAI: llama a la API correcta, con Bearer y modo JSON', async () => {
+    let seen: { url: string; body: Record<string, unknown>; auth: string } | null = null;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, init: RequestInit) => {
+        seen = {
+          url,
+          body: JSON.parse(init.body as string),
+          auth: ((init.headers ?? {}) as Record<string, string>).authorization ?? '',
+        };
+        return jsonResponse(200, { choices: [{ message: { content: mockArticleJson(['s0']) } }] });
+      }),
+    );
+
+    await new GenericContentGenerationProvider('openai', 'sk-abc', 'gpt-4o-mini').generateArticle(INPUT);
+    expect(seen!.url).toBe('https://api.openai.com/v1/chat/completions');
+    expect(seen!.auth).toBe('Bearer sk-abc');
+    expect(seen!.body.model).toBe('gpt-4o-mini');
+    expect(seen!.body.response_format).toEqual({ type: 'json_object' });
+  });
+
+  it('rechaza antes de llamar si el prompt supera el tope de tokens de entrada (default ~110k)', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    // ~40 segmentos de 12k chars = ~480k chars > 110000 tokens * 4 chars/token.
+    const bigInput: GenerateArticleInput = {
+      ...INPUT,
+      transcript: {
+        ...INPUT.transcript,
+        segments: Array.from({ length: 40 }, (_, i) => ({
+          id: `${i}`.padStart(8, '0') + '-0000-4000-8000-000000000000',
+          index: i,
+          speaker: null,
+          startSeconds: i,
+          endSeconds: i + 1,
+          text: 'x'.repeat(12_000),
+        })),
+      },
+    };
+
+    await expect(
+      new GenericContentGenerationProvider('openai', 'sk-x').generateArticle(bigInput),
+    ).rejects.toThrow('AI_TRANSCRIPT_TOO_LONG');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('NO reintenta un 429 de cuota agotada (insufficient_quota)', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(jsonResponse(429, {}, 'You exceeded your current quota (insufficient_quota)'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      new GenericContentGenerationProvider('openai', 'sk-x').generateArticle(INPUT),
+    ).rejects.toThrow(/AI_PROVIDER_HTTP_ERROR:429/);
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it('reintenta ante 500 y termina bien', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(500, {}, 'internal error'))
+      .mockResolvedValueOnce(jsonResponse(200, { choices: [{ message: { content: mockArticleJson(['s0']) } }] }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const article = await new GenericContentGenerationProvider('openai', 'sk-x').generateArticle(INPUT);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(article.content[0]!.sourceSegmentIds).toEqual([SEG_A]);
+  });
+
+  it('propaga el 401 con el cuerpo para que se clasifique como error de auth', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => jsonResponse(401, {}, '{"error":{"code":"invalid_api_key"}}')),
+    );
+    await expect(
+      new GenericContentGenerationProvider('openai', 'sk-bad').generateArticle(INPUT),
+    ).rejects.toThrow(/AI_PROVIDER_HTTP_ERROR:401:.*invalid_api_key/);
+  });
+});

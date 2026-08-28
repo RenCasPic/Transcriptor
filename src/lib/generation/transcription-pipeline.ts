@@ -4,6 +4,7 @@ import { z } from 'zod';
 import type { Database } from '@/lib/types/database';
 import type { TranscriptionProvider, TranscriptResult } from '@/lib/ai/provider';
 import { getTranscriptionProvider } from '@/lib/ai/transcription';
+import { classifyAiError } from '@/lib/ai/errors';
 import { getAudioChunker, isAudioChunkingAvailable, type AudioChunker } from '@/lib/media/audio-chunker';
 import { mergeChunkTranscripts, type ChunkTranscript } from '@/lib/media/merge-transcripts';
 import { getMediaLimits, type MediaLimits } from '@/lib/media/limits';
@@ -255,14 +256,12 @@ class JobError extends Error {
 function normalizeErrorCode(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   if (message === 'TRANSCRIPTION_NOT_CONFIGURED') return 'TRANSCRIPTION_NOT_CONFIGURED';
-  if (message === 'AI_NOT_CONFIGURED') return 'AI_NOT_CONFIGURED';
   // Errores del proveedor de IA que se propagan desde la generación del
-  // artículo encadenada (autoGenerate). Se mapean a códigos limpios para que
-  // la UI muestre un mensaje útil en vez del genérico.
-  if (message.startsWith('AI_PROVIDER_HTTP_ERROR:413')) return 'AI_REQUEST_TOO_LARGE';
-  if (message.startsWith('AI_PROVIDER_HTTP_ERROR:429')) return 'AI_RATE_LIMITED';
-  if (message.startsWith('AI_PROVIDER_HTTP_ERROR:404')) return 'AI_MODEL_UNAVAILABLE';
-  if (message.startsWith('AI_PROVIDER_')) return 'GENERATION_FAILED';
+  // artículo encadenada (autoGenerate): se clasifican con la misma lógica que
+  // usa `generateArticleAction`, para que la UI muestre un mensaje accionable.
+  if (message === 'AI_NOT_CONFIGURED' || message === 'AI_TRANSCRIPT_TOO_LONG' || message.startsWith('AI_PROVIDER_')) {
+    return classifyAiError(message);
+  }
   if (message.startsWith('AUDIO_CHUNKER_UNAVAILABLE')) return 'MEDIA_REQUIRES_CHUNKING_UNAVAILABLE';
   if (message.startsWith('MEDIA_DURATION_EXCEEDED')) return 'MEDIA_DURATION_EXCEEDED';
   if (message.startsWith('FFMPEG_EXIT')) return 'AUDIO_EXTRACTION_FAILED';
