@@ -113,14 +113,14 @@ export function EditorShell({
     // encabezados de columna son sticky. Fondo neutro y tranquilo: el
     // protagonista es el artículo.
     <div className="-m-4 min-h-[calc(100vh-var(--app-header-h))] bg-muted/40 lg:-m-8">
-      <div className="sticky top-0 z-40 flex h-11 items-center justify-between gap-2 border-b bg-background/95 px-3 shadow-sm backdrop-blur">
+      <div className="sticky top-0 z-40 flex h-11 items-center justify-between gap-2 border-b border-primary/20 bg-primary/10 px-3 shadow-sm backdrop-blur-md">
         <div className="flex min-w-0 items-center gap-1.5">
-          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-primary hover:text-primary" asChild>
             <Link href={`/projects/${project.id}`}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <span className="truncate text-sm font-medium">{project.name}</span>
+          <span className="truncate text-sm font-semibold text-primary">{project.name}</span>
           <span className="ml-1 hidden sm:block">
             <SaveStatusIndicator status={saveStatus} iconOnly />
           </span>

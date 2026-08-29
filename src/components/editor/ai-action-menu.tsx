@@ -9,9 +9,12 @@ import type { RewriteInstruction } from '@/lib/ai/provider';
 export function AiActionMenu({
   editor,
   onAction,
+  disabled = false,
 }: {
   editor: Editor;
   onAction: (instruction: RewriteInstruction) => void;
+  /** Oculta el menú mientras el diálogo de previsualización está abierto. */
+  disabled?: boolean;
 }) {
   const t = useDictionary();
   const ACTIONS: Array<{ value: RewriteInstruction; label: string }> = [
@@ -30,8 +33,11 @@ export function AiActionMenu({
   return (
     <BubbleMenu
       editor={editor}
-      tippyOptions={{ duration: 100, maxWidth: 340 }}
-      shouldShow={({ state }) => !state.selection.empty}
+      // zIndex 40: por debajo del diálogo de previsualización (overlay z-50),
+      // para que ese diálogo SIEMPRE quede por encima de este menú. tippy usa
+      // 9999 por defecto, que tapaba el diálogo.
+      tippyOptions={{ duration: 100, maxWidth: 340, zIndex: 40 }}
+      shouldShow={({ state }) => !disabled && !state.selection.empty}
     >
       <div className="flex max-w-xs flex-wrap gap-1 rounded-lg border bg-popover p-1.5 shadow-lg">
         <div className="flex w-full items-center gap-1 px-1 pb-1 text-xs font-medium text-muted-foreground">

@@ -224,7 +224,7 @@ export function ArticleEditor({
       </div>
 
       <div className="mx-auto w-full max-w-[44rem] px-5 pb-16 pt-6 sm:px-6">
-        <AiActionMenu editor={editor} onAction={handleAction} />
+        <AiActionMenu editor={editor} onAction={handleAction} disabled={!!rewriteState} />
         <EditorContent editor={editor} />
       </div>
 

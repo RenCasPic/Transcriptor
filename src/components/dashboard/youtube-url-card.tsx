@@ -84,8 +84,9 @@ export function YoutubeUrlCard() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <ArticleConfigFields idPrefix="youtube" register={register} control={control} errors={errors} />
-
+        {/* La caja de enlace y su botón van ARRIBA, con la misma estructura que
+            el panel "Subir archivo" (acción principal primero, configuración
+            del artículo debajo). */}
         <div className="flex gap-2">
           <Input
             placeholder={t.projects.source.youtubeUrlPlaceholder}
@@ -104,6 +105,9 @@ export function YoutubeUrlCard() {
             {t.projects.source.youtubeStages[stage]}
           </p>
         )}
+
+        <ArticleConfigFields idPrefix="youtube" register={register} control={control} errors={errors} />
+
         {importError &&
           (() => {
             const { title, tips } = youtubeImportErrorPresentation(importError.code, t.dashboard.importError);
