@@ -109,6 +109,15 @@
     prose-li:my-1;
 }
 
+/* Cuerpo del artículo justificado (con guionado automático para evitar los
+   "ríos" de espacio en blanco). Solo párrafos y listas: los encabezados y
+   citas se dejan alineados a la izquierda. */
+.tiptap-editor p,
+.tiptap-editor li {
+  text-align: justify;
+  hyphens: auto;
+}
+
 /* Compensa la toolbar sticky (top-11 = 2.75rem) al saltar a un encabezado
    desde el índice del artículo, para que no quede oculto debajo. */
 .tiptap-editor :is(h1, h2, h3) {

@@ -67,26 +67,26 @@ export function EditorDrawerTabs({
   return (
     <Tabs value={tab} onValueChange={setTab} className="flex flex-col">
       <div className="sticky top-11 z-20 rounded-t-2xl border-b bg-background/95 px-3 pb-2 pt-3 backdrop-blur">
-        <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <p className="mb-2 px-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           {t.editor.panelTitle}
         </p>
-        <TabsList className="grid w-full grid-cols-5 gap-0.5">
-          <TabsTrigger value="outline" className="px-1 text-[11px]">
+        <TabsList className="grid h-auto w-full grid-cols-5 gap-0.5">
+          <TabsTrigger value="outline" className="px-0.5 py-1.5 text-[13px]">
             {t.editor.tabs.outline}
           </TabsTrigger>
-          <TabsTrigger value="seo" className="px-1 text-[11px]">
+          <TabsTrigger value="seo" className="px-0.5 py-1.5 text-[13px]">
             {t.editor.tabs.seo}
           </TabsTrigger>
-          <TabsTrigger value="alerts" className="px-1 text-[11px]">
+          <TabsTrigger value="alerts" className="px-0.5 py-1.5 text-[13px]">
             {t.editor.tabs.alerts}
             {openWarnings > 0 && (
-              <span className="ml-1 rounded-full bg-warning px-1 text-[10px] text-warning-foreground">{openWarnings}</span>
+              <span className="ml-1 rounded-full bg-warning px-1 text-[11px] text-warning-foreground">{openWarnings}</span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="transcript" className="px-1 text-[11px]">
+          <TabsTrigger value="transcript" className="px-0.5 py-1.5 text-[13px]">
             {t.editor.tabs.transcript}
           </TabsTrigger>
-          <TabsTrigger value="history" className="px-1 text-[11px]">
+          <TabsTrigger value="history" className="px-0.5 py-1.5 text-[13px]">
             {t.editor.tabs.history}
           </TabsTrigger>
         </TabsList>

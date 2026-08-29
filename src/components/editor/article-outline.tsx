@@ -43,7 +43,7 @@ export function ArticleOutline({ json }: { json: Json }) {
   }
 
   if (items.length === 0) {
-    return <p className="p-4 text-xs text-muted-foreground">{t.editor.outline.empty}</p>;
+    return <p className="p-4 text-sm text-muted-foreground">{t.editor.outline.empty}</p>;
   }
 
   return (
@@ -55,8 +55,8 @@ export function ArticleOutline({ json }: { json: Json }) {
               type="button"
               onClick={() => jumpTo(i)}
               className={cn(
-                'block w-full truncate rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground',
-                item.level === 3 && 'pl-5 text-xs',
+                'block w-full truncate rounded-md px-2 py-1.5 text-left text-[15px] leading-6 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground',
+                item.level === 3 && 'pl-5 text-sm',
               )}
               title={item.text}
             >

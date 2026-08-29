@@ -56,7 +56,7 @@ export function EditorPreview({
         </p>
         <hr className="my-8" />
         <div
-          className="prose prose-lg prose-slate max-w-none dark:prose-invert prose-headings:font-semibold prose-a:text-primary"
+          className="prose prose-lg prose-slate max-w-none dark:prose-invert prose-headings:font-semibold prose-a:text-primary prose-p:text-justify prose-li:text-justify [&_p]:hyphens-auto"
           dangerouslySetInnerHTML={{ __html: html }}
         />
       </article>

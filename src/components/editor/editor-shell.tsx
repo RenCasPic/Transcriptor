@@ -155,10 +155,11 @@ export function EditorShell({
           onClose={() => setPreviewMode(false)}
         />
       ) : (
-        <div className="mx-auto grid max-w-[1400px] gap-4 p-3 lg:grid-cols-[minmax(0,1fr)_340px] lg:p-4">
+        <div className="mx-auto grid max-w-[1400px] gap-4 p-3 lg:grid-cols-[minmax(0,1fr)_360px] lg:p-4">
           {/* El editor es el contenido principal. Sin overflow-hidden: rompería
-              los encabezados sticky internos. */}
-          <div className="min-w-0 rounded-2xl bg-background shadow-sm ring-1 ring-border/60">
+              los encabezados sticky internos. Borde sutil + sombra ligera para
+              despegarlo del fondo. */}
+          <div className="min-w-0 rounded-2xl border border-border bg-background shadow-sm">
             <ArticleEditor
               documentId={document.id}
               projectId={project.id}
@@ -175,7 +176,7 @@ export function EditorShell({
           </div>
 
           <aside className="hidden lg:block">
-            <div className="rounded-2xl bg-background shadow-sm ring-1 ring-border/60">{panel}</div>
+            <div className="rounded-2xl border border-border bg-background shadow-sm">{panel}</div>
           </aside>
         </div>
       )}
