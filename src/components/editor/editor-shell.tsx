@@ -157,9 +157,10 @@ export function EditorShell({
       ) : (
         <div className="mx-auto grid max-w-[1400px] gap-4 p-3 lg:grid-cols-[minmax(0,1fr)_360px] lg:p-4">
           {/* El editor es el contenido principal. Sin overflow-hidden: rompería
-              los encabezados sticky internos. Borde sutil + sombra ligera para
-              despegarlo del fondo. */}
-          <div className="min-w-0 rounded-2xl border border-border bg-background shadow-sm">
+              los encabezados sticky internos. Mismo tratamiento que las
+              tarjetas del dashboard (componente Card): borde primario + sombra
+              ligera + esquinas redondeadas. */}
+          <div className="min-w-0 rounded-xl border border-primary bg-card shadow-sm">
             <ArticleEditor
               documentId={document.id}
               projectId={project.id}
@@ -176,7 +177,7 @@ export function EditorShell({
           </div>
 
           <aside className="hidden lg:block">
-            <div className="rounded-2xl border border-border bg-background shadow-sm">{panel}</div>
+            <div className="rounded-xl border border-primary bg-card shadow-sm">{panel}</div>
           </aside>
         </div>
       )}

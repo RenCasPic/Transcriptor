@@ -66,7 +66,7 @@ export function EditorDrawerTabs({
 
   return (
     <Tabs value={tab} onValueChange={setTab} className="flex flex-col">
-      <div className="sticky top-11 z-20 rounded-t-2xl border-b bg-background/95 px-3 pb-2 pt-3 backdrop-blur">
+      <div className="sticky top-11 z-20 rounded-t-xl border-b bg-background/95 px-3 pb-2 pt-3 backdrop-blur">
         <p className="mb-2 px-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           {t.editor.panelTitle}
         </p>
