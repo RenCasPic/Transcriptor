@@ -53,17 +53,26 @@ export async function createProjectAction(input: CreateProjectInput): Promise<Ac
       primary_keyword: parsed.data.primaryKeyword || null,
       objective: parsed.data.objective || null,
       call_to_action: parsed.data.callToAction || null,
-      target_reading_minutes: parsed.data.targetReadingMinutes ?? null,
+      // Solo se envía cuando el usuario eligió un tiempo concreto: así crear un
+      // proyecto en "Automático" no depende de que la migración 0021 ya esté
+      // aplicada (con NULL, la columna toma su valor por defecto o ni se toca).
+      ...targetReadingMinutesInsert(parsed.data.targetReadingMinutes),
     })
     .select('id')
     .single();
 
   if (error || !data) {
+    console.error('createProjectAction failed:', error);
     return err('CREATE_PROJECT_ERROR', 'No se pudo crear el proyecto.');
   }
 
   revalidatePath('/dashboard');
   return ok({ id: data.id });
+}
+
+/** Omite `target_reading_minutes` cuando es "Automático" (null/undefined). */
+function targetReadingMinutesInsert(value: number | null | undefined): { target_reading_minutes?: number } {
+  return value == null ? {} : { target_reading_minutes: value };
 }
 
 const QUICK_PROJECT_DEFAULTS = {
@@ -120,12 +129,13 @@ export async function createQuickProjectAction(
       primary_keyword: parsed.data.primaryKeyword || null,
       objective: parsed.data.objective || null,
       call_to_action: parsed.data.callToAction || null,
-      target_reading_minutes: parsed.data.targetReadingMinutes ?? null,
+      ...targetReadingMinutesInsert(parsed.data.targetReadingMinutes),
     })
     .select('id')
     .single();
 
   if (error || !data) {
+    console.error('createQuickProjectAction failed:', error);
     return err('CREATE_PROJECT_ERROR', 'No se pudo crear el proyecto.');
   }
 
@@ -158,9 +168,20 @@ export async function updateProjectAction(
   }
   if (parsed.data.status !== undefined) update.status = parsed.data.status;
 
-  const { error } = await supabase.from('projects').update(update).eq('id', projectId);
+  let { error } = await supabase.from('projects').update(update).eq('id', projectId);
+
+  // Tolerancia a la ventana de migración: si `target_reading_minutes` todavía
+  // no existe en la BD (migración 0021 sin aplicar), reintenta sin ese campo
+  // para no bloquear el resto de la edición. Cuando la migración esté
+  // aplicada, esta rama nunca se ejecuta.
+  if (error?.code === '42703' && 'target_reading_minutes' in update) {
+    const rest = { ...update };
+    delete rest.target_reading_minutes;
+    ({ error } = await supabase.from('projects').update(rest).eq('id', projectId));
+  }
 
   if (error) {
+    console.error('updateProjectAction failed:', error);
     return err('UPDATE_PROJECT_ERROR', 'No se pudo actualizar el proyecto.');
   }
 
