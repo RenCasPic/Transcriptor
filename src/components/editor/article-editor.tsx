@@ -176,50 +176,55 @@ export function ArticleEditor({
     // (top-11 = altura de la barra superior del EditorShell) para seguir a mano
     // mientras se edita; el título y sus metadatos van en el flujo del artículo.
     <div className="flex flex-col">
-      <div className="mx-auto w-full max-w-[44rem] px-5 pt-8 sm:px-6">
-        {coverImageUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={coverImageUrl}
-            alt={coverImageAlt ?? ''}
-            className="mb-6 aspect-[16/7] w-full rounded-xl object-cover"
-          />
-        )}
-        <textarea
-          value={title}
-          onChange={(e) => handleTitleChange(e.target.value)}
-          placeholder={t.editor.titlePlaceholder}
-          rows={1}
-          spellCheck
-          className="block w-full resize-none overflow-hidden bg-transparent text-3xl font-bold leading-tight tracking-tight outline-none placeholder:text-muted-foreground/60 sm:text-4xl"
-          onInput={(e) => {
-            const el = e.currentTarget;
-            el.style.height = 'auto';
-            el.style.height = `${el.scrollHeight}px`;
-          }}
-        />
-        <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted-foreground">
-          <span className="tabular-nums">
-            {liveWordCount.toLocaleString(locale)} {t.common.words}
-          </span>
-          <Dot />
-          <span>
-            {estimateReadingTimeMinutes(liveWordCount)} {t.common.minutesReading}
-          </span>
-          <Dot />
-          <SaveStatusIndicator status={status} />
-          {updatedAt && (
-            <>
-              <Dot />
-              <span>
-                {t.editor.meta.updated} {formatUpdated(updatedAt, locale)}
-              </span>
-            </>
+      {/* Cabecera del artículo: banda morada a lo ancho de la tarjeta, con
+          título y metadatos en blanco (mismo tratamiento que la barra
+          superior y el panel de publicación). */}
+      <div className="rounded-t-xl bg-primary text-primary-foreground">
+        <div className="mx-auto w-full max-w-[44rem] px-5 pb-5 pt-8 sm:px-6">
+          {coverImageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={coverImageUrl}
+              alt={coverImageAlt ?? ''}
+              className="mb-6 aspect-[16/7] w-full rounded-xl object-cover"
+            />
           )}
+          <textarea
+            value={title}
+            onChange={(e) => handleTitleChange(e.target.value)}
+            placeholder={t.editor.titlePlaceholder}
+            rows={1}
+            spellCheck
+            className="block w-full resize-none overflow-hidden bg-transparent text-3xl font-bold leading-tight tracking-tight text-primary-foreground caret-primary-foreground outline-none placeholder:text-primary-foreground/50 sm:text-4xl"
+            onInput={(e) => {
+              const el = e.currentTarget;
+              el.style.height = 'auto';
+              el.style.height = `${el.scrollHeight}px`;
+            }}
+          />
+          <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-primary-foreground/80">
+            <span className="tabular-nums">
+              {liveWordCount.toLocaleString(locale)} {t.common.words}
+            </span>
+            <Dot />
+            <span>
+              {estimateReadingTimeMinutes(liveWordCount)} {t.common.minutesReading}
+            </span>
+            <Dot />
+            <SaveStatusIndicator status={status} onColor />
+            {updatedAt && (
+              <>
+                <Dot />
+                <span>
+                  {t.editor.meta.updated} {formatUpdated(updatedAt, locale)}
+                </span>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="sticky top-11 z-20 mt-4">
+      <div className="sticky top-11 z-20">
         <EditorToolbar editor={editor} />
       </div>
 

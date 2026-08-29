@@ -17,7 +17,15 @@ import { Label } from '@/components/ui/label';
 import { setDocumentPublicAction } from '@/lib/actions/embed';
 import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
-export function EmbedButton({ documentId, initialIsPublic }: { documentId: string; initialIsPublic: boolean }) {
+export function EmbedButton({
+  documentId,
+  initialIsPublic,
+  className,
+}: {
+  documentId: string;
+  initialIsPublic: boolean;
+  className?: string;
+}) {
   const t = useDictionary();
   const [open, setOpen] = useState(false);
   const [isPublic, setIsPublic] = useState(initialIsPublic);
@@ -56,7 +64,7 @@ export function EmbedButton({ documentId, initialIsPublic }: { documentId: strin
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant={isPublic ? 'outline' : 'default'} size="sm">
+        <Button variant={isPublic ? 'outline' : 'default'} size="sm" className={className}>
           <Globe className="h-4 w-4" />
           {isPublic ? t.editor.actions.published : t.editor.actions.publish}
         </Button>

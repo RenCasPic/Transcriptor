@@ -28,6 +28,7 @@ const INPUT: GenerateArticleInput = {
     objective: null,
     callToAction: null,
     provisionalTitle: null,
+    targetReadingMinutes: null,
   },
 };
 

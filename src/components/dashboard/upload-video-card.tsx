@@ -34,7 +34,7 @@ export function UploadVideoCard({ mediaLimits }: { mediaLimits: MediaLimits }) {
     formState: { errors },
   } = useForm<ArticleConfigInput>({
     resolver: zodResolver(ArticleConfigSchema),
-    defaultValues: { contentType: 'guide', tone: 'professional' },
+    defaultValues: { contentType: 'guide', tone: 'professional', targetReadingMinutes: null },
   });
 
   const isBusy = active !== null && phase !== 'error';

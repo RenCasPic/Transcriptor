@@ -46,15 +46,15 @@ export function TranscriptPanel({
 
   return (
     <div className="flex flex-col">
-      <div className="border-b border-primary/20 bg-primary/10 p-3">
+      <div className="border-b border-primary bg-primary p-3 text-primary-foreground">
         <button
           type="button"
           onClick={() => setCollapsed((prev) => !prev)}
-          className="flex w-full items-center justify-between text-xs font-semibold uppercase tracking-wide text-primary"
+          className="flex w-full items-center justify-between text-xs font-semibold uppercase tracking-wide text-primary-foreground"
         >
           <span>
             {t.editor.columns.transcript}
-            <span className="ml-1.5 font-normal normal-case tracking-normal text-primary/60">
+            <span className="ml-1.5 font-normal normal-case tracking-normal text-primary-foreground/60">
               {segments.length}
             </span>
           </span>

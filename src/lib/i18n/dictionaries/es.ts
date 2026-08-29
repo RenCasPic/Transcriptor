@@ -225,6 +225,10 @@ export const es = {
       objectivePlaceholder: 'Ej. Explicar cómo estructurar un plan de contenidos trimestral',
       ctaLabel: 'Llamada a la acción (opcional)',
       ctaPlaceholder: 'Ej. Agenda una consultoría gratuita',
+      readingTimeLabel: 'Tiempo de lectura del artículo',
+      readingTimeHint: 'Marca la extensión objetivo. La IA desarrolla o condensa el contenido real de la transcripción para acercarse, sin inventar.',
+      readingTimeAuto: 'Automático (según el contenido)',
+      readingTimeMinutes: '{n} min de lectura',
       saveAsTemplate: 'Guardar esta configuración como plantilla',
       templateNamePlaceholder: 'Nombre de la plantilla (ej. Podcast semanal B2B)',
       submit: 'Crear proyecto',
@@ -419,6 +423,7 @@ export const es = {
       regenerateConfirm:
         '¿Regenerar el artículo desde la transcripción? Se reemplazará el contenido actual del editor. La versión actual queda guardada en el historial.',
       regenerateSuccess: 'Artículo regenerado desde la transcripción.',
+      regenerateLengthLabel: 'Regenerar con este tiempo de lectura',
       publish: 'Publicar',
       published: 'Publicado',
     },

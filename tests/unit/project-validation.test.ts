@@ -31,6 +31,36 @@ describe('CreateProjectSchema', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  describe('targetReadingMinutes', () => {
+    const base = { name: 'Episodio 12', contentType: 'guide', tone: 'professional', language: 'es' } as const;
+
+    it('es opcional (undefined) para no romper flujos existentes', () => {
+      const result = CreateProjectSchema.safeParse(base);
+      expect(result.success).toBe(true);
+      if (result.success) expect(result.data.targetReadingMinutes).toBeUndefined();
+    });
+
+    it('normaliza "auto" / "" a null', () => {
+      for (const raw of ['auto', '']) {
+        const result = CreateProjectSchema.safeParse({ ...base, targetReadingMinutes: raw });
+        expect(result.success).toBe(true);
+        if (result.success) expect(result.data.targetReadingMinutes).toBeNull();
+      }
+    });
+
+    it('acepta un número de minutos (incluido como string del <select>)', () => {
+      expect(CreateProjectSchema.safeParse({ ...base, targetReadingMinutes: 8 }).success).toBe(true);
+      const asString = CreateProjectSchema.safeParse({ ...base, targetReadingMinutes: '8' });
+      expect(asString.success).toBe(true);
+      if (asString.success) expect(asString.data.targetReadingMinutes).toBe(8);
+    });
+
+    it('rechaza minutos fuera de rango', () => {
+      expect(CreateProjectSchema.safeParse({ ...base, targetReadingMinutes: 0 }).success).toBe(false);
+      expect(CreateProjectSchema.safeParse({ ...base, targetReadingMinutes: 120 }).success).toBe(false);
+    });
+  });
 });
 
 describe('ImportTranscriptSchema', () => {

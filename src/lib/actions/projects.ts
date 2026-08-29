@@ -53,6 +53,7 @@ export async function createProjectAction(input: CreateProjectInput): Promise<Ac
       primary_keyword: parsed.data.primaryKeyword || null,
       objective: parsed.data.objective || null,
       call_to_action: parsed.data.callToAction || null,
+      target_reading_minutes: parsed.data.targetReadingMinutes ?? null,
     })
     .select('id')
     .single();
@@ -119,6 +120,7 @@ export async function createQuickProjectAction(
       primary_keyword: parsed.data.primaryKeyword || null,
       objective: parsed.data.objective || null,
       call_to_action: parsed.data.callToAction || null,
+      target_reading_minutes: parsed.data.targetReadingMinutes ?? null,
     })
     .select('id')
     .single();
@@ -151,6 +153,9 @@ export async function updateProjectAction(
   if (parsed.data.primaryKeyword !== undefined) update.primary_keyword = parsed.data.primaryKeyword || null;
   if (parsed.data.objective !== undefined) update.objective = parsed.data.objective || null;
   if (parsed.data.callToAction !== undefined) update.call_to_action = parsed.data.callToAction || null;
+  if (parsed.data.targetReadingMinutes !== undefined) {
+    update.target_reading_minutes = parsed.data.targetReadingMinutes ?? null;
+  }
   if (parsed.data.status !== undefined) update.status = parsed.data.status;
 
   const { error } = await supabase.from('projects').update(update).eq('id', projectId);

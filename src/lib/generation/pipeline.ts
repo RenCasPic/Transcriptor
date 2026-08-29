@@ -72,6 +72,7 @@ export async function runArticleGenerationPipeline(
       objective: project.objective,
       callToAction: project.call_to_action,
       provisionalTitle: project.provisional_title,
+      targetReadingMinutes: project.target_reading_minutes,
     },
   });
 

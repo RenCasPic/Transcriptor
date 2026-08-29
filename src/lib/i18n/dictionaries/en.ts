@@ -223,6 +223,10 @@ export const en: Dictionary = {
       objectivePlaceholder: 'E.g. Explain how to structure a quarterly content plan',
       ctaLabel: 'Call to action (optional)',
       ctaPlaceholder: 'E.g. Schedule a free consultation',
+      readingTimeLabel: 'Article reading time',
+      readingTimeHint: 'Sets the target length. The AI develops or condenses the real transcript content to get close, without making things up.',
+      readingTimeAuto: 'Automatic (based on content)',
+      readingTimeMinutes: '{n} min read',
       saveAsTemplate: 'Save this configuration as a template',
       templateNamePlaceholder: 'Template name (e.g. Weekly B2B podcast)',
       submit: 'Create project',
@@ -414,6 +418,7 @@ export const en: Dictionary = {
       regenerateConfirm:
         'Regenerate the article from the transcript? The current editor content will be replaced. The current version stays saved in history.',
       regenerateSuccess: 'Article regenerated from the transcript.',
+      regenerateLengthLabel: 'Regenerate at this reading time',
       publish: 'Publish',
       published: 'Published',
     },

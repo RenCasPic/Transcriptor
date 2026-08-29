@@ -25,6 +25,8 @@ export interface GenerateArticleInput {
     objective: string | null;
     callToAction: string | null;
     provisionalTitle: string | null;
+    /** Minutos de lectura objetivo; `null` = automático (según el contenido). */
+    targetReadingMinutes: number | null;
   };
 }
 

@@ -4,7 +4,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CONTENT_TYPES, ARTICLE_TONES, type ArticleConfigInput } from '@/lib/validations/project';
+import {
+  CONTENT_TYPES,
+  ARTICLE_TONES,
+  READING_TIME_OPTIONS,
+  type ArticleConfigInput,
+} from '@/lib/validations/project';
 import { useDictionary, useLocale } from '@/lib/i18n/dictionary-provider';
 import { getDomainLabels } from '@/lib/i18n/domain-labels';
 
@@ -73,6 +78,33 @@ export function ArticleConfigFields({
             </Select>
           )}
         />
+      </div>
+
+      <div className="space-y-1.5 sm:col-span-2">
+        <Label htmlFor={`${idPrefix}-targetReadingMinutes`}>{t.projects.new.readingTimeLabel}</Label>
+        <Controller
+          control={control}
+          name="targetReadingMinutes"
+          render={({ field }) => (
+            <Select
+              value={field.value == null ? 'auto' : String(field.value)}
+              onValueChange={(v) => field.onChange(v === 'auto' ? null : Number(v))}
+            >
+              <SelectTrigger id={`${idPrefix}-targetReadingMinutes`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="auto">{t.projects.new.readingTimeAuto}</SelectItem>
+                {READING_TIME_OPTIONS.map((min) => (
+                  <SelectItem key={min} value={String(min)}>
+                    {t.projects.new.readingTimeMinutes.replace('{n}', String(min))}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+        <p className="text-xs text-muted-foreground">{t.projects.new.readingTimeHint}</p>
       </div>
 
       <div className="space-y-1.5 sm:col-span-2">

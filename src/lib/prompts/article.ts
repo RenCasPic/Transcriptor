@@ -2,6 +2,33 @@ import { COMMON_RULES, toneInstruction } from './rules';
 import type { GenerateArticleInput } from '@/lib/ai/provider';
 import type { ExtractedNote, ArticleOutline } from '@/lib/validations/article';
 
+const WORDS_PER_MINUTE = 200;
+
+/** Palabras objetivo para un tiempo de lectura dado. */
+export function targetWordCount(minutes: number): number {
+  return Math.round(minutes * WORDS_PER_MINUTE);
+}
+
+/**
+ * Instrucción de extensión para los prompts. Con `targetReadingMinutes`, el
+ * artículo apunta a ~minutos*200 palabras: desarrolla más (contexto, ejemplos,
+ * implicaciones de lo que SÍ dice la fuente) si se queda corto, condensa lo
+ * accesorio si se pasa — nunca inventando información. Sin valor (`null`),
+ * mantiene el criterio "la extensión la decide la riqueza de la conversación".
+ */
+function lengthGuidance(targetReadingMinutes: number | null): string {
+  if (!targetReadingMinutes) {
+    return `Extensión: la determina la riqueza de la conversación, no un número fijo. Un artículo corto para
+una transcripción con mucho contenido útil es un ERROR: significa que se perdió información.`;
+  }
+  const words = targetWordCount(targetReadingMinutes);
+  return `Extensión objetivo: ~${words} palabras (≈ ${targetReadingMinutes} min de lectura). Ajusta CUÁNTO
+desarrollas cada punto para acercarte a esa cifra: si te quedas corto, profundiza en los ejemplos, el
+contexto, las razones y las implicaciones de lo que SÍ aparece en la transcripción; si te pasas mucho,
+condensa lo accesorio y las repeticiones. NUNCA inventes datos, ejemplos ni afirmaciones para alcanzar
+la extensión, y NUNCA elimines una idea sustantiva de la fuente para acortar.`;
+}
+
 const CONTENT_TYPE_GUIDANCE: Record<string, string> = {
   tutorial: 'Estructura el contenido como pasos secuenciales, numerados cuando sea posible.',
   guide: 'Organiza el contenido en secciones temáticas que guíen al lector de lo general a lo específico.',
@@ -32,8 +59,7 @@ Cómo trabajar:
    mencionan, los datos, las razones que se dan, las objeciones, los matices y las conclusiones.
 3. Cubre TODA la transcripción. No te quedes solo con los primeros minutos ni con las ideas más
    evidentes: el contenido del final es tan importante como el del principio.
-4. La extensión la determina la riqueza de la conversación, no un número fijo. Un artículo corto para
-   una transcripción con mucho contenido útil es un ERROR: significa que se perdió información.
+4. ${lengthGuidance(project.targetReadingMinutes)}
 
 Lo ÚNICO que se elimina: saludos y despedidas, muletillas y titubeos, digresiones sin relación con el
 tema, y repeticiones literales. NO elimines una idea, un ejemplo o un dato solo porque el artículo
@@ -84,16 +110,22 @@ function numberedNotes(notes: ExtractedNote[]): string {
 /** Etapa 2: agrupar las notas en secciones temáticas ordenadas (esqueleto del artículo). */
 export function buildOutlinePrompt(input: GenerateArticleInput, notes: ExtractedNote[]): string {
   const { project } = input;
-  const suggested = Math.max(4, Math.min(16, Math.round(notes.length / 12)));
+  const byNotes = Math.max(4, Math.min(16, Math.round(notes.length / 12)));
+  // Con tiempo de lectura objetivo, el nº de secciones se ajusta a la
+  // extensión buscada (~380 palabras por sección); si no, va por nº de notas.
+  const suggested = project.targetReadingMinutes
+    ? Math.max(3, Math.min(14, Math.round(targetWordCount(project.targetReadingMinutes) / 380)))
+    : byNotes;
 
   return `Tienes ${notes.length} NOTAS numeradas extraídas de una conversación (charla/podcast/entrevista),
 en orden cronológico. Diseña el ESQUELETO de un artículo editorial que las desarrolle TODAS.
 
 ${projectContext(project)}
+${lengthGuidance(project.targetReadingMinutes)}
 Título provisional del usuario (puedes mejorarlo): ${project.provisionalTitle ?? 'ninguno'}
 
 Devuelve un JSON { "title": string, "sections": [{ "heading": string, "noteRefs": number[] }] }:
-- Entre ${Math.max(4, suggested - 2)} y ${suggested + 4} secciones temáticas, en un orden que fluya para el lector.
+- Entre ${Math.max(3, suggested - 2)} y ${suggested + 4} secciones temáticas, en un orden que fluya para el lector.
 - "noteRefs": los NÚMEROS de las notas que cubre esa sección. CADA nota (1..${notes.length}) debe estar
   asignada exactamente a una sección; ninguna puede quedar sin asignar. Está bien que una nota de
   contexto aparezca en la sección introductoria.
@@ -114,6 +146,14 @@ export function buildSectionPrompt(
   const isIntro = position.index === 0;
   const isClose = position.index === position.total - 1;
 
+  // Presupuesto de extensión por sección cuando hay tiempo de lectura objetivo.
+  let lengthLine = 'Entre 3 y 7 párrafos completos (cada párrafo, varias frases).';
+  if (project.targetReadingMinutes) {
+    const perSection = Math.round(targetWordCount(project.targetReadingMinutes) / Math.max(1, position.total));
+    const paragraphs = Math.max(2, Math.min(9, Math.round(perSection / 110)));
+    lengthLine = `Aproximadamente ${paragraphs} párrafos completos (~${perSection} palabras en total para esta sección), para que el artículo entero quede en ~${targetWordCount(project.targetReadingMinutes)} palabras. Prioriza cubrir todos los puntos sobre clavar la cifra exacta, y no inventes contenido para rellenar.`;
+  }
+
   return `Escribe SOLO la sección "${heading}" de un artículo editorial (sección ${position.index + 1} de ${position.total}).
 
 ${projectContext(project)}
@@ -121,8 +161,7 @@ ${project.callToAction && isClose ? `Cierra la sección integrando esta llamada 
 ${project.primaryKeyword ? `Si encaja de forma natural, usa la expresión "${project.primaryKeyword}".` : ''}
 
 Desarrolla en prosa TODOS los puntos de abajo, sin omitir ninguno: la idea, el porqué, los ejemplos
-concretos, las cifras, los nombres, los matices y las conclusiones. Entre 3 y 7 párrafos completos
-(cada párrafo, varias frases). ${isIntro ? 'Es la introducción: presenta el tema del artículo antes de entrar en detalle.' : 'No repitas lo ya dicho en secciones anteriores; entra directo al contenido de esta sección.'}
+concretos, las cifras, los nombres, los matices y las conclusiones. ${lengthLine} ${isIntro ? 'Es la introducción: presenta el tema del artículo antes de entrar en detalle.' : 'No repitas lo ya dicho en secciones anteriores; entra directo al contenido de esta sección.'}
 Usa "list" solo si los puntos enumeran elementos, y "quote" para reproducir una frase textual del orador.
 
 ${COMMON_RULES}

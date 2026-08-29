@@ -23,6 +23,7 @@ import {
   CreateProjectSchema,
   CONTENT_TYPES,
   ARTICLE_TONES,
+  READING_TIME_OPTIONS,
   type CreateProjectInput,
 } from '@/lib/validations/project';
 import { updateProjectAction } from '@/lib/actions/projects';
@@ -57,6 +58,7 @@ export function EditProjectDialog({ project }: { project: ProjectRow }) {
       primaryKeyword: project.primary_keyword ?? '',
       objective: project.objective ?? '',
       callToAction: project.call_to_action ?? '',
+      targetReadingMinutes: project.target_reading_minutes,
     },
   });
 
@@ -140,6 +142,32 @@ export function EditProjectDialog({ project }: { project: ProjectRow }) {
                 )}
               />
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="edit-targetReadingMinutes">{t.projects.new.readingTimeLabel}</Label>
+            <Controller
+              control={control}
+              name="targetReadingMinutes"
+              render={({ field }) => (
+                <Select
+                  value={field.value == null ? 'auto' : String(field.value)}
+                  onValueChange={(v) => field.onChange(v === 'auto' ? null : Number(v))}
+                >
+                  <SelectTrigger id="edit-targetReadingMinutes">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="auto">{t.projects.new.readingTimeAuto}</SelectItem>
+                    {READING_TIME_OPTIONS.map((min) => (
+                      <SelectItem key={min} value={String(min)}>
+                        {t.projects.new.readingTimeMinutes.replace('{n}', String(min))}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            <p className="text-xs text-muted-foreground">{t.projects.new.readingTimeHint}</p>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="edit-audience">{t.projects.new.audienceLabel}</Label>

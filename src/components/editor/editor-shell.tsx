@@ -113,16 +113,24 @@ export function EditorShell({
     // encabezados de columna son sticky. Fondo neutro y tranquilo: el
     // protagonista es el artículo.
     <div className="-m-4 min-h-[calc(100vh-var(--app-header-h))] bg-muted/40 lg:-m-8">
-      <div className="sticky top-0 z-40 flex h-11 items-center justify-between gap-2 border-b border-primary/20 bg-primary/10 px-3 shadow-sm backdrop-blur-md">
+      {/* Barra superior: morado sólido, texto e iconos blancos. La línea
+          inferior (border-primary) es la "línea delgada morada" contra el
+          contenido blanco de debajo. */}
+      <div className="sticky top-0 z-40 flex h-11 items-center justify-between gap-2 border-b border-primary bg-primary px-3 text-primary-foreground shadow-sm">
         <div className="flex min-w-0 items-center gap-1.5">
-          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-primary hover:text-primary" asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0 text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
+            asChild
+          >
             <Link href={`/projects/${project.id}`}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <span className="truncate text-sm font-semibold text-primary">{project.name}</span>
+          <span className="truncate text-sm font-semibold">{project.name}</span>
           <span className="ml-1 hidden sm:block">
-            <SaveStatusIndicator status={saveStatus} iconOnly />
+            <SaveStatusIndicator status={saveStatus} iconOnly onColor />
           </span>
         </div>
 
@@ -130,16 +138,34 @@ export function EditorShell({
           <Button
             variant="ghost"
             size="sm"
-            className="hidden sm:inline-flex"
+            className="hidden text-primary-foreground hover:bg-white/15 hover:text-primary-foreground sm:inline-flex"
             onClick={() => setPreviewMode((v) => !v)}
           >
             <Eye className="h-4 w-4" />
             {t.editor.preview.enter}
           </Button>
-          <RegenerateButton projectId={project.id} />
-          <ExportMenu title={document.title} html={snapshot.html} json={snapshot.json} />
-          <EmbedButton documentId={document.id} initialIsPublic={document.isPublic} />
-          <Button variant="outline" size="icon" className="h-8 w-8 lg:hidden" onClick={() => setPanelSheetOpen(true)}>
+          <RegenerateButton
+            projectId={project.id}
+            currentTargetReadingMinutes={project.target_reading_minutes}
+            className="text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
+          />
+          <ExportMenu
+            title={document.title}
+            html={snapshot.html}
+            json={snapshot.json}
+            className="border-white/40 bg-transparent text-primary-foreground shadow-none hover:bg-white/15 hover:text-primary-foreground"
+          />
+          <EmbedButton
+            documentId={document.id}
+            initialIsPublic={document.isPublic}
+            className="border-transparent bg-white text-primary shadow-none hover:bg-white/90 hover:text-primary"
+          />
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 border-white/40 bg-white/15 text-primary-foreground shadow-none hover:bg-white/25 lg:hidden"
+            onClick={() => setPanelSheetOpen(true)}
+          >
             <PanelRight className="h-4 w-4" />
           </Button>
         </div>

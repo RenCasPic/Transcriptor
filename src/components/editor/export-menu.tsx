@@ -18,7 +18,17 @@ import { slugify } from '@/lib/content/slug';
 import { useDictionary } from '@/lib/i18n/dictionary-provider';
 import type { Json } from '@/lib/types/database';
 
-export function ExportMenu({ title, html, json }: { title: string; html: string; json: Json }) {
+export function ExportMenu({
+  title,
+  html,
+  json,
+  className,
+}: {
+  title: string;
+  html: string;
+  json: Json;
+  className?: string;
+}) {
   const t = useDictionary();
   const filenameBase = slugify(title) || 'articulo';
 
@@ -46,7 +56,7 @@ export function ExportMenu({ title, html, json }: { title: string; html: string;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" className={className}>
           <Download className="h-4 w-4" />
           {t.editor.export.button}
         </Button>

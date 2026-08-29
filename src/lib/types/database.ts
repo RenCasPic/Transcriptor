@@ -137,6 +137,7 @@ export interface Database {
           primary_keyword: string | null;
           objective: string | null;
           call_to_action: string | null;
+          target_reading_minutes: number | null;
           status: ProjectStatus;
           created_at: string;
           updated_at: string;
@@ -154,6 +155,7 @@ export interface Database {
           primary_keyword?: string | null;
           objective?: string | null;
           call_to_action?: string | null;
+          target_reading_minutes?: number | null;
           status?: ProjectStatus;
           created_at?: string;
           updated_at?: string;

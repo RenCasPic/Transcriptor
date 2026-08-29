@@ -14,14 +14,28 @@ const ICONS: Record<AutosaveStatus, { icon: typeof Check; className: string; dot
   conflict: { icon: AlertTriangle, className: 'text-destructive', dot: 'bg-destructive' },
 };
 
-export function SaveStatusIndicator({ status, iconOnly = false }: { status: AutosaveStatus; iconOnly?: boolean }) {
+export function SaveStatusIndicator({
+  status,
+  iconOnly = false,
+  onColor = false,
+}: {
+  status: AutosaveStatus;
+  iconOnly?: boolean;
+  /** Sobre fondo de color (barra morada): fuerza texto/icono claros. */
+  onColor?: boolean;
+}) {
   const t = useDictionary();
   const { icon: Icon, className, dot } = ICONS[status];
 
   if (iconOnly) {
     return (
       <span
-        className={cn('inline-flex h-2 w-2 shrink-0 rounded-full', dot, status === 'saving' && 'animate-pulse')}
+        className={cn(
+          'inline-flex h-2 w-2 shrink-0 rounded-full',
+          dot,
+          status === 'saving' && 'animate-pulse',
+          onColor && (status === 'idle' || status === 'saving') && '!bg-primary-foreground/60',
+        )}
         title={t.editor.saveStatus[status]}
         aria-label={t.editor.saveStatus[status]}
       />
@@ -29,7 +43,7 @@ export function SaveStatusIndicator({ status, iconOnly = false }: { status: Auto
   }
 
   return (
-    <div className={cn('flex items-center gap-1.5 text-xs font-medium', className)}>
+    <div className={cn('flex items-center gap-1.5 text-xs font-medium', onColor ? 'text-primary-foreground/90' : className)}>
       <Icon className={cn('h-3.5 w-3.5', status === 'saving' && 'animate-spin')} />
       {t.editor.saveStatus[status]}
     </div>

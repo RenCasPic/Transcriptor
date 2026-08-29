@@ -20,6 +20,19 @@ export const ARTICLE_TONES = [
   'friendly',
 ] as const;
 
+/**
+ * Opciones de "tiempo de lectura objetivo" (minutos). El valor controla la
+ * extensión del artículo generado (≈ minutos * 200 palabras). `null` =
+ * "Automático": la extensión la decide la riqueza de la transcripción.
+ */
+export const READING_TIME_OPTIONS = [3, 5, 8, 10, 15, 20] as const;
+
+/** Acepta "" / "auto" / null -> null; un número dentro de rango -> number. */
+const targetReadingMinutesSchema = z.preprocess(
+  (v) => (v === '' || v === 'auto' || v === undefined || v === null ? null : Number(v)),
+  z.number().int().min(1).max(60).nullable(),
+);
+
 export const CreateProjectSchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres').max(120),
   provisionalTitle: z.string().max(200).optional().or(z.literal('')),
@@ -30,6 +43,7 @@ export const CreateProjectSchema = z.object({
   primaryKeyword: z.string().max(120).optional().or(z.literal('')),
   objective: z.string().max(500).optional().or(z.literal('')),
   callToAction: z.string().max(300).optional().or(z.literal('')),
+  targetReadingMinutes: targetReadingMinutesSchema.optional(),
 });
 
 export type CreateProjectInput = z.infer<typeof CreateProjectSchema>;
