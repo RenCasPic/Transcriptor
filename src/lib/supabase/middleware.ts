@@ -76,7 +76,10 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (user && (pathname === '/login' || pathname === '/register')) {
+  // Con sesión, /login no tiene sentido -> al panel. /register SÍ se deja
+  // pasar: el CTA "Crear cuenta gratis" de la landing debe abrir el formulario
+  // de registro aunque ya haya una sesión (p. ej. para crear otra cuenta).
+  if (user && pathname === '/login') {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
