@@ -131,7 +131,7 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
   ];
 
   return (
-    <div className="flex flex-wrap items-center gap-1 border-y border-border bg-background/95 px-3 py-2 backdrop-blur">
+    <div className="flex flex-wrap items-center gap-1 border-y border-primary bg-background/95 px-3 py-2 backdrop-blur">
       {groups.map((group, i) => (
         <div key={i} className="flex items-center gap-0.5">
           {i > 0 && <span className="mx-1 h-5 w-px bg-border" aria-hidden="true" />}

@@ -46,7 +46,7 @@ export function TranscriptPanel({
 
   return (
     <div className="flex flex-col">
-      <div className="border-b border-border bg-background p-4">
+      <div className="border-b border-primary bg-background p-4">
         <button
           type="button"
           onClick={() => setCollapsed((prev) => !prev)}

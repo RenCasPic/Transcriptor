@@ -113,9 +113,9 @@ export function EditorShell({
     // encabezados de columna son sticky. Fondo neutro y tranquilo: el
     // protagonista es el artículo.
     <div className="-m-4 min-h-[calc(100vh-var(--app-header-h))] bg-muted/30 lg:-m-8">
-      {/* Barra superior: fondo claro y neutro, borde sutil. El morado solo
-          aparece como acento (botón "Publicar", estados activos). */}
-      <div className="sticky top-0 z-40 flex h-11 items-center justify-between gap-2 border-b border-border bg-background/95 px-3 shadow-sm backdrop-blur">
+      {/* Barra superior: fondo claro y neutro. El morado solo aparece como
+          acento (botón "Publicar", estados activos) y en la línea inferior. */}
+      <div className="sticky top-0 z-40 flex h-11 items-center justify-between gap-2 border-b border-primary bg-background/95 px-3 shadow-sm backdrop-blur">
         <div className="flex min-w-0 items-center gap-1.5">
           <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground" asChild>
             <Link href={`/projects/${project.id}`}>
@@ -166,10 +166,9 @@ export function EditorShell({
         />
       ) : (
         <div className="mx-auto grid max-w-[1400px] gap-5 p-4 lg:grid-cols-[minmax(0,1fr)_360px] lg:p-6">
-          {/* El editor es el contenido principal. Sin overflow-hidden: rompería
-              los encabezados sticky internos. Tarjeta blanca con borde sutil y
-              sombra suave; sin bloques de color. */}
-          <div className="min-w-0 rounded-xl border border-border bg-card shadow-sm">
+          {/* El editor es el contenido principal. Tarjeta blanca con borde
+              morado fino y sombra suave. */}
+          <div className="min-w-0 rounded-xl border border-primary bg-card shadow-sm">
             <ArticleEditor
               documentId={document.id}
               projectId={project.id}
@@ -185,14 +184,19 @@ export function EditorShell({
             />
           </div>
 
+          {/* El panel queda fijo en pantalla mientras se hace scroll del
+              artículo (sticky). Si su contenido excede el alto de la ventana,
+              scrollea por dentro; nunca se pierde de vista. */}
           <aside className="hidden lg:block">
-            <div className="rounded-xl border border-border bg-card shadow-sm">{panel}</div>
+            <div className="sticky top-[4.25rem] flex max-h-[calc(100vh-6.5rem)] flex-col overflow-hidden rounded-xl border border-primary bg-card shadow-sm">
+              {panel}
+            </div>
           </aside>
         </div>
       )}
 
       <Sheet open={panelSheetOpen} onOpenChange={setPanelSheetOpen}>
-        <SheetContent side="right" className="w-[88vw] max-w-sm overflow-y-auto p-0">
+        <SheetContent side="right" className="flex w-[88vw] max-w-sm flex-col p-0">
           <SheetTitle className="sr-only">{t.editor.panelTitle}</SheetTitle>
           {panel}
         </SheetContent>

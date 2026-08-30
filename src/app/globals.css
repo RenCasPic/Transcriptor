@@ -106,6 +106,7 @@
     prose-p:my-4
     prose-a:text-primary prose-a:underline-offset-2
     prose-blockquote:border-l-primary/40 prose-blockquote:not-italic prose-blockquote:text-muted-foreground
+    prose-hr:border-primary/30
     prose-li:my-1;
 }
 
