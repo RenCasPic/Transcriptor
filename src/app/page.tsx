@@ -17,9 +17,20 @@ import { StepPreviews } from '@/components/landing/step-previews';
 import { FadeIn } from '@/components/landing/fade-in';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import { getDictionary } from '@/lib/i18n/get-dictionary';
+import { createClient } from '@/lib/supabase/server';
 
 export default async function LandingPage() {
   const { dictionary: t } = await getDictionary();
+
+  // Si ya hay sesión, "Crear cuenta" / "Empezar gratis" no tienen sentido (el
+  // middleware redirige /register -> /dashboard, que se veía como si el botón
+  // llevara directo a "Subir archivo"). Con sesión, se muestra un único CTA
+  // "Ir a mi panel".
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const isAuthed = !!user;
 
   const STEPS = [
     { icon: Mic, title: t.landing.steps.step1Title, description: t.landing.steps.step1Description, color: 'bg-indigo-500/10 text-indigo-600' },
@@ -49,15 +60,26 @@ export default async function LandingPage() {
           </Link>
           <nav className="flex items-center gap-2">
             <LanguageSwitcher />
-            <Button variant="ghost" asChild>
-              <Link href="/login">{t.landing.signIn}</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/register">
-                {t.landing.createFreeAccount}
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
+            {isAuthed ? (
+              <Button asChild>
+                <Link href="/dashboard">
+                  {t.landing.goToDashboard}
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            ) : (
+              <>
+                <Button variant="ghost" asChild>
+                  <Link href="/login">{t.landing.signIn}</Link>
+                </Button>
+                <Button asChild>
+                  <Link href="/register">
+                    {t.landing.createFreeAccount}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </>
+            )}
           </nav>
         </div>
       </header>
@@ -80,15 +102,26 @@ export default async function LandingPage() {
             </h1>
             <p className="max-w-2xl text-lg text-muted-foreground">{t.landing.heroSubtitle}</p>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Button size="lg" asChild>
-                <Link href="/register" className="group">
-                  {t.landing.startFree}
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="/login">{t.landing.alreadyHaveAccount}</Link>
-              </Button>
+              {isAuthed ? (
+                <Button size="lg" asChild>
+                  <Link href="/dashboard" className="group">
+                    {t.landing.goToDashboard}
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </Link>
+                </Button>
+              ) : (
+                <>
+                  <Button size="lg" asChild>
+                    <Link href="/register" className="group">
+                      {t.landing.startFree}
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </Link>
+                  </Button>
+                  <Button size="lg" variant="outline" asChild>
+                    <Link href="/login">{t.landing.alreadyHaveAccount}</Link>
+                  </Button>
+                </>
+              )}
             </div>
           </FadeIn>
         </section>
@@ -150,8 +183,8 @@ export default async function LandingPage() {
             <h2 className="text-3xl font-bold tracking-tight">{t.landing.ctaTitle}</h2>
             <p className="max-w-xl text-primary-foreground/80">{t.landing.ctaSubtitle}</p>
             <Button size="lg" variant="secondary" asChild>
-              <Link href="/register" className="group">
-                {t.landing.createFreeAccount}
+              <Link href={isAuthed ? '/dashboard' : '/register'} className="group">
+                {isAuthed ? t.landing.goToDashboard : t.landing.createFreeAccount}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
             </Button>
@@ -165,12 +198,20 @@ export default async function LandingPage() {
             © {new Date().getFullYear()} {t.common.appName}. {t.landing.footerRights}
           </p>
           <div className="flex gap-4">
-            <Link href="/login" className="hover:text-foreground">
-              {t.landing.signIn}
-            </Link>
-            <Link href="/register" className="hover:text-foreground">
-              {t.auth.register.submit}
-            </Link>
+            {isAuthed ? (
+              <Link href="/dashboard" className="hover:text-foreground">
+                {t.landing.goToDashboard}
+              </Link>
+            ) : (
+              <>
+                <Link href="/login" className="hover:text-foreground">
+                  {t.landing.signIn}
+                </Link>
+                <Link href="/register" className="hover:text-foreground">
+                  {t.auth.register.submit}
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </footer>
