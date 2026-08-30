@@ -1,33 +1,8 @@
 import type { Metadata, Viewport } from 'next';
-import { Fraunces, Newsreader, Space_Mono } from 'next/font/google';
 import { Toaster } from '@/components/ui/sonner';
 import { getDictionary } from '@/lib/i18n/get-dictionary';
 import { DictionaryProvider } from '@/lib/i18n/dictionary-provider';
 import './globals.css';
-
-// Tres voces tipográficas del instrumento editorial:
-//   DISPLAY  → Fraunces: carácter, títulos enormes (voz "MANUSCRITO").
-//   BODY     → Newsreader: serif de texto optimizada para pantalla, lectura larga.
-//   SYSTEM   → Space Mono: técnica, para escalas, consola y coordenadas ("CONTROL").
-const fraunces = Fraunces({
-  subsets: ['latin'],
-  style: ['normal', 'italic'],
-  variable: '--font-fraunces',
-  display: 'swap',
-});
-const newsreader = Newsreader({
-  subsets: ['latin'],
-  style: ['normal', 'italic'],
-  variable: '--font-newsreader',
-  display: 'swap',
-});
-const spaceMono = Space_Mono({
-  subsets: ['latin'],
-  weight: ['400', '700'],
-  style: ['normal', 'italic'],
-  variable: '--font-space-mono',
-  display: 'swap',
-});
 
 export async function generateMetadata(): Promise<Metadata> {
   const { locale } = await getDictionary();
@@ -58,7 +33,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const { locale, dictionary } = await getDictionary();
 
   return (
-    <html lang={locale} className={`h-full ${fraunces.variable} ${newsreader.variable} ${spaceMono.variable}`}>
+    <html lang={locale} className="h-full">
       <body className="h-full antialiased">
         <DictionaryProvider locale={locale} dictionary={dictionary}>
           {children}

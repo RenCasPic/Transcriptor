@@ -50,7 +50,7 @@ export function EditorPreview({
           />
         )}
         <p className="ed-label mb-5">{t.editor.masthead.kicker}</p>
-        <h1 className="font-display text-[2.7rem] font-medium leading-[1.05] tracking-[-0.02em] text-[hsl(var(--ed-ink))] sm:text-[3.6rem]">
+        <h1 className="font-sans text-[2.6rem] font-semibold leading-[1.06] tracking-[-0.02em] text-[hsl(var(--ed-ink))] sm:text-[3.3rem]">
           {title}
         </h1>
         <p className="mt-6 border-y border-[hsl(var(--ed-rule))] py-3 font-mono text-[0.72rem] uppercase tracking-[0.08em] text-[hsl(var(--ed-ink-faint))]">

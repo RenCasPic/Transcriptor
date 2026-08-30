@@ -100,52 +100,44 @@
 
 /* ============================================================
    INSTRUMENTO EDITORIAL
-   Dos materiales: GRAFITO (el "banco" / chrome de la máquina) y
-   PAPEL (el manuscrito, un objeto físico posado encima). UNA señal
-   eléctrica (bermellón de registro), que funciona como SEÑAL, no
-   decoración. Tres voces: DISPLAY (Fraunces) / BODY (Newsreader) /
-   SYSTEM (Space Mono). Nada de esto toca los tokens globales.
+   La arquitectura (REGLA + LÍNEA DE REGISTRO + CONSOLA, marcas de
+   corte, composición asimétrica, coordenadas §, sin barra de
+   herramientas) se conserva, pero el tratamiento visual usa los
+   colores y las fuentes de la app: fondo claro, tinta = --foreground,
+   la señal es el índigo --primary. Dos capas: SUPERFICIE (el chrome
+   del instrumento, gris claro de la app) y PAPEL (el manuscrito,
+   blanco). Los --ed-* derivan de los tokens globales, así que el
+   modo oscuro se hereda solo. No toca los tokens globales.
    ============================================================ */
 .editor-surface {
-  /* GRAFITO — el banco de trabajo */
-  --ed-desk: 28 6% 14%;
-  --ed-desk-2: 28 5% 18%;
-  --ed-desk-3: 28 5% 22%;
-  --ed-desk-line: 28 6% 30%;
-  --ed-desk-ink: 40 12% 66%;
-  --ed-desk-ink-dim: 30 5% 45%;
+  /* SUPERFICIE — el chrome del instrumento (grises claros de la app) */
+  --ed-desk: var(--muted);
+  --ed-desk-2: var(--background);
+  --ed-desk-3: var(--secondary);
+  --ed-desk-line: var(--border);
+  --ed-desk-ink: var(--foreground);
+  --ed-desk-ink-dim: var(--muted-foreground);
 
   /* PAPEL — el manuscrito */
-  --ed-paper: 40 26% 96%;
-  --ed-paper-sunk: 40 16% 91%;
-  --ed-ink: 28 14% 13%;
-  --ed-ink-soft: 28 8% 37%;
-  --ed-ink-faint: 28 6% 56%;
-  --ed-rule: 32 13% 82%;
-  --ed-rule-strong: 30 10% 66%;
+  --ed-paper: var(--card);
+  --ed-paper-sunk: var(--muted);
+  --ed-ink: var(--foreground);
+  --ed-ink-soft: var(--muted-foreground);
+  --ed-ink-faint: 226 12% 55%;
+  --ed-rule: var(--border);
+  --ed-rule-strong: 214 20% 80%;
 
-  /* SEÑAL — bermellón de registro. Un solo color eléctrico. */
-  --ed-accent: 9 83% 55%;
-  /* Acento "de modo": gris en calma, señal cuando el modo lo pide. */
+  /* SEÑAL — el índigo de la app. Un solo color, usado como señal. */
+  --ed-accent: var(--primary);
+  /* Acento "de modo": tenue en calma, señal cuando el modo lo pide. */
   --ed-mode: var(--ed-desk-ink-dim);
 
   background-color: hsl(var(--ed-desk));
   color: hsl(var(--ed-desk-ink));
 }
 .dark .editor-surface {
-  --ed-desk: 24 5% 9%;
-  --ed-desk-2: 24 5% 12%;
-  --ed-desk-3: 24 4% 16%;
-  --ed-desk-line: 26 5% 24%;
-  --ed-desk-ink: 38 10% 62%;
-  --ed-desk-ink-dim: 28 5% 40%;
-  --ed-paper: 30 8% 11%;
-  --ed-paper-sunk: 30 7% 14%;
-  --ed-ink: 40 24% 90%;
-  --ed-ink-soft: 38 10% 68%;
-  --ed-ink-faint: 34 7% 50%;
-  --ed-rule: 32 7% 24%;
-  --ed-rule-strong: 32 7% 34%;
+  --ed-ink-faint: 215 14% 52%;
+  --ed-rule-strong: 217 20% 32%;
 }
 
 /* Modos operativos: al elegir estación en la consola, la señal aparece. */
@@ -158,7 +150,7 @@
 
 /* Micro-etiqueta de instrumento (mono, versalitas). Hereda el color. */
 .ed-label {
-  font-family: var(--font-space-mono), ui-monospace, monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   text-transform: uppercase;
   letter-spacing: 0.2em;
   font-size: 0.62rem;
@@ -202,10 +194,9 @@
 /* ---------- El manuscrito: voz BODY, legibilidad extrema ---------- */
 .tiptap-editor {
   @apply prose max-w-none focus:outline-none;
-  font-family: var(--font-newsreader), Georgia, Cambria, serif;
-  font-optical-sizing: auto;
-  font-size: 1.16rem;
-  line-height: 1.74;
+  font-family: inherit;
+  font-size: 1.08rem;
+  line-height: 1.7;
   color: hsl(var(--ed-ink));
   --tw-prose-body: hsl(var(--ed-ink));
   --tw-prose-headings: hsl(var(--ed-ink));
@@ -237,19 +228,18 @@
   position: absolute;
   left: -3.4rem;
   top: 1.05em;
-  font-family: var(--font-space-mono), monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.6rem;
   letter-spacing: 0.12em;
   color: hsl(var(--ed-ink-faint));
 }
 
-/* Encabezados: voz DISPLAY (Fraunces), con su coordenada de sección. */
+/* Encabezados: sans de la app, más peso, con su coordenada de sección. */
 .tiptap-editor h2,
 .tiptap-editor h3 {
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-weight: 540;
-  letter-spacing: -0.012em;
-  line-height: 1.1;
+  font-weight: 640;
+  letter-spacing: -0.017em;
+  line-height: 1.15;
   position: relative;
 }
 .tiptap-editor h2 {
@@ -270,11 +260,10 @@
 
 /* Capitular sobria: en tinta, no en señal (la señal se reserva para acción). */
 .tiptap-editor > p:first-of-type::first-letter {
-  font-family: var(--font-fraunces), Georgia, serif;
   float: left;
-  font-size: 3.7em;
+  font-size: 3.2em;
   line-height: 0.82;
-  font-weight: 560;
+  font-weight: 680;
   margin: 0.05em 0.1em -0.04em 0;
 }
 .tiptap-editor blockquote {
@@ -291,7 +280,7 @@
   text-decoration-color: hsl(var(--ed-accent));
 }
 .tiptap-editor code {
-  font-family: var(--font-space-mono), ui-monospace, monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.85em;
   background: hsl(var(--ed-paper-sunk));
   padding: 0.1em 0.35em;
@@ -311,7 +300,7 @@
   transform: translateX(-50%);
   background: hsl(var(--ed-paper));
   padding: 0 0.5em;
-  font-family: var(--font-space-mono), monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.8rem;
   color: hsl(var(--ed-ink-faint));
 }

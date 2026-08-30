@@ -112,7 +112,7 @@ export function TranscriptPanel({
                     <Copy className="h-3 w-3" />
                   </Button>
                 </div>
-                <p className={cn('font-serif leading-relaxed', isUsed ? 'text-[hsl(var(--ed-ink))]' : 'text-[hsl(var(--ed-ink-soft))]')}>
+                <p className={cn('font-sans leading-relaxed', isUsed ? 'text-[hsl(var(--ed-ink))]' : 'text-[hsl(var(--ed-ink-soft))]')}>
                   {segment.speaker && <span className="font-mono text-xs uppercase tracking-wide">{segment.speaker}: </span>}
                   {segment.text}
                 </p>

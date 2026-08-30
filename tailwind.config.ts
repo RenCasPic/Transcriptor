@@ -16,13 +16,6 @@ const config: Config = {
       screens: { '2xl': '1400px' },
     },
     extend: {
-      fontFamily: {
-        // Solo se usan en el editor (instrumento editorial). El resto de la app
-        // sigue con la sans del sistema (fontFamily.sans por defecto de Tailwind).
-        display: ['var(--font-fraunces)', 'Georgia', 'Cambria', 'serif'],
-        serif: ['var(--font-newsreader)', 'Georgia', 'Cambria', 'serif'],
-        mono: ['var(--font-space-mono)', 'ui-monospace', 'SFMono-Regular', 'monospace'],
-      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',

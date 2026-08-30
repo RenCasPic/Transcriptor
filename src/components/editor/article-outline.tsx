@@ -51,8 +51,8 @@ export function ArticleOutline({ json }: { json: Json }) {
                   className={cn(
                     'truncate',
                     isChapter
-                      ? 'font-serif text-[0.98rem] text-[hsl(var(--ed-ink))]'
-                      : 'font-serif text-[0.88rem] text-[hsl(var(--ed-ink-soft))]',
+                      ? 'font-sans text-[0.95rem] font-medium text-[hsl(var(--ed-ink))]'
+                      : 'font-sans text-[0.86rem] text-[hsl(var(--ed-ink-soft))]',
                   )}
                 >
                   {item.text}

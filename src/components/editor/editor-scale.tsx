@@ -84,11 +84,11 @@ export function EditorScale({ json, scroll }: { json: Json; scroll: EditorScroll
 
               {/* Ficha contextual — invade el papel */}
               {hover === i && (
-                <div className="ed-mode-sweep absolute left-[calc(100%+0.25rem)] top-1/2 z-30 w-56 -translate-y-1/2 border border-[hsl(var(--ed-rule-strong))] bg-[hsl(var(--ed-paper))] px-3 py-2.5 text-[hsl(var(--ed-ink))] shadow-[4px_4px_0_hsl(var(--ed-desk-2))]">
+                <div className="ed-mode-sweep absolute left-[calc(100%+0.25rem)] top-1/2 z-30 w-56 -translate-y-1/2 border border-[hsl(var(--ed-rule-strong))] bg-[hsl(var(--ed-paper))] px-3 py-2.5 text-[hsl(var(--ed-ink))] shadow-[4px_4px_0_hsl(var(--ed-rule))]">
                   <p className="mb-1.5 font-mono text-[0.6rem] uppercase tracking-[0.16em] text-[hsl(var(--ed-ink-faint))]">
                     §{String(ch.index).padStart(2, '0')}
                   </p>
-                  <p className="font-display text-[0.98rem] leading-snug">{ch.text}</p>
+                  <p className="font-sans text-[0.95rem] font-medium leading-snug">{ch.text}</p>
                   <p className="mt-1.5 font-mono text-[0.62rem] uppercase tracking-[0.08em] text-[hsl(var(--ed-ink-soft))]">
                     {ch.words.toLocaleString(locale)} {t.common.words}
                     <span className="mx-1.5 text-[hsl(var(--ed-rule-strong))]">·</span>

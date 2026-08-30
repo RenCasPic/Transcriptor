@@ -201,7 +201,7 @@ export function ArticleEditor({
           placeholder={t.editor.titlePlaceholder}
           rows={1}
           spellCheck
-          className="block w-full resize-none overflow-hidden bg-transparent font-display text-[2.6rem] font-medium leading-[1.03] tracking-[-0.02em] text-[hsl(var(--ed-ink))] caret-[hsl(var(--ed-accent))] outline-none placeholder:text-[hsl(var(--ed-ink-faint))] sm:text-[3.7rem]"
+          className="block w-full resize-none overflow-hidden bg-transparent font-sans text-[2.5rem] font-semibold leading-[1.05] tracking-[-0.02em] text-[hsl(var(--ed-ink))] caret-[hsl(var(--ed-accent))] outline-none placeholder:text-[hsl(var(--ed-ink-faint))] sm:text-[3.4rem]"
           onInput={(e) => {
             const el = e.currentTarget;
             el.style.height = 'auto';
