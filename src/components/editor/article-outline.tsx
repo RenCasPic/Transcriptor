@@ -2,69 +2,66 @@
 
 import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
+import { extractHeadings, jumpToHeading } from '@/lib/editor/headings';
 import { useDictionary } from '@/lib/i18n/dictionary-provider';
 import type { Json } from '@/lib/types/database';
 
-interface OutlineItem {
-  level: 2 | 3;
-  text: string;
-}
-
-function extractHeadings(json: Json): OutlineItem[] {
-  const doc = json as { content?: Array<{ type?: string; attrs?: { level?: number }; content?: Array<{ text?: string }> }> };
-  if (!Array.isArray(doc?.content)) return [];
-  const items: OutlineItem[] = [];
-  for (const node of doc.content) {
-    if (node.type !== 'heading') continue;
-    const level = node.attrs?.level === 3 ? 3 : 2;
-    const text = (node.content ?? []).map((c) => c.text ?? '').join('').trim();
-    if (text) items.push({ level, text });
-  }
-  return items;
-}
-
 /**
- * Índice del artículo a partir de los encabezados del editor. Al pulsar un
- * ítem se hace scroll al encabezado correspondiente dentro de `.tiptap-editor`
- * (por posición ordinal, así funciona también para encabezados nuevos que aún
- * no tienen `data-block-id`).
+ * ESTRUCTURA — el mapa del documento. Los capítulos (h2) van numerados 01, 02…
+ * con la MISMA numeración que el folio de la izquierda; los sub-apartados (h3)
+ * cuelgan indentados.
  */
 export function ArticleOutline({ json }: { json: Json }) {
   const t = useDictionary();
   const items = useMemo(() => extractHeadings(json), [json]);
 
-  function jumpTo(ordinal: number) {
-    const headings = document.querySelectorAll<HTMLElement>('.tiptap-editor h2, .tiptap-editor h3');
-    const el = headings[ordinal];
-    if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    el.classList.add('outline-flash');
-    window.setTimeout(() => el.classList.remove('outline-flash'), 1200);
+  if (items.length === 0) {
+    return <p className="px-5 py-6 font-mono text-[0.72rem] leading-relaxed text-[hsl(var(--ed-ink-faint))]">{t.editor.outline.empty}</p>;
   }
 
-  if (items.length === 0) {
-    return <p className="p-5 text-sm text-muted-foreground">{t.editor.outline.empty}</p>;
-  }
+  let chapter = 0;
 
   return (
-    <nav className="p-4">
-      <ul className="space-y-1">
-        {items.map((item, i) => (
-          <li key={`${i}-${item.text}`}>
-            <button
-              type="button"
-              onClick={() => jumpTo(i)}
-              className={cn(
-                'block w-full truncate rounded-md px-2 py-2 text-left text-[15px] leading-6 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground',
-                item.level === 3 && 'pl-5 text-sm',
-              )}
-              title={item.text}
-            >
-              {item.text}
-            </button>
-          </li>
-        ))}
-      </ul>
+    <nav className="py-3">
+      <ol>
+        {items.map((item) => {
+          const isChapter = item.level === 2;
+          if (isChapter) chapter += 1;
+          return (
+            <li key={`${item.ordinal}-${item.text}`}>
+              <button
+                type="button"
+                onClick={() => jumpToHeading(item.ordinal)}
+                title={item.text}
+                className={cn(
+                  'flex w-full items-baseline gap-3 border-l-2 border-transparent px-4 py-2 text-left transition-colors hover:border-[hsl(var(--ed-accent))] hover:bg-[hsl(var(--ed-paper-sunk))]',
+                  !isChapter && 'pl-10',
+                )}
+              >
+                {isChapter ? (
+                  <span className="w-6 shrink-0 font-mono text-[0.72rem] tabular-nums text-[hsl(var(--ed-ink-faint))]">
+                    {String(chapter).padStart(2, '0')}
+                  </span>
+                ) : (
+                  <span aria-hidden className="w-6 shrink-0 text-center text-[hsl(var(--ed-rule-strong))]">
+                    ·
+                  </span>
+                )}
+                <span
+                  className={cn(
+                    'truncate',
+                    isChapter
+                      ? 'font-serif text-[0.98rem] text-[hsl(var(--ed-ink))]'
+                      : 'font-serif text-[0.88rem] text-[hsl(var(--ed-ink-soft))]',
+                  )}
+                >
+                  {item.text}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ol>
     </nav>
   );
 }

@@ -5,6 +5,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
+import { Undo2, Redo2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { BlockId } from '@/lib/editor/block-id-extension';
 import { useAutosave, type AutosaveStatus } from '@/lib/editor/use-autosave';
@@ -13,8 +14,7 @@ import { rewriteSectionAction } from '@/lib/actions/editor';
 import { createVersionAction } from '@/lib/actions/versions';
 import type { RewriteInstruction } from '@/lib/ai/provider';
 import type { Json } from '@/lib/types/database';
-import { EditorToolbar } from './editor-toolbar';
-import { AiActionMenu } from './ai-action-menu';
+import { EditorContextMenu } from './editor-context-menu';
 import { RewritePreviewDialog } from './rewrite-preview-dialog';
 import { SaveStatusIndicator } from './save-status-indicator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -39,6 +39,7 @@ export function ArticleEditor({
   updatedAt,
   coverImageUrl,
   coverImageAlt,
+  contentTypeLabel,
   onContentSnapshot,
   onSaveStatusChange,
 }: {
@@ -51,6 +52,7 @@ export function ArticleEditor({
   updatedAt?: string;
   coverImageUrl?: string | null;
   coverImageAlt?: string | null;
+  contentTypeLabel?: string;
   onContentSnapshot?: (snapshot: { plainText: string; html: string; json: Json; wordCount: number }) => void;
   onSaveStatusChange?: (status: AutosaveStatus) => void;
 }) {
@@ -160,73 +162,99 @@ export function ArticleEditor({
 
   if (!editor) {
     return (
-      <div className="mx-auto max-w-[44rem] space-y-4 px-6 py-12 sm:px-8">
-        <Skeleton className="h-9 w-2/3" />
-        <Skeleton className="h-4 w-40" />
+      <div className="mx-auto max-w-[46rem] space-y-5 px-6 py-14 sm:px-10">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-14 w-4/5" />
+        <Skeleton className="h-3 w-52" />
         <Skeleton className="h-px w-full" />
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-4 w-2/3" />
       </div>
     );
   }
 
+  const readingMin = estimateReadingTimeMinutes(liveWordCount);
+
   return (
-    // Crece con su contenido; la PÁGINA hace scroll. La toolbar es sticky
-    // (top-11 = altura de la barra superior del EditorShell) para seguir a mano
-    // mientras se edita; el título y sus metadatos van en el flujo del artículo.
-    <div className="flex flex-col">
-      {/* Cabecera del artículo: fondo blanco, título en tipografía oscura y
-          metadatos en gris medio. Sin bloques de color. */}
-      <div className="mx-auto w-full max-w-[44rem] px-6 pt-10 sm:px-8">
+    <div className="flex flex-col bg-[hsl(var(--ed-paper))]">
+      {/* MASTHEAD — el documento como pieza editorial, no como un H1. */}
+      <header className="mx-auto w-full max-w-[46rem] px-6 pt-12 sm:px-10 sm:pt-16">
         {coverImageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={coverImageUrl}
             alt={coverImageAlt ?? ''}
-            className="mb-6 aspect-[16/7] w-full rounded-xl object-cover"
+            className="mb-8 aspect-[16/6] w-full object-cover grayscale-[0.15]"
           />
         )}
+
+        <p className="ed-label mb-5">
+          {contentTypeLabel ?? t.editor.masthead.kicker}
+          <span className="mx-2 text-[hsl(var(--ed-rule-strong))]">/</span>
+          {t.editor.saveStatus[status] ?? ''}
+        </p>
+
         <textarea
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
           placeholder={t.editor.titlePlaceholder}
           rows={1}
           spellCheck
-          className="block w-full resize-none overflow-hidden bg-transparent text-3xl font-bold leading-tight tracking-tight text-foreground caret-primary outline-none placeholder:text-muted-foreground/50 sm:text-4xl"
+          className="block w-full resize-none overflow-hidden bg-transparent font-display text-[2.7rem] font-medium leading-[1.05] tracking-[-0.02em] text-[hsl(var(--ed-ink))] caret-[hsl(var(--ed-accent))] outline-none placeholder:text-[hsl(var(--ed-ink-faint))] sm:text-[3.6rem]"
           onInput={(e) => {
             const el = e.currentTarget;
             el.style.height = 'auto';
             el.style.height = `${el.scrollHeight}px`;
           }}
         />
-        <div className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted-foreground">
-          <span className="tabular-nums">
-            {liveWordCount.toLocaleString(locale)} {t.common.words}
+
+        {/* COLOFÓN — metadatos tratados como línea editorial. */}
+        <div className="mt-7 flex flex-wrap items-center gap-x-3 gap-y-2 border-y border-[hsl(var(--ed-rule))] py-3 font-mono text-[0.72rem] uppercase tracking-[0.08em] text-[hsl(var(--ed-ink-faint))]">
+          <span className="tabular-nums text-[hsl(var(--ed-ink-soft))]">
+            {liveWordCount.toLocaleString(locale)}&nbsp;{t.common.words}
           </span>
-          <Dot />
-          <span>
-            {estimateReadingTimeMinutes(liveWordCount)} {t.common.minutesReading}
+          <Rule />
+          <span className="tabular-nums text-[hsl(var(--ed-ink-soft))]">
+            {readingMin}&nbsp;{t.common.minutesReading}
           </span>
-          <Dot />
+          <Rule />
+          <span className="tabular-nums">v{initialVersion}</span>
+          <Rule />
           <SaveStatusIndicator status={status} />
           {updatedAt && (
             <>
-              <Dot />
-              <span>
+              <Rule />
+              <span className="normal-case tracking-normal">
                 {t.editor.meta.updated} {formatUpdated(updatedAt, locale)}
               </span>
             </>
           )}
+          <span className="ml-auto flex items-center gap-0.5">
+            <button
+              type="button"
+              onClick={() => editor.chain().focus().undo().run()}
+              disabled={!editor.can().undo()}
+              title={t.editor.toolbar.undo}
+              className="grid h-6 w-6 place-items-center text-[hsl(var(--ed-ink-faint))] transition-colors hover:text-[hsl(var(--ed-ink))] disabled:opacity-30"
+            >
+              <Undo2 className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => editor.chain().focus().redo().run()}
+              disabled={!editor.can().redo()}
+              title={t.editor.toolbar.redo}
+              className="grid h-6 w-6 place-items-center text-[hsl(var(--ed-ink-faint))] transition-colors hover:text-[hsl(var(--ed-ink))] disabled:opacity-30"
+            >
+              <Redo2 className="h-3.5 w-3.5" />
+            </button>
+          </span>
         </div>
-      </div>
+      </header>
 
-      <div className="sticky top-11 z-20 mt-5">
-        <EditorToolbar editor={editor} />
-      </div>
-
-      <div className="mx-auto w-full max-w-[44rem] px-6 pb-20 pt-8 sm:px-8">
-        <AiActionMenu editor={editor} onAction={handleAction} disabled={!!rewriteState} />
+      <div className="mx-auto w-full max-w-[46rem] px-6 pb-32 pt-12 sm:px-10">
+        <EditorContextMenu editor={editor} onAiAction={handleAction} disabled={!!rewriteState} />
         <EditorContent editor={editor} />
       </div>
 
@@ -242,8 +270,8 @@ export function ArticleEditor({
   );
 }
 
-function Dot() {
-  return <span aria-hidden="true">·</span>;
+function Rule() {
+  return <span aria-hidden className="h-2.5 w-px bg-[hsl(var(--ed-rule-strong))]" />;
 }
 
 function formatUpdated(iso: string, locale: string): string {

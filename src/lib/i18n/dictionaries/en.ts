@@ -401,8 +401,14 @@ export const en: Dictionary = {
       project: 'Details',
     },
     articlePanelTitle: 'Article panel',
-    panelTitle: 'Publishing panel',
+    panelTitle: 'Control room',
     contentPlaceholder: 'Start writing your article...',
+    masthead: {
+      kicker: 'Manuscript',
+    },
+    spine: {
+      label: 'Folio',
+    },
     meta: {
       updated: 'Updated',
     },
@@ -416,6 +422,7 @@ export const en: Dictionary = {
       exit: 'Exit preview',
     },
     actions: {
+      back: 'Back to project',
       regenerate: 'Regenerate',
       regenerating: 'Regenerating...',
       regenerateConfirm:
@@ -461,6 +468,7 @@ export const en: Dictionary = {
     },
     aiMenu: {
       heading: 'AI actions',
+      short: 'AI',
       rewrite: 'Rewrite',
       shorten: 'Shorten',
       expand: 'Expand',

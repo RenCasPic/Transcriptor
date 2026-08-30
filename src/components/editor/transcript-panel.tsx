@@ -46,16 +46,16 @@ export function TranscriptPanel({
 
   return (
     <div className="flex flex-col">
-      <div className="border-b border-primary bg-background p-4">
+      <div className="border-b border-[hsl(var(--ed-rule))] bg-[hsl(var(--ed-paper))] p-4">
         <button
           type="button"
           onClick={() => setCollapsed((prev) => !prev)}
-          className="flex w-full items-center justify-between text-xs font-semibold uppercase tracking-wide text-foreground/70"
+          className="flex w-full items-center justify-between font-mono text-[0.66rem] uppercase tracking-[0.14em] text-[hsl(var(--ed-ink-soft))]"
         >
           <span>
             {t.editor.columns.transcript}
-            <span className="ml-1.5 font-normal normal-case tracking-normal text-muted-foreground">
-              {segments.length}
+            <span className="ml-2 tabular-nums text-[hsl(var(--ed-ink-faint))]">
+              {segments.length.toString().padStart(3, '0')}
             </span>
           </span>
           <ChevronDown
@@ -65,11 +65,11 @@ export function TranscriptPanel({
           <span className="sr-only">{collapsed ? t.editor.transcript.expand : t.editor.transcript.collapse}</span>
         </button>
         {!collapsed && (
-          <div className="relative mt-2">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <div className="relative mt-3">
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[hsl(var(--ed-ink-faint))]" />
             <Input
               placeholder={t.editor.transcript.searchPlaceholder}
-              className="h-8 pl-8 text-xs"
+              className="h-8 rounded-none border-[hsl(var(--ed-rule-strong))] bg-transparent pl-8 font-mono text-xs"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -77,7 +77,7 @@ export function TranscriptPanel({
         )}
       </div>
       {!collapsed && (
-        <div className="space-y-1 p-3">
+        <div className="p-2">
           {filtered.map((segment) => {
             const isUsed = usedSegmentIds.has(segment.id);
             const isSelected = selectedSegmentId === segment.id;
@@ -87,15 +87,15 @@ export function TranscriptPanel({
                 id={segmentDomId(segment.id)}
                 onClick={() => onSelectSegment(segment.id)}
                 className={cn(
-                  'group cursor-pointer rounded-md border border-transparent p-2 text-sm transition-colors hover:bg-accent',
-                  isSelected && 'border-primary bg-primary/5',
+                  'group cursor-pointer border-l-2 border-transparent p-2.5 text-sm transition-colors hover:bg-[hsl(var(--ed-paper-sunk))]',
+                  isSelected && 'border-[hsl(var(--ed-accent))] bg-[hsl(var(--ed-paper-sunk))]',
                 )}
               >
-                <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="font-mono">#{segment.index + 1}</span>
+                <div className="mb-1 flex items-center gap-2 font-mono text-[0.66rem] text-[hsl(var(--ed-ink-faint))]">
+                  <span className="tabular-nums">{String(segment.index + 1).padStart(3, '0')}</span>
                   {segment.startSeconds !== null && <span>{secondsToTimestamp(segment.startSeconds)}</span>}
                   {isUsed && (
-                    <span className="ml-auto flex items-center gap-1 text-success">
+                    <span className="ml-auto flex items-center gap-1 text-[hsl(var(--success))]">
                       <CheckCircle2 className="h-3 w-3" />
                       {t.editor.transcript.used}
                     </span>
@@ -112,15 +112,15 @@ export function TranscriptPanel({
                     <Copy className="h-3 w-3" />
                   </Button>
                 </div>
-                <p className={cn('text-foreground', !isUsed && 'text-muted-foreground')}>
-                  {segment.speaker && <span className="font-medium">{segment.speaker}: </span>}
+                <p className={cn('font-serif leading-relaxed', isUsed ? 'text-[hsl(var(--ed-ink))]' : 'text-[hsl(var(--ed-ink-soft))]')}>
+                  {segment.speaker && <span className="font-mono text-xs uppercase tracking-wide">{segment.speaker}: </span>}
                   {segment.text}
                 </p>
               </div>
             );
           })}
           {filtered.length === 0 && (
-            <p className="p-4 text-center text-xs text-muted-foreground">
+            <p className="p-4 text-center font-mono text-xs text-[hsl(var(--ed-ink-faint))]">
               {t.editor.transcript.noResultsFor} &quot;{search}&quot;
             </p>
           )}

@@ -406,8 +406,14 @@ export const es = {
       project: 'Detalles',
     },
     articlePanelTitle: 'Panel del artículo',
-    panelTitle: 'Panel de publicación',
+    panelTitle: 'Sala de control',
     contentPlaceholder: 'Empieza a escribir tu artículo...',
+    masthead: {
+      kicker: 'Manuscrito',
+    },
+    spine: {
+      label: 'Pliego',
+    },
     meta: {
       updated: 'Actualizado',
     },
@@ -421,6 +427,7 @@ export const es = {
       exit: 'Salir de la vista previa',
     },
     actions: {
+      back: 'Volver al proyecto',
       regenerate: 'Regenerar',
       regenerating: 'Regenerando...',
       regenerateConfirm:
@@ -466,6 +473,7 @@ export const es = {
     },
     aiMenu: {
       heading: 'Acciones de IA',
+      short: 'IA',
       rewrite: 'Reescribir',
       shorten: 'Acortar',
       expand: 'Expandir',

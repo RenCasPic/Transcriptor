@@ -98,31 +98,137 @@
   }
 }
 
-.tiptap-editor {
-  @apply prose prose-slate max-w-none text-[1.05rem] leading-[1.75] focus:outline-none dark:prose-invert
-    prose-headings:font-semibold prose-headings:tracking-tight
-    prose-h2:mb-3 prose-h2:mt-10 prose-h2:text-2xl
-    prose-h3:mb-2 prose-h3:mt-8 prose-h3:text-xl
-    prose-p:my-4
-    prose-a:text-primary prose-a:underline-offset-2
-    prose-blockquote:border-l-primary/40 prose-blockquote:not-italic prose-blockquote:text-muted-foreground
-    prose-hr:border-primary/30
-    prose-li:my-1;
+/* ============================================================
+   SALA DE EDICIÓN — microclima editorial del editor.
+   Paleta propia (papel hueso / tinta óxido) definida solo en
+   `.editor-surface`, sin tocar los tokens globales de la app.
+   Un único acento: --ed-accent (= --primary), usado con cuentagotas.
+   ============================================================ */
+.editor-surface {
+  --ed-paper: 40 30% 97%;
+  --ed-paper-sunk: 38 24% 94%;
+  --ed-ink: 30 12% 12%;
+  --ed-ink-soft: 30 8% 34%;
+  --ed-ink-faint: 30 6% 52%;
+  --ed-rule: 32 12% 84%;
+  --ed-rule-strong: 30 10% 68%;
+  --ed-accent: var(--primary);
+
+  background-color: hsl(var(--ed-paper));
+  color: hsl(var(--ed-ink));
+}
+.dark .editor-surface {
+  --ed-paper: 30 10% 9%;
+  --ed-paper-sunk: 30 9% 12%;
+  --ed-ink: 40 28% 92%;
+  --ed-ink-soft: 38 12% 70%;
+  --ed-ink-faint: 34 8% 52%;
+  --ed-rule: 32 8% 24%;
+  --ed-rule-strong: 32 8% 34%;
 }
 
-/* Cuerpo del artículo justificado (con guionado automático para evitar los
-   "ríos" de espacio en blanco). Solo párrafos y listas: los encabezados y
-   citas se dejan alineados a la izquierda. */
-.tiptap-editor p,
-.tiptap-editor li {
+/* Micro-etiqueta de instrumento: monoespaciada, versalitas, tracking amplio. */
+.ed-label {
+  font-family: var(--font-space-mono), ui-monospace, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.66rem;
+  line-height: 1;
+  color: hsl(var(--ed-ink-faint));
+}
+
+/* ---------- Cuerpo del artículo: una pieza editorial ---------- */
+.tiptap-editor {
+  @apply prose prose-slate max-w-none focus:outline-none dark:prose-invert;
+  font-family: var(--font-fraunces), Georgia, Cambria, serif;
+  font-optical-sizing: auto;
+  font-size: 1.18rem;
+  line-height: 1.72;
+  color: hsl(var(--ed-ink));
+  --tw-prose-body: hsl(var(--ed-ink));
+  --tw-prose-headings: hsl(var(--ed-ink));
+  --tw-prose-bold: hsl(var(--ed-ink));
+  --tw-prose-links: hsl(var(--ed-ink));
+  --tw-prose-quotes: hsl(var(--ed-ink-soft));
+  --tw-prose-bullets: hsl(var(--ed-rule-strong));
+  --tw-prose-hr: hsl(var(--ed-rule));
+  --tw-prose-counters: hsl(var(--ed-ink-faint));
+  hanging-punctuation: first last;
+}
+
+.tiptap-editor p {
+  margin: 1.15em 0;
   text-align: justify;
+  text-justify: inter-word;
   hyphens: auto;
 }
+.tiptap-editor li {
+  margin: 0.35em 0;
+}
 
-/* Compensa la barra superior (top-11) + la toolbar sticky al saltar a un
-   encabezado desde el índice, para que no quede oculto debajo. */
+.tiptap-editor h2,
+.tiptap-editor h3 {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 560;
+  letter-spacing: -0.015em;
+  line-height: 1.12;
+}
+.tiptap-editor h2 {
+  font-size: 1.9rem;
+  margin: 2.4em 0 0.7em;
+  padding-top: 0.7em;
+  border-top: 1px solid hsl(var(--ed-rule));
+}
+.tiptap-editor h2:first-child {
+  margin-top: 0.3em;
+  border-top: 0;
+  padding-top: 0;
+}
+.tiptap-editor h3 {
+  font-size: 1.4rem;
+  margin: 1.9em 0 0.5em;
+}
+
+/* Capitular: la primera letra del primer párrafo, a la manera de una revista. */
+.tiptap-editor > p:first-of-type::first-letter {
+  font-family: var(--font-fraunces), Georgia, serif;
+  float: left;
+  font-size: 3.9em;
+  line-height: 0.82;
+  font-weight: 600;
+  margin: 0.06em 0.09em -0.02em 0;
+  color: hsl(var(--ed-accent));
+}
+
+.tiptap-editor blockquote {
+  font-style: italic;
+  border-left: 2px solid hsl(var(--ed-accent));
+  padding-left: 1.1em;
+  margin-left: 0;
+  color: hsl(var(--ed-ink-soft));
+}
+.tiptap-editor a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: hsl(var(--ed-accent));
+}
+.tiptap-editor code {
+  font-family: var(--font-space-mono), ui-monospace, monospace;
+  font-size: 0.86em;
+  background: hsl(var(--ed-paper-sunk));
+  padding: 0.1em 0.35em;
+  border-radius: 2px;
+}
+.tiptap-editor hr {
+  border: 0;
+  margin: 2.6em auto;
+  width: 42%;
+  border-top: 1px solid hsl(var(--ed-rule-strong));
+}
+
 .tiptap-editor :is(h1, h2, h3) {
-  scroll-margin-top: 5.5rem;
+  scroll-margin-top: 7rem;
 }
 
 .tiptap-editor p.is-editor-empty:first-child::before {
@@ -130,22 +236,35 @@
   float: left;
   height: 0;
   pointer-events: none;
-  @apply text-muted-foreground;
+  color: hsl(var(--ed-ink-faint));
 }
 
-/* Destello breve al navegar a un encabezado desde el índice. */
+/* Destello breve al navegar a un encabezado desde el folio / la estructura. */
 @keyframes outline-flash {
   0% {
-    background-color: hsl(var(--primary) / 0.16);
+    background-color: hsl(var(--ed-accent) / 0.14);
   }
   100% {
     background-color: transparent;
   }
 }
-
 .tiptap-editor .outline-flash {
-  animation: outline-flash 1.2s ease-out;
-  border-radius: 0.25rem;
+  animation: outline-flash 1.4s ease-out;
+  border-radius: 2px;
+}
+
+/* Marca del compositor (playhead) del folio: latido sutil. */
+@keyframes ed-playhead {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+.ed-playhead-pulse {
+  animation: ed-playhead 2.4s ease-in-out infinite;
 }
 
 /* Movimiento sutil y continuo para el degradado decorativo del hero de la landing. */

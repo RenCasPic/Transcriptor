@@ -1,14 +1,12 @@
 'use client';
 
 import { X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { estimateReadingTimeMinutes } from '@/lib/content/metrics';
 import { useDictionary, useLocale } from '@/lib/i18n/dictionary-provider';
 
 /**
- * Vista previa de lectura: el artículo tal como lo vería un lector, sin
- * toolbar, panel ni controles de edición. Renderiza el HTML actual del editor
- * (mismo modelo de confianza que el propio editor: es tu contenido local).
+ * Prueba de imprenta: el artículo tal como lo vería un lector, sin folio,
+ * sala de control ni herramientas. Renderiza el HTML actual del editor.
  */
 export function EditorPreview({
   title,
@@ -29,36 +27,39 @@ export function EditorPreview({
   const locale = useLocale();
 
   return (
-    <div className="min-h-[calc(100vh-var(--app-header-h))] bg-background">
-      <div className="sticky top-0 z-40 flex h-11 items-center justify-between border-b bg-background/95 px-4 backdrop-blur">
-        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {t.editor.preview.label}
-        </span>
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          <X className="h-4 w-4" />
+    <div className="min-h-[calc(100vh-var(--app-header-h)-3rem)] bg-[hsl(var(--ed-paper))]">
+      <div className="sticky top-12 z-30 flex h-11 items-center justify-between border-b border-[hsl(var(--ed-rule))] bg-[hsl(var(--ed-paper))]/95 px-5 backdrop-blur">
+        <span className="ed-label">{t.editor.preview.label}</span>
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex items-center gap-1.5 font-mono text-[0.68rem] uppercase tracking-[0.12em] text-[hsl(var(--ed-ink-soft))] transition-colors hover:text-[hsl(var(--ed-ink))]"
+        >
+          <X className="h-3.5 w-3.5" />
           {t.editor.preview.exit}
-        </Button>
+        </button>
       </div>
 
-      <article className="mx-auto max-w-[44rem] px-5 py-12 sm:px-6">
+      <article className="mx-auto max-w-[42rem] px-6 py-20 sm:px-8">
         {coverImageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={coverImageUrl}
             alt={coverImageAlt ?? ''}
-            className="mb-8 aspect-[16/7] w-full rounded-xl object-cover"
+            className="mb-10 aspect-[16/6] w-full object-cover grayscale-[0.15]"
           />
         )}
-        <h1 className="text-balance text-3xl font-bold tracking-tight sm:text-4xl">{title}</h1>
-        <p className="mt-3 text-sm text-muted-foreground">
-          {wordCount.toLocaleString(locale)} {t.common.words} ·{' '}
-          {estimateReadingTimeMinutes(wordCount)} {t.common.minutesReading}
+        <p className="ed-label mb-5">{t.editor.masthead.kicker}</p>
+        <h1 className="font-display text-[2.7rem] font-medium leading-[1.05] tracking-[-0.02em] text-[hsl(var(--ed-ink))] sm:text-[3.6rem]">
+          {title}
+        </h1>
+        <p className="mt-6 border-y border-[hsl(var(--ed-rule))] py-3 font-mono text-[0.72rem] uppercase tracking-[0.08em] text-[hsl(var(--ed-ink-faint))]">
+          <span className="text-[hsl(var(--ed-ink-soft))]">{wordCount.toLocaleString(locale)}</span> {t.common.words}
+          <span className="mx-2.5 text-[hsl(var(--ed-rule-strong))]">—</span>
+          <span className="text-[hsl(var(--ed-ink-soft))]">{estimateReadingTimeMinutes(wordCount)}</span>{' '}
+          {t.common.minutesReading}
         </p>
-        <hr className="my-8" />
-        <div
-          className="prose prose-lg prose-slate max-w-none dark:prose-invert prose-headings:font-semibold prose-a:text-primary prose-p:text-justify prose-li:text-justify [&_p]:hyphens-auto"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        <div className="tiptap-editor mt-12" dangerouslySetInnerHTML={{ __html: html }} />
       </article>
     </div>
   );

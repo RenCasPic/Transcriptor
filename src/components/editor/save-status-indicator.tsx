@@ -1,37 +1,40 @@
 'use client';
 
-import { Loader2, Check, AlertTriangle, CloudUpload, Cloud } from 'lucide-react';
 import type { AutosaveStatus } from '@/lib/editor/use-autosave';
 import { cn } from '@/lib/utils';
 import { useDictionary } from '@/lib/i18n/dictionary-provider';
 
-const ICONS: Record<AutosaveStatus, { icon: typeof Check; className: string; dot: string }> = {
-  idle: { icon: Cloud, className: 'text-muted-foreground', dot: 'bg-muted-foreground/40' },
-  dirty: { icon: CloudUpload, className: 'text-amber-600 dark:text-amber-500', dot: 'bg-amber-500' },
-  saving: { icon: Loader2, className: 'text-muted-foreground', dot: 'bg-muted-foreground/60' },
-  saved: { icon: Check, className: 'text-emerald-600 dark:text-emerald-500', dot: 'bg-emerald-500' },
-  error: { icon: AlertTriangle, className: 'text-destructive', dot: 'bg-destructive' },
-  conflict: { icon: AlertTriangle, className: 'text-destructive', dot: 'bg-destructive' },
+// Glifo + color por estado, en clave editorial (sin iconos de "nube").
+const GLYPH: Record<AutosaveStatus, { mark: string; className: string; pulse?: boolean }> = {
+  idle: { mark: '○', className: 'text-[hsl(var(--ed-ink-faint))]' },
+  dirty: { mark: '◍', className: 'text-[hsl(var(--warning))]' },
+  saving: { mark: '◐', className: 'text-[hsl(var(--ed-ink-soft))]', pulse: true },
+  saved: { mark: '●', className: 'text-[hsl(var(--success))]' },
+  error: { mark: '▲', className: 'text-[hsl(var(--destructive))]' },
+  conflict: { mark: '▲', className: 'text-[hsl(var(--destructive))]' },
 };
 
 export function SaveStatusIndicator({ status, iconOnly = false }: { status: AutosaveStatus; iconOnly?: boolean }) {
   const t = useDictionary();
-  const { icon: Icon, className, dot } = ICONS[status];
+  const { mark, className, pulse } = GLYPH[status];
+  const label = t.editor.saveStatus[status];
 
   if (iconOnly) {
     return (
       <span
-        className={cn('inline-flex h-2 w-2 shrink-0 rounded-full', dot, status === 'saving' && 'animate-pulse')}
-        title={t.editor.saveStatus[status]}
-        aria-label={t.editor.saveStatus[status]}
-      />
+        className={cn('inline-block text-[0.7rem] leading-none', className, pulse && 'animate-pulse')}
+        title={label}
+        aria-label={label}
+      >
+        {mark}
+      </span>
     );
   }
 
   return (
-    <div className={cn('flex items-center gap-1.5 text-xs font-medium', className)}>
-      <Icon className={cn('h-3.5 w-3.5', status === 'saving' && 'animate-spin')} />
-      {t.editor.saveStatus[status]}
-    </div>
+    <span className={cn('inline-flex items-center gap-1.5 font-mono text-[0.66rem] uppercase tracking-[0.12em]', className)}>
+      <span className={cn('text-[0.7rem] leading-none', pulse && 'animate-pulse')}>{mark}</span>
+      {label}
+    </span>
   );
 }
