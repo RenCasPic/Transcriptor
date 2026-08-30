@@ -2,17 +2,18 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Eye, PanelRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ArrowLeft, Eye, PanelRightOpen } from 'lucide-react';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { ArticleEditor } from './article-editor';
-import { EditorSpine } from './editor-spine';
-import { EditorDrawerTabs } from './editor-drawer-tabs';
+import { EditorScale } from './editor-scale';
+import { EditorRegistration } from './editor-registration';
+import { EditorConsole, type EditorMode } from './editor-console';
 import { EditorPreview } from './editor-preview';
 import { RegenerateButton } from './regenerate-button';
 import { SaveStatusIndicator } from './save-status-indicator';
 import { ExportMenu } from './export-menu';
 import { EmbedButton } from './embed-button';
+import { useEditorScroll } from '@/lib/editor/use-editor-scroll';
 import type { AutosaveStatus } from '@/lib/editor/use-autosave';
 import type { TranscriptSegmentItem } from '@/lib/data/transcripts';
 import type { ContentDocumentRecord } from '@/lib/data/documents';
@@ -56,9 +57,11 @@ export function EditorShell({
   currentUserId: string | null;
 }) {
   const t = useDictionary();
+  const scroll = useEditorScroll();
   const [selectedSegmentId, setSelectedSegmentId] = useState<string | null>(null);
   const [panelSheetOpen, setPanelSheetOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+  const [mode, setMode] = useState<EditorMode>('structure');
   const [saveStatus, setSaveStatus] = useState<AutosaveStatus>('idle');
   const [snapshot, setSnapshot] = useState({
     plainText: '',
@@ -88,9 +91,10 @@ export function EditorShell({
   };
 
   const openWarnings = warnings.filter((w) => w.status === 'open').length;
+  const modeLabel = t.editor.console[mode];
 
-  const panel = (
-    <EditorDrawerTabs
+  const consoleEl = (
+    <EditorConsole
       documentId={document.id}
       projectId={project.id}
       documentTitle={document.title}
@@ -108,59 +112,65 @@ export function EditorShell({
       versions={versions}
       currentUserId={currentUserId}
       saveStatus={saveStatus}
+      onModeChange={setMode}
     />
   );
 
-  const monoBtn =
-    'h-7 gap-1.5 rounded-none px-2 font-mono text-[0.68rem] uppercase tracking-[0.12em] text-[hsl(var(--ed-ink-soft))] hover:bg-[hsl(var(--ed-paper-sunk))] hover:text-[hsl(var(--ed-ink))]';
+  const link = 'font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[hsl(var(--ed-desk-ink-dim))] transition-colors hover:text-[hsl(var(--ed-desk-ink))]';
 
   return (
-    <div className="editor-surface -m-4 min-h-[calc(100vh-var(--app-header-h))] font-sans lg:-m-8">
-      {/* CINTA SUPERIOR — casi invisible; solo lo esencial, en monoespaciada. */}
-      <div className="sticky top-0 z-40 flex h-12 items-center justify-between gap-3 border-b border-[hsl(var(--ed-rule))] bg-[hsl(var(--ed-paper))]/90 px-3 backdrop-blur sm:px-5">
+    <div
+      data-mode={mode}
+      className="editor-surface -m-4 min-h-[calc(100vh-var(--app-header-h))] font-sans lg:-m-8"
+    >
+      {/* CINTA — casi nada en calma. Coordenada a la izquierda, maquinaria a la derecha. */}
+      <div className="sticky top-0 z-40 flex h-9 items-center justify-between gap-4 border-b border-[hsl(var(--ed-desk-line))] bg-[hsl(var(--ed-desk))]/95 px-3 backdrop-blur sm:px-5">
         <div className="flex min-w-0 items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 shrink-0 rounded-none text-[hsl(var(--ed-ink-faint))] hover:bg-[hsl(var(--ed-paper-sunk))] hover:text-[hsl(var(--ed-ink))]"
-            asChild
+          <Link
+            href={`/projects/${project.id}`}
+            aria-label={t.editor.actions.back}
+            className="grid h-6 w-6 place-items-center text-[hsl(var(--ed-desk-ink-dim))] transition-colors hover:text-[hsl(var(--ed-desk-ink))]"
           >
-            <Link href={`/projects/${project.id}`} aria-label={t.editor.actions.back ?? 'Volver'}>
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-          </Button>
-          <span className="ed-label hidden shrink-0 sm:inline">{t.editor.masthead.kicker}</span>
-          <span aria-hidden className="hidden h-3 w-px bg-[hsl(var(--ed-rule-strong))] sm:block" />
-          <span className="truncate font-mono text-[0.78rem] text-[hsl(var(--ed-ink))]">{project.name}</span>
+            <ArrowLeft className="h-3.5 w-3.5" />
+          </Link>
+          <span className="ed-label text-[hsl(var(--ed-desk-ink-dim))]">{t.editor.masthead.kicker}</span>
+          <span aria-hidden className="hidden h-2.5 w-px bg-[hsl(var(--ed-desk-line))] sm:block" />
+          <span className="truncate font-mono text-[0.72rem] text-[hsl(var(--ed-desk-ink))]">{project.name}</span>
         </div>
 
-        <div className="flex items-center gap-1">
-          <SaveStatusIndicator status={saveStatus} iconOnly />
-          <Button variant="ghost" size="sm" className={`hidden sm:inline-flex ${monoBtn}`} onClick={() => setPreviewMode((v) => !v)}>
+        <div className="flex items-center gap-3">
+          <SaveStatusIndicator status={saveStatus} />
+          <button type="button" className={`hidden items-center gap-1.5 sm:inline-flex ${link}`} onClick={() => setPreviewMode((v) => !v)}>
             <Eye className="h-3.5 w-3.5" />
             {t.editor.preview.enter}
-          </Button>
+          </button>
           <RegenerateButton
             projectId={project.id}
             currentTargetReadingMinutes={project.target_reading_minutes}
-            className={monoBtn}
+            className={`hidden gap-1.5 rounded-none px-0 hover:bg-transparent sm:inline-flex ${link} hover:text-[hsl(var(--ed-desk-ink))]`}
           />
-          <ExportMenu title={document.title} html={snapshot.html} json={snapshot.json} className={monoBtn} />
+          <ExportMenu
+            title={document.title}
+            html={snapshot.html}
+            json={snapshot.json}
+            className={`hidden gap-1.5 rounded-none border-0 bg-transparent px-0 shadow-none hover:bg-transparent sm:inline-flex ${link} hover:text-[hsl(var(--ed-desk-ink))]`}
+          />
           <EmbedButton
             documentId={document.id}
             initialIsPublic={document.isPublic}
-            className="h-7 gap-1.5 rounded-none border-0 bg-[hsl(var(--ed-accent))] px-3 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-[hsl(var(--primary-foreground))] shadow-none hover:bg-[hsl(var(--ed-accent))]/90 hover:text-[hsl(var(--primary-foreground))]"
+            className="h-6 gap-1.5 rounded-none border border-[hsl(var(--ed-accent))] bg-transparent px-2.5 font-mono text-[0.62rem] uppercase tracking-[0.16em] text-[hsl(var(--ed-accent))] shadow-none hover:bg-[hsl(var(--ed-accent))] hover:text-[hsl(var(--ed-desk))]"
           />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="relative h-7 w-7 rounded-none text-[hsl(var(--ed-ink-soft))] lg:hidden"
+          <button
+            type="button"
             onClick={() => setPanelSheetOpen(true)}
             aria-label={t.editor.panelTitle}
+            className="relative grid h-6 w-6 place-items-center text-[hsl(var(--ed-desk-ink-dim))] lg:hidden"
           >
-            <PanelRight className="h-4 w-4" />
-            {openWarnings > 0 && <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-[hsl(var(--warning))]" />}
-          </Button>
+            <PanelRightOpen className="h-4 w-4" />
+            {openWarnings > 0 && (
+              <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full bg-[hsl(var(--ed-accent))]" />
+            )}
+          </button>
         </div>
       </div>
 
@@ -174,10 +184,18 @@ export function EditorShell({
           onClose={() => setPreviewMode(false)}
         />
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[4.75rem_minmax(0,1fr)_22.5rem] xl:grid-cols-[5.5rem_minmax(0,1fr)_24.5rem]">
-          <EditorSpine json={snapshot.json} />
+        <div className="grid grid-cols-1 lg:grid-cols-[6rem_minmax(0,44rem)_1fr] xl:grid-cols-[7rem_minmax(0,46rem)_1fr]">
+          <EditorScale json={snapshot.json} scroll={scroll} />
 
-          <main className="min-w-0 lg:border-x lg:border-[hsl(var(--ed-rule))]">
+          {/* EL MANUSCRITO — objeto físico posado sobre el banco. */}
+          <main className="relative min-w-0 border-x border-[hsl(var(--ed-rule-strong))] bg-[hsl(var(--ed-paper))] shadow-[8px_10px_0_-2px_hsl(var(--ed-desk-2))] lg:my-6 lg:border">
+            <span className="ed-crop tl" aria-hidden />
+            <span className="ed-crop tr" aria-hidden />
+            <span className="ed-crop bl" aria-hidden />
+            <span className="ed-crop br" aria-hidden />
+
+            <EditorRegistration scroll={scroll} mode={mode} modeLabel={modeLabel} saveStatus={saveStatus} />
+
             <ArticleEditor
               documentId={document.id}
               projectId={project.id}
@@ -194,19 +212,22 @@ export function EditorShell({
             />
           </main>
 
-          <aside className="hidden lg:block">
-            <div className="sticky top-12 flex max-h-[calc(100vh-3rem)] flex-col overflow-hidden">{panel}</div>
-          </aside>
+          {/* EL BANCO se ve como vacío intencionado; la consola cuelga a la derecha. */}
+          <div className="hidden lg:flex lg:justify-end">
+            <aside className="sticky top-9 flex h-[calc(100vh-2.25rem)] w-[21rem] flex-col overflow-hidden border-l border-[hsl(var(--ed-desk-line))]">
+              {consoleEl}
+            </aside>
+          </div>
         </div>
       )}
 
       <Sheet open={panelSheetOpen} onOpenChange={setPanelSheetOpen}>
         <SheetContent
           side="right"
-          className="editor-surface flex w-[90vw] max-w-sm flex-col border-l border-[hsl(var(--ed-rule-strong))] bg-[hsl(var(--ed-paper))] p-0"
+          className="editor-surface flex w-[92vw] max-w-sm flex-col border-l border-[hsl(var(--ed-desk-line))] bg-[hsl(var(--ed-desk-2))] p-0"
         >
           <SheetTitle className="sr-only">{t.editor.panelTitle}</SheetTitle>
-          {panel}
+          {consoleEl}
         </SheetContent>
       </Sheet>
     </div>

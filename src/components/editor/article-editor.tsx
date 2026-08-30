@@ -162,9 +162,9 @@ export function ArticleEditor({
 
   if (!editor) {
     return (
-      <div className="mx-auto max-w-[46rem] space-y-5 px-6 py-14 sm:px-10">
+      <div className="space-y-5 px-8 py-20 pl-16">
         <Skeleton className="h-3 w-24" />
-        <Skeleton className="h-14 w-4/5" />
+        <Skeleton className="h-16 w-4/5" />
         <Skeleton className="h-3 w-52" />
         <Skeleton className="h-px w-full" />
         <Skeleton className="h-4 w-full" />
@@ -177,22 +177,22 @@ export function ArticleEditor({
   const readingMin = estimateReadingTimeMinutes(liveWordCount);
 
   return (
-    <div className="flex flex-col bg-[hsl(var(--ed-paper))]">
-      {/* MASTHEAD — el documento como pieza editorial, no como un H1. */}
-      <header className="mx-auto w-full max-w-[46rem] px-6 pt-12 sm:px-10 sm:pt-16">
+    // Márgenes editoriales asimétricos: mucho aire a la izquierda (donde vuelan
+    // las coordenadas §), la mancha de texto desplazada.
+    <div className="flex flex-col pl-6 pr-6 sm:pl-16 sm:pr-10">
+      <header className="pt-16">
         {coverImageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={coverImageUrl}
             alt={coverImageAlt ?? ''}
-            className="mb-8 aspect-[16/6] w-full object-cover grayscale-[0.15]"
+            className="mb-10 aspect-[16/6] w-full object-cover grayscale-[0.2]"
           />
         )}
 
-        <p className="ed-label mb-5">
+        <p className="ed-label mb-6 text-[hsl(var(--ed-ink-faint))]">
           {contentTypeLabel ?? t.editor.masthead.kicker}
-          <span className="mx-2 text-[hsl(var(--ed-rule-strong))]">/</span>
-          {t.editor.saveStatus[status] ?? ''}
+          <span className="mx-2 text-[hsl(var(--ed-rule-strong))]">·</span>§00
         </p>
 
         <textarea
@@ -201,7 +201,7 @@ export function ArticleEditor({
           placeholder={t.editor.titlePlaceholder}
           rows={1}
           spellCheck
-          className="block w-full resize-none overflow-hidden bg-transparent font-display text-[2.7rem] font-medium leading-[1.05] tracking-[-0.02em] text-[hsl(var(--ed-ink))] caret-[hsl(var(--ed-accent))] outline-none placeholder:text-[hsl(var(--ed-ink-faint))] sm:text-[3.6rem]"
+          className="block w-full resize-none overflow-hidden bg-transparent font-display text-[2.6rem] font-medium leading-[1.03] tracking-[-0.02em] text-[hsl(var(--ed-ink))] caret-[hsl(var(--ed-accent))] outline-none placeholder:text-[hsl(var(--ed-ink-faint))] sm:text-[3.7rem]"
           onInput={(e) => {
             const el = e.currentTarget;
             el.style.height = 'auto';
@@ -209,8 +209,8 @@ export function ArticleEditor({
           }}
         />
 
-        {/* COLOFÓN — metadatos tratados como línea editorial. */}
-        <div className="mt-7 flex flex-wrap items-center gap-x-3 gap-y-2 border-y border-[hsl(var(--ed-rule))] py-3 font-mono text-[0.72rem] uppercase tracking-[0.08em] text-[hsl(var(--ed-ink-faint))]">
+        {/* Datos de registro del manuscrito. */}
+        <div className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2 border-y border-[hsl(var(--ed-rule))] py-2.5 font-mono text-[0.66rem] uppercase tracking-[0.1em] text-[hsl(var(--ed-ink-faint))]">
           <span className="tabular-nums text-[hsl(var(--ed-ink-soft))]">
             {liveWordCount.toLocaleString(locale)}&nbsp;{t.common.words}
           </span>
@@ -230,13 +230,13 @@ export function ArticleEditor({
               </span>
             </>
           )}
-          <span className="ml-auto flex items-center gap-0.5">
+          <span className="ml-auto flex items-center">
             <button
               type="button"
               onClick={() => editor.chain().focus().undo().run()}
               disabled={!editor.can().undo()}
               title={t.editor.toolbar.undo}
-              className="grid h-6 w-6 place-items-center text-[hsl(var(--ed-ink-faint))] transition-colors hover:text-[hsl(var(--ed-ink))] disabled:opacity-30"
+              className="grid h-6 w-6 place-items-center text-[hsl(var(--ed-ink-faint))] transition-colors hover:text-[hsl(var(--ed-ink))] disabled:opacity-25"
             >
               <Undo2 className="h-3.5 w-3.5" />
             </button>
@@ -245,7 +245,7 @@ export function ArticleEditor({
               onClick={() => editor.chain().focus().redo().run()}
               disabled={!editor.can().redo()}
               title={t.editor.toolbar.redo}
-              className="grid h-6 w-6 place-items-center text-[hsl(var(--ed-ink-faint))] transition-colors hover:text-[hsl(var(--ed-ink))] disabled:opacity-30"
+              className="grid h-6 w-6 place-items-center text-[hsl(var(--ed-ink-faint))] transition-colors hover:text-[hsl(var(--ed-ink))] disabled:opacity-25"
             >
               <Redo2 className="h-3.5 w-3.5" />
             </button>
@@ -253,7 +253,7 @@ export function ArticleEditor({
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-[46rem] px-6 pb-32 pt-12 sm:px-10">
+      <div className="pb-40 pt-14">
         <EditorContextMenu editor={editor} onAiAction={handleAction} disabled={!!rewriteState} />
         <EditorContent editor={editor} />
       </div>

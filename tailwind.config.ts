@@ -17,10 +17,10 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
-        // Solo se usan en el editor ("sala de edición"). El resto de la app
+        // Solo se usan en el editor (instrumento editorial). El resto de la app
         // sigue con la sans del sistema (fontFamily.sans por defecto de Tailwind).
         display: ['var(--font-fraunces)', 'Georgia', 'Cambria', 'serif'],
-        serif: ['var(--font-fraunces)', 'Georgia', 'Cambria', 'serif'],
+        serif: ['var(--font-newsreader)', 'Georgia', 'Cambria', 'serif'],
         mono: ['var(--font-space-mono)', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
       colors: {

@@ -406,13 +406,23 @@ export const es = {
       project: 'Detalles',
     },
     articlePanelTitle: 'Panel del artículo',
-    panelTitle: 'Sala de control',
+    panelTitle: 'Control',
     contentPlaceholder: 'Empieza a escribir tu artículo...',
     masthead: {
       kicker: 'Manuscrito',
     },
     spine: {
-      label: 'Pliego',
+      label: 'Regla',
+    },
+    registration: {
+      mode: 'Modo',
+    },
+    console: {
+      structure: 'Estructura',
+      discovery: 'Descubrimiento',
+      integrity: 'Integridad',
+      origin: 'Origen',
+      memory: 'Memoria',
     },
     meta: {
       updated: 'Actualizado',

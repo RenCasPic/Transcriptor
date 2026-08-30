@@ -99,51 +99,113 @@
 }
 
 /* ============================================================
-   SALA DE EDICIÓN — microclima editorial del editor.
-   Paleta propia (papel hueso / tinta óxido) definida solo en
-   `.editor-surface`, sin tocar los tokens globales de la app.
-   Un único acento: --ed-accent (= --primary), usado con cuentagotas.
+   INSTRUMENTO EDITORIAL
+   Dos materiales: GRAFITO (el "banco" / chrome de la máquina) y
+   PAPEL (el manuscrito, un objeto físico posado encima). UNA señal
+   eléctrica (bermellón de registro), que funciona como SEÑAL, no
+   decoración. Tres voces: DISPLAY (Fraunces) / BODY (Newsreader) /
+   SYSTEM (Space Mono). Nada de esto toca los tokens globales.
    ============================================================ */
 .editor-surface {
-  --ed-paper: 40 30% 97%;
-  --ed-paper-sunk: 38 24% 94%;
-  --ed-ink: 30 12% 12%;
-  --ed-ink-soft: 30 8% 34%;
-  --ed-ink-faint: 30 6% 52%;
-  --ed-rule: 32 12% 84%;
-  --ed-rule-strong: 30 10% 68%;
-  --ed-accent: var(--primary);
+  /* GRAFITO — el banco de trabajo */
+  --ed-desk: 28 6% 14%;
+  --ed-desk-2: 28 5% 18%;
+  --ed-desk-3: 28 5% 22%;
+  --ed-desk-line: 28 6% 30%;
+  --ed-desk-ink: 40 12% 66%;
+  --ed-desk-ink-dim: 30 5% 45%;
 
-  background-color: hsl(var(--ed-paper));
-  color: hsl(var(--ed-ink));
+  /* PAPEL — el manuscrito */
+  --ed-paper: 40 26% 96%;
+  --ed-paper-sunk: 40 16% 91%;
+  --ed-ink: 28 14% 13%;
+  --ed-ink-soft: 28 8% 37%;
+  --ed-ink-faint: 28 6% 56%;
+  --ed-rule: 32 13% 82%;
+  --ed-rule-strong: 30 10% 66%;
+
+  /* SEÑAL — bermellón de registro. Un solo color eléctrico. */
+  --ed-accent: 9 83% 55%;
+  /* Acento "de modo": gris en calma, señal cuando el modo lo pide. */
+  --ed-mode: var(--ed-desk-ink-dim);
+
+  background-color: hsl(var(--ed-desk));
+  color: hsl(var(--ed-desk-ink));
 }
 .dark .editor-surface {
-  --ed-paper: 30 10% 9%;
-  --ed-paper-sunk: 30 9% 12%;
-  --ed-ink: 40 28% 92%;
-  --ed-ink-soft: 38 12% 70%;
-  --ed-ink-faint: 34 8% 52%;
-  --ed-rule: 32 8% 24%;
-  --ed-rule-strong: 32 8% 34%;
+  --ed-desk: 24 5% 9%;
+  --ed-desk-2: 24 5% 12%;
+  --ed-desk-3: 24 4% 16%;
+  --ed-desk-line: 26 5% 24%;
+  --ed-desk-ink: 38 10% 62%;
+  --ed-desk-ink-dim: 28 5% 40%;
+  --ed-paper: 30 8% 11%;
+  --ed-paper-sunk: 30 7% 14%;
+  --ed-ink: 40 24% 90%;
+  --ed-ink-soft: 38 10% 68%;
+  --ed-ink-faint: 34 7% 50%;
+  --ed-rule: 32 7% 24%;
+  --ed-rule-strong: 32 7% 34%;
 }
 
-/* Micro-etiqueta de instrumento: monoespaciada, versalitas, tracking amplio. */
+/* Modos operativos: al elegir estación en la consola, la señal aparece. */
+.editor-surface[data-mode='discovery'],
+.editor-surface[data-mode='integrity'],
+.editor-surface[data-mode='origin'],
+.editor-surface[data-mode='memory'] {
+  --ed-mode: hsl(var(--ed-accent));
+}
+
+/* Micro-etiqueta de instrumento (mono, versalitas). Hereda el color. */
 .ed-label {
   font-family: var(--font-space-mono), ui-monospace, monospace;
   text-transform: uppercase;
-  letter-spacing: 0.18em;
-  font-size: 0.66rem;
+  letter-spacing: 0.2em;
+  font-size: 0.62rem;
   line-height: 1;
-  color: hsl(var(--ed-ink-faint));
+  opacity: 0.68;
 }
 
-/* ---------- Cuerpo del artículo: una pieza editorial ---------- */
+/* Marcas de corte / registro en las esquinas del manuscrito. */
+.ed-crop {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+  color: hsl(var(--ed-rule-strong));
+}
+.ed-crop::before,
+.ed-crop::after {
+  content: '';
+  position: absolute;
+  background: currentColor;
+}
+.ed-crop::before {
+  width: 1px;
+  height: 100%;
+}
+.ed-crop::after {
+  height: 1px;
+  width: 100%;
+}
+.ed-crop.tl { top: -1px; left: -1px; }
+.ed-crop.tr { top: -1px; right: -1px; }
+.ed-crop.tr::before { right: 0; }
+.ed-crop.tr::after { right: 0; }
+.ed-crop.bl { bottom: -1px; left: -1px; }
+.ed-crop.bl::before { bottom: 0; }
+.ed-crop.bl::after { bottom: 0; }
+.ed-crop.br { bottom: -1px; right: -1px; }
+.ed-crop.br::before { bottom: 0; right: 0; }
+.ed-crop.br::after { bottom: 0; right: 0; }
+
+/* ---------- El manuscrito: voz BODY, legibilidad extrema ---------- */
 .tiptap-editor {
-  @apply prose prose-slate max-w-none focus:outline-none dark:prose-invert;
-  font-family: var(--font-fraunces), Georgia, Cambria, serif;
+  @apply prose max-w-none focus:outline-none;
+  font-family: var(--font-newsreader), Georgia, Cambria, serif;
   font-optical-sizing: auto;
-  font-size: 1.18rem;
-  line-height: 1.72;
+  font-size: 1.16rem;
+  line-height: 1.74;
   color: hsl(var(--ed-ink));
   --tw-prose-body: hsl(var(--ed-ink));
   --tw-prose-headings: hsl(var(--ed-ink));
@@ -155,9 +217,8 @@
   --tw-prose-counters: hsl(var(--ed-ink-faint));
   hanging-punctuation: first last;
 }
-
 .tiptap-editor p {
-  margin: 1.15em 0;
+  margin: 1.2em 0;
   text-align: justify;
   text-justify: inter-word;
   hyphens: auto;
@@ -166,44 +227,60 @@
   margin: 0.35em 0;
 }
 
+/* Coordenada de sección (§01, §02…) volada en el margen izquierdo. */
+.tiptap-editor {
+  counter-reset: ed-chap;
+}
+.tiptap-editor h2::before {
+  counter-increment: ed-chap;
+  content: '§' counter(ed-chap, decimal-leading-zero);
+  position: absolute;
+  left: -3.4rem;
+  top: 1.05em;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  color: hsl(var(--ed-ink-faint));
+}
+
+/* Encabezados: voz DISPLAY (Fraunces), con su coordenada de sección. */
 .tiptap-editor h2,
 .tiptap-editor h3 {
   font-family: var(--font-fraunces), Georgia, serif;
-  font-weight: 560;
-  letter-spacing: -0.015em;
-  line-height: 1.12;
+  font-weight: 540;
+  letter-spacing: -0.012em;
+  line-height: 1.1;
+  position: relative;
 }
 .tiptap-editor h2 {
-  font-size: 1.9rem;
-  margin: 2.4em 0 0.7em;
-  padding-top: 0.7em;
-  border-top: 1px solid hsl(var(--ed-rule));
+  font-size: 2rem;
+  margin: 2.6em 0 0.7em;
+  padding-top: 0.75em;
+  border-top: 1px solid hsl(var(--ed-rule-strong));
 }
 .tiptap-editor h2:first-child {
-  margin-top: 0.3em;
+  margin-top: 0.2em;
   border-top: 0;
   padding-top: 0;
 }
 .tiptap-editor h3 {
-  font-size: 1.4rem;
-  margin: 1.9em 0 0.5em;
+  font-size: 1.42rem;
+  margin: 2em 0 0.5em;
 }
 
-/* Capitular: la primera letra del primer párrafo, a la manera de una revista. */
+/* Capitular sobria: en tinta, no en señal (la señal se reserva para acción). */
 .tiptap-editor > p:first-of-type::first-letter {
   font-family: var(--font-fraunces), Georgia, serif;
   float: left;
-  font-size: 3.9em;
+  font-size: 3.7em;
   line-height: 0.82;
-  font-weight: 600;
-  margin: 0.06em 0.09em -0.02em 0;
-  color: hsl(var(--ed-accent));
+  font-weight: 560;
+  margin: 0.05em 0.1em -0.04em 0;
 }
-
 .tiptap-editor blockquote {
   font-style: italic;
-  border-left: 2px solid hsl(var(--ed-accent));
-  padding-left: 1.1em;
+  border-left: 2px solid hsl(var(--ed-rule-strong));
+  padding-left: 1.15em;
   margin-left: 0;
   color: hsl(var(--ed-ink-soft));
 }
@@ -215,22 +292,32 @@
 }
 .tiptap-editor code {
   font-family: var(--font-space-mono), ui-monospace, monospace;
-  font-size: 0.86em;
+  font-size: 0.85em;
   background: hsl(var(--ed-paper-sunk));
   padding: 0.1em 0.35em;
-  border-radius: 2px;
 }
 .tiptap-editor hr {
   border: 0;
-  margin: 2.6em auto;
-  width: 42%;
-  border-top: 1px solid hsl(var(--ed-rule-strong));
+  margin: 2.8em 0;
+  width: 100%;
+  border-top: 1px solid hsl(var(--ed-rule));
+  position: relative;
 }
-
+.tiptap-editor hr::after {
+  content: '§';
+  position: absolute;
+  left: 50%;
+  top: -0.75em;
+  transform: translateX(-50%);
+  background: hsl(var(--ed-paper));
+  padding: 0 0.5em;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 0.8rem;
+  color: hsl(var(--ed-ink-faint));
+}
 .tiptap-editor :is(h1, h2, h3) {
-  scroll-margin-top: 7rem;
+  scroll-margin-top: 8rem;
 }
-
 .tiptap-editor p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
@@ -239,32 +326,37 @@
   color: hsl(var(--ed-ink-faint));
 }
 
-/* Destello breve al navegar a un encabezado desde el folio / la estructura. */
+/* Barrido de registro al saltar a una sección (la "cabeza editorial" llega). */
 @keyframes outline-flash {
   0% {
-    background-color: hsl(var(--ed-accent) / 0.14);
+    box-shadow: -1.5rem 0 0 hsl(var(--ed-accent) / 0.9);
+    background-color: hsl(var(--ed-accent) / 0.08);
   }
   100% {
+    box-shadow: -1.5rem 0 0 transparent;
     background-color: transparent;
   }
 }
 .tiptap-editor .outline-flash {
-  animation: outline-flash 1.4s ease-out;
-  border-radius: 2px;
+  animation: outline-flash 1.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Marca del compositor (playhead) del folio: latido sutil. */
-@keyframes ed-playhead {
+@keyframes ed-blink {
   0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.55;
-  }
+  100% { opacity: 1; }
+  50% { opacity: 0.35; }
 }
-.ed-playhead-pulse {
-  animation: ed-playhead 2.4s ease-in-out infinite;
+.ed-blink {
+  animation: ed-blink 1.8s steps(1, end) infinite;
+}
+
+/* Transición de modo: leve barrido cuando cambias de estación en la consola. */
+@keyframes ed-mode-sweep {
+  0% { clip-path: inset(0 100% 0 0); }
+  100% { clip-path: inset(0 0 0 0); }
+}
+.ed-mode-sweep {
+  animation: ed-mode-sweep 0.42s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Movimiento sutil y continuo para el degradado decorativo del hero de la landing. */

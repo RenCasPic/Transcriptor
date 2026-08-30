@@ -401,13 +401,23 @@ export const en: Dictionary = {
       project: 'Details',
     },
     articlePanelTitle: 'Article panel',
-    panelTitle: 'Control room',
+    panelTitle: 'Control',
     contentPlaceholder: 'Start writing your article...',
     masthead: {
       kicker: 'Manuscript',
     },
     spine: {
-      label: 'Folio',
+      label: 'Rule',
+    },
+    registration: {
+      mode: 'Mode',
+    },
+    console: {
+      structure: 'Structure',
+      discovery: 'Discovery',
+      integrity: 'Integrity',
+      origin: 'Source',
+      memory: 'Memory',
     },
     meta: {
       updated: 'Updated',
