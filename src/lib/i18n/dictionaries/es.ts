@@ -41,7 +41,6 @@ export const es = {
   landing: {
     signIn: 'Iniciar sesión',
     createFreeAccount: 'Crear cuenta gratis',
-    goToDashboard: 'Ir a mi panel',
     heroBadge: 'Listo en minutos, sin complicaciones',
     heroTitle: 'Convierte tus videos y podcasts en',
     heroTitleHighlight: 'artículos',

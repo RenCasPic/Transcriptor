@@ -39,7 +39,6 @@ export const en: Dictionary = {
   landing: {
     signIn: 'Sign in',
     createFreeAccount: 'Create free account',
-    goToDashboard: 'Go to my dashboard',
     heroBadge: 'Ready in minutes, no hassle',
     heroTitle: 'Turn your videos and podcasts into',
     heroTitleHighlight: 'articles',
