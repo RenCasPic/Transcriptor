@@ -153,6 +153,9 @@ export const es = {
       restrictedTitle: 'No podemos acceder a este video',
       restrictedTip1: 'Los videos privados, solo para miembros o con restricción de edad no se pueden procesar automáticamente.',
       restrictedTip2: 'Usa un video público, o descarga el audio y súbelo con "Subir archivo".',
+      tooLongTitle: 'El video es demasiado largo para transcribirlo automáticamente',
+      tooLongTip1: 'La transcripción automática de audio de YouTube admite videos de hasta ~90 minutos.',
+      tooLongTip2: 'Para videos más largos, descarga el audio y súbelo con "Subir archivo" (se trocea automáticamente).',
     },
     stats: {
       projects: 'Proyectos',

@@ -1,10 +1,15 @@
 import { spawn as nodeSpawn } from 'node:child_process';
-import { PassThrough } from 'node:stream';
+import { createReadStream } from 'node:fs';
+import { readdir } from 'node:fs/promises';
+import path from 'node:path';
+import type { Readable } from 'node:stream';
 import type { AudioExtractor, ExtractAudioOptions, ExtractedAudio } from './types';
 import { consoleExtractionLogger, type ExtractionLogger } from './extraction-logger';
 import { resolveYtDlpBinary } from './ytdlp-binary';
+import { resolveFfmpegBinaries, makeTempDir, cleanupTempDir } from '@/lib/media/audio-chunker/ffmpeg';
 
 const METADATA_TIMEOUT_MS = 25_000;
+const DOWNLOAD_TIMEOUT_MS = 240_000;
 const STDERR_MAX_CHARS = 4_000;
 
 // Selector de formato: audio en m4a preferido (contenedor que Whisper/Groq
@@ -12,6 +17,22 @@ const STDERR_MAX_CHARS = 4_000;
 // resuelve internamente qué cliente de YouTube usar para obtener una URL
 // descargable — ahí está su ventaja sobre las librerías JS.
 const AUDIO_FORMAT_SELECTOR = 'bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/ba/bestaudio*';
+
+// Recomprimir a MP3 mono 16 kHz / 32 kbps (~0,24 MB por minuto) antes de
+// transcribir: un vídeo de 90 min ≈ 22 MB, por debajo del límite de 25 MB del
+// proveedor (y de MAX_MEDIA_BYTES). Sin comprimir, cualquier charla de más de
+// ~25 min superaba el límite y fallaba con TRANSCRIPTION_FILE_TOO_LARGE.
+// yt-dlp NO aplica postproceso cuando escribe a stdout (`-o -`), así que la
+// descarga va a un archivo temporal en disco (se borra al terminar).
+const COMPRESSED_AUDIO_ARGS = [
+  '-x',
+  '--audio-format',
+  'mp3',
+  '--audio-quality',
+  '32K',
+  '--postprocessor-args',
+  'ExtractAudio:-ac 1 -ar 16000',
+];
 
 interface AudioKind {
   mimeType: string;
@@ -108,45 +129,35 @@ export class YtDlpAudioExtractor implements AudioExtractor {
       throw hardError('YOUTUBE_AUDIO_TOO_LONG', logger, videoId, extractorVersion, startedAt);
     }
 
-    const { mimeType, fileExtension } = EXT_TO_MIME[meta.ext ?? ''] ?? DEFAULT_AUDIO_KIND;
+    let downloaded: DownloadedAudio;
+    try {
+      downloaded = options.deps?.downloadAudio
+        ? await options.deps.downloadAudio()
+        : await downloadAudioToTempFile(spawn, binary, videoUrl);
+    } catch (error) {
+      const mapped = toError(error);
+      logger.summary({
+        videoId,
+        extractorVersion,
+        outcome: 'failure',
+        attempts: 1,
+        totalDurationMs: Date.now() - startedAt,
+        errorCode: errorCodeOf(mapped),
+      });
+      throw mapped;
+    }
 
-    // Descarga real: yt-dlp -> stdout -> PassThrough. El PassThrough permite
-    // propagar como 'error' del stream cualquier fallo que yt-dlp reporte
-    // DESPUÉS de haber empezado a emitir bytes (p. ej. un 403 a mitad).
-    const format = meta.formatId ?? AUDIO_FORMAT_SELECTOR;
-    const child = spawn(
-      binary,
-      ['--no-warnings', '--no-progress', '--no-playlist', '--no-part', '-f', format, '-o', '-', videoUrl],
-      { stdio: ['ignore', 'pipe', 'pipe'] },
-    );
-
-    const out = new PassThrough();
-    let stderr = '';
-    child.stderr?.on('data', (d: Buffer) => {
-      if (stderr.length < STDERR_MAX_CHARS) stderr += d.toString();
-    });
-    // `{ end: false }`: NO cerramos el PassThrough cuando stdout termina, sino
-    // solo tras conocer el exit code. Así, si yt-dlp emite algunos bytes y
-    // luego falla (p. ej. un 403 a mitad), el consumidor recibe un 'error' y
-    // no un 'end' con un audio truncado.
-    child.stdout?.pipe(out, { end: false });
-    child.on('error', (err: Error) => out.destroy(new Error(`YOUTUBE_AUDIO_EXTRACTION_FAILED:${err.message}`)));
-    child.on('close', (code: number | null) => {
-      if (code === 0) out.end();
-      else out.destroy(mapYtDlpError(stderr, code));
-    });
-    // Si el consumidor corta el stream (límite de tamaño / timeout en
-    // readStreamWithLimit), matamos yt-dlp para no dejar el proceso colgado.
-    out.on('close', () => {
-      if (!child.killed) child.kill('SIGKILL');
-    });
+    // El archivo temporal se borra cuando el consumidor termina de leer el
+    // stream (readStreamWithLimit) o lo destruye (límite de tamaño / timeout).
+    downloaded.stream.once('close', downloaded.cleanup);
+    downloaded.stream.once('error', downloaded.cleanup);
 
     logger.attempt({
       videoId,
       extractorVersion,
       strategy: 'yt-dlp',
       playerClients: [],
-      requestedFormat: meta.formatId ? `${meta.formatId} (${meta.ext})` : AUDIO_FORMAT_SELECTOR,
+      requestedFormat: downloaded.compressed ? 'mp3 32k mono 16kHz' : downloaded.fileExtension,
       attempt: 1,
       maxAttempts: 1,
       outcome: 'success',
@@ -162,9 +173,9 @@ export class YtDlpAudioExtractor implements AudioExtractor {
     });
 
     return {
-      stream: out,
-      fileExtension,
-      mimeType,
+      stream: downloaded.stream,
+      fileExtension: downloaded.fileExtension,
+      mimeType: downloaded.mimeType,
       durationSeconds: meta.durationSeconds,
       title: meta.title || 'Video de YouTube',
     };
@@ -215,37 +226,116 @@ export class YtDlpAudioExtractor implements AudioExtractor {
   }
 }
 
+export interface DownloadedAudio {
+  stream: Readable;
+  fileExtension: string;
+  mimeType: string;
+  /** true = recomprimido a MP3 32k mono; false = formato original de YouTube. */
+  compressed: boolean;
+  /** Borra el archivo/directorio temporal. Idempotente. */
+  cleanup: () => void;
+}
+
+/**
+ * Descarga el audio con yt-dlp a un archivo temporal. Si ffmpeg está
+ * disponible (lo está en este proyecto vía `@ffmpeg-installer`), lo recomprime
+ * a MP3 32 kbps mono para que quepa bajo el límite de 25 MB del proveedor de
+ * transcripción. Si no, deja el formato original (y videos largos podrán
+ * seguir superando el límite).
+ */
+async function downloadAudioToTempFile(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  spawn: any,
+  binary: string,
+  videoUrl: string,
+): Promise<DownloadedAudio> {
+  const ffmpeg = await resolveFfmpegBinaries();
+  const dir = await makeTempDir();
+  const cleanup = () => {
+    void cleanupTempDir(dir);
+  };
+
+  const args = ['--no-warnings', '--no-progress', '--no-playlist', '--no-part'];
+  if (ffmpeg) {
+    args.push(...COMPRESSED_AUDIO_ARGS, '-f', 'bestaudio/ba');
+    const ffmpegDir = path.dirname(ffmpeg.ffmpeg);
+    if (ffmpegDir && ffmpegDir !== '.') args.push('--ffmpeg-location', ffmpegDir);
+  } else {
+    args.push('-f', AUDIO_FORMAT_SELECTOR);
+  }
+  args.push('-o', path.join(dir, 'audio.%(ext)s'), videoUrl);
+
+  try {
+    await runYtDlpToCompletion(spawn, binary, args);
+  } catch (error) {
+    cleanup();
+    throw error;
+  }
+
+  const files = (await readdir(dir)).filter((f) => f.startsWith('audio.'));
+  const file = files.find((f) => f.endsWith('.mp3')) ?? files[0];
+  if (!file) {
+    cleanup();
+    throw new Error('YOUTUBE_EXTRACTOR_INCOMPATIBLE:yt-dlp no produjo ningún archivo de audio');
+  }
+
+  const ext = path.extname(file).slice(1).toLowerCase();
+  const kind = EXT_TO_MIME[ext] ?? DEFAULT_AUDIO_KIND;
+  return {
+    stream: createReadStream(path.join(dir, file)),
+    fileExtension: kind.fileExtension,
+    mimeType: kind.mimeType,
+    compressed: !!ffmpeg && ext === 'mp3',
+    cleanup,
+  };
+}
+
+/** Ejecuta yt-dlp y resuelve al terminar (exit 0) o rechaza con el error mapeado. */
+function runYtDlpToCompletion(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  spawn: any,
+  binary: string,
+  args: string[],
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(binary, args, { stdio: ['ignore', 'ignore', 'pipe'] });
+    let stderr = '';
+    const timer = setTimeout(() => {
+      child.kill('SIGKILL');
+      reject(new Error('YOUTUBE_AUDIO_EXTRACTION_TIMEOUT'));
+    }, DOWNLOAD_TIMEOUT_MS);
+
+    child.stderr?.on('data', (d: Buffer) => {
+      if (stderr.length < STDERR_MAX_CHARS) stderr += d.toString();
+    });
+    child.on('error', (err: Error) => {
+      clearTimeout(timer);
+      reject(new Error(`YOUTUBE_AUDIO_EXTRACTION_FAILED:${err.message}`));
+    });
+    child.on('close', (code: number | null) => {
+      clearTimeout(timer);
+      if (code === 0) resolve();
+      else reject(mapYtDlpError(stderr, code));
+    });
+  });
+}
+
 interface YtDlpMetadata {
   title: string;
   durationSeconds: number;
   isLive: boolean;
   availabilityCode: string | null;
-  formatId: string | null;
-  ext: string | null;
 }
 
 function parseMetadata(raw: string): YtDlpMetadata {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const json: any = JSON.parse(raw);
-  const chosen = Array.isArray(json.requested_downloads) ? json.requested_downloads[0] : undefined;
-  const fallback = pickBestAudio(Array.isArray(json.formats) ? json.formats : []);
-  const fmt = chosen ?? fallback;
-
   return {
     title: typeof json.title === 'string' ? json.title : '',
     durationSeconds: Number(json.duration) || 0,
     isLive: json.is_live === true || json.live_status === 'is_live' || json.live_status === 'is_upcoming',
     availabilityCode: availabilityToCode(json.availability),
-    formatId: fmt?.format_id ? String(fmt.format_id) : null,
-    ext: fmt?.ext ? String(fmt.ext) : null,
   };
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function pickBestAudio(formats: any[]): any {
-  return formats
-    .filter((f) => f && f.acodec && f.acodec !== 'none' && (f.vcodec === 'none' || f.vcodec == null))
-    .sort((a, b) => (Number(b.abr) || Number(b.tbr) || 0) - (Number(a.abr) || Number(a.tbr) || 0))[0];
 }
 
 function availabilityToCode(availability: unknown): string | null {

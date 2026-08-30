@@ -151,6 +151,9 @@ export const en: Dictionary = {
       restrictedTitle: "We can't access this video",
       restrictedTip1: "Private, members-only, or age-restricted videos can't be processed automatically.",
       restrictedTip2: 'Use a public video, or download the audio and add it with "Upload file".',
+      tooLongTitle: 'The video is too long to transcribe automatically',
+      tooLongTip1: 'Automatic YouTube audio transcription supports videos up to ~90 minutes.',
+      tooLongTip2: 'For longer videos, download the audio and add it with "Upload file" (it gets split automatically).',
     },
     stats: {
       projects: 'Projects',

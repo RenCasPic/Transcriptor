@@ -33,6 +33,12 @@ export function youtubeImportErrorPresentation(
         title: copy.restrictedTitle,
         tips: [copy.restrictedTip1, copy.restrictedTip2],
       };
+    case 'TRANSCRIPTION_FILE_TOO_LARGE':
+    case 'YOUTUBE_AUDIO_TOO_LONG':
+      return {
+        title: copy.tooLongTitle,
+        tips: [copy.tooLongTip1, copy.tooLongTip2],
+      };
     default:
       return {
         title: copy.title,

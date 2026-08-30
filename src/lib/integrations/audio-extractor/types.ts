@@ -33,6 +33,14 @@ export interface ExtractAudioOptions {
      */
     binaryPath?: string | null;
     ytdlpVersion?: string;
+    /** yt-dlp: sustituye la descarga+recompresión real (que toca disco). */
+    downloadAudio?: () => Promise<{
+      stream: Readable;
+      fileExtension: string;
+      mimeType: string;
+      compressed: boolean;
+      cleanup: () => void;
+    }>;
   };
 }
 

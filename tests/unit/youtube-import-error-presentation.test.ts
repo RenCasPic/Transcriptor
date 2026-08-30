@@ -26,6 +26,14 @@ describe('youtubeImportErrorPresentation', () => {
     }
   });
 
+  it('agrupa "audio demasiado grande / vídeo muy largo" bajo "demasiado largo"', () => {
+    for (const code of ['TRANSCRIPTION_FILE_TOO_LARGE', 'YOUTUBE_AUDIO_TOO_LONG']) {
+      const { title, tips } = youtubeImportErrorPresentation(code, copy);
+      expect(title).toBe(copy.tooLongTitle);
+      expect(tips).toEqual([copy.tooLongTip1, copy.tooLongTip2]);
+    }
+  });
+
   it('cae en el genérico para códigos desconocidos', () => {
     const { title, tips } = youtubeImportErrorPresentation('ALGO_RARO', copy);
     expect(title).toBe(copy.title);
