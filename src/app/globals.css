@@ -118,10 +118,10 @@
   hyphens: auto;
 }
 
-/* Compensa la toolbar sticky (top-11 = 2.75rem) al saltar a un encabezado
-   desde el índice del artículo, para que no quede oculto debajo. */
+/* Compensa la barra superior (top-11) + la toolbar sticky al saltar a un
+   encabezado desde el índice, para que no quede oculto debajo. */
 .tiptap-editor :is(h1, h2, h3) {
-  scroll-margin-top: 4.5rem;
+  scroll-margin-top: 5.5rem;
 }
 
 .tiptap-editor p.is-editor-empty:first-child::before {

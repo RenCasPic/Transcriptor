@@ -112,25 +112,19 @@ export function EditorShell({
     // del navegador, no de una caja interna). La barra superior y los
     // encabezados de columna son sticky. Fondo neutro y tranquilo: el
     // protagonista es el artículo.
-    <div className="-m-4 min-h-[calc(100vh-var(--app-header-h))] bg-muted/40 lg:-m-8">
-      {/* Barra superior: morado sólido, texto e iconos blancos. La línea
-          inferior (border-primary) es la "línea delgada morada" contra el
-          contenido blanco de debajo. */}
-      <div className="sticky top-0 z-40 flex h-11 items-center justify-between gap-2 border-b border-primary bg-primary px-3 text-primary-foreground shadow-sm">
+    <div className="-m-4 min-h-[calc(100vh-var(--app-header-h))] bg-muted/30 lg:-m-8">
+      {/* Barra superior: fondo claro y neutro, borde sutil. El morado solo
+          aparece como acento (botón "Publicar", estados activos). */}
+      <div className="sticky top-0 z-40 flex h-11 items-center justify-between gap-2 border-b border-border bg-background/95 px-3 shadow-sm backdrop-blur">
         <div className="flex min-w-0 items-center gap-1.5">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 shrink-0 text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
-            asChild
-          >
+          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground" asChild>
             <Link href={`/projects/${project.id}`}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <span className="truncate text-sm font-semibold">{project.name}</span>
+          <span className="truncate text-sm font-medium text-foreground">{project.name}</span>
           <span className="ml-1 hidden sm:block">
-            <SaveStatusIndicator status={saveStatus} iconOnly onColor />
+            <SaveStatusIndicator status={saveStatus} iconOnly />
           </span>
         </div>
 
@@ -138,7 +132,7 @@ export function EditorShell({
           <Button
             variant="ghost"
             size="sm"
-            className="hidden text-primary-foreground hover:bg-white/15 hover:text-primary-foreground sm:inline-flex"
+            className="hidden text-muted-foreground sm:inline-flex"
             onClick={() => setPreviewMode((v) => !v)}
           >
             <Eye className="h-4 w-4" />
@@ -147,23 +141,13 @@ export function EditorShell({
           <RegenerateButton
             projectId={project.id}
             currentTargetReadingMinutes={project.target_reading_minutes}
-            className="text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
           />
-          <ExportMenu
-            title={document.title}
-            html={snapshot.html}
-            json={snapshot.json}
-            className="border-white/40 bg-transparent text-primary-foreground shadow-none hover:bg-white/15 hover:text-primary-foreground"
-          />
-          <EmbedButton
-            documentId={document.id}
-            initialIsPublic={document.isPublic}
-            className="border-transparent bg-white text-primary shadow-none hover:bg-white/90 hover:text-primary"
-          />
+          <ExportMenu title={document.title} html={snapshot.html} json={snapshot.json} />
+          <EmbedButton documentId={document.id} initialIsPublic={document.isPublic} />
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8 border-white/40 bg-white/15 text-primary-foreground shadow-none hover:bg-white/25 lg:hidden"
+            className="h-8 w-8 lg:hidden"
             onClick={() => setPanelSheetOpen(true)}
           >
             <PanelRight className="h-4 w-4" />
@@ -181,12 +165,11 @@ export function EditorShell({
           onClose={() => setPreviewMode(false)}
         />
       ) : (
-        <div className="mx-auto grid max-w-[1400px] gap-4 p-3 lg:grid-cols-[minmax(0,1fr)_360px] lg:p-4">
+        <div className="mx-auto grid max-w-[1400px] gap-5 p-4 lg:grid-cols-[minmax(0,1fr)_360px] lg:p-6">
           {/* El editor es el contenido principal. Sin overflow-hidden: rompería
-              los encabezados sticky internos. Mismo tratamiento que las
-              tarjetas del dashboard (componente Card): borde primario + sombra
-              ligera + esquinas redondeadas. */}
-          <div className="min-w-0 rounded-xl border border-primary bg-card shadow-sm">
+              los encabezados sticky internos. Tarjeta blanca con borde sutil y
+              sombra suave; sin bloques de color. */}
+          <div className="min-w-0 rounded-xl border border-border bg-card shadow-sm">
             <ArticleEditor
               documentId={document.id}
               projectId={project.id}
@@ -203,7 +186,7 @@ export function EditorShell({
           </div>
 
           <aside className="hidden lg:block">
-            <div className="rounded-xl border border-primary bg-card shadow-sm">{panel}</div>
+            <div className="rounded-xl border border-border bg-card shadow-sm">{panel}</div>
           </aside>
         </div>
       )}
