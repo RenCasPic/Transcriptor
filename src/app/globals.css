@@ -123,9 +123,9 @@
   --ed-paper-sunk: var(--muted);
   --ed-ink: var(--foreground);
   --ed-ink-soft: var(--muted-foreground);
-  --ed-ink-faint: 226 12% 55%;
+  --ed-ink-faint: 226 13% 44%;
   --ed-rule: var(--border);
-  --ed-rule-strong: 214 20% 80%;
+  --ed-rule-strong: 214 18% 74%;
 
   /* SEÑAL — el índigo de la app. Un solo color, usado como señal. */
   --ed-accent: var(--primary);
@@ -258,13 +258,15 @@
   margin: 2em 0 0.5em;
 }
 
-/* Capitular sobria: en tinta, no en señal (la señal se reserva para acción). */
+/* Capitular sobria: en tinta, no en señal (la señal se reserva para acción).
+   line-height:1 + margen superior negativo alinea la cima de la letra con la
+   altura de mayúscula de la primera línea; margin-right uniforme de 0.5rem. */
 .tiptap-editor > p:first-of-type::first-letter {
   float: left;
-  font-size: 3.2em;
-  line-height: 0.82;
+  font-size: 3.05em;
+  line-height: 1;
   font-weight: 680;
-  margin: 0.05em 0.1em -0.04em 0;
+  margin: -0.09em 0.5rem 0 0;
 }
 .tiptap-editor blockquote {
   font-style: italic;

@@ -37,11 +37,11 @@ export function EditorScale({ json, scroll }: { json: Json; scroll: EditorScroll
 
       <ol className="relative flex flex-1 flex-col justify-evenly py-10">
         {/* Eje de la regla */}
-        <span aria-hidden className="absolute bottom-0 left-8 top-0 w-px bg-[hsl(var(--ed-desk-line))]" />
+        <span aria-hidden className="absolute bottom-0 left-8 top-0 w-px bg-[hsl(var(--ed-rule-strong))]" />
         {/* Corchete de la cabeza de registro (posición de scroll) */}
         <span
           aria-hidden
-          className="pointer-events-none absolute left-[1.55rem] font-mono text-[hsl(var(--ed-accent))] transition-[top] duration-300 ease-out"
+          className="pointer-events-none absolute left-[1.5rem] font-mono text-[0.8rem] font-bold text-[hsl(var(--ed-accent))] transition-[top] duration-300 ease-out"
           style={{ top: `calc(${progress * 100}% - 0.5rem)` }}
         >
           ▐
@@ -64,19 +64,21 @@ export function EditorScale({ json, scroll }: { json: Json; scroll: EditorScroll
               >
                 <span
                   className={cn(
-                    'w-6 shrink-0 text-right font-mono text-[0.7rem] tabular-nums transition-colors',
-                    isActive ? 'text-[hsl(var(--ed-accent))]' : 'text-[hsl(var(--ed-desk-ink-dim))]',
+                    'w-6 shrink-0 text-right font-mono text-[0.74rem] tabular-nums transition-colors',
+                    isActive
+                      ? 'font-semibold text-[hsl(var(--ed-accent))]'
+                      : 'font-medium text-[hsl(var(--ed-desk-ink))]',
                   )}
                 >
                   {String(ch.index).padStart(2, '0')}
                 </span>
                 <span
                   className={cn(
-                    'block h-px shrink-0 origin-left transition-all duration-200',
+                    'block shrink-0 origin-left rounded-full transition-all duration-200',
                     isActive
-                      ? 'h-[2px] bg-[hsl(var(--ed-accent))]'
-                      : 'bg-[hsl(var(--ed-desk-ink-dim))] group-hover/scale:bg-[hsl(var(--ed-desk-ink))]',
-                    hover === i && !isActive && '!bg-[hsl(var(--ed-desk-ink))]',
+                      ? 'h-[3px] bg-[hsl(var(--ed-accent))]'
+                      : 'h-[1.5px] bg-[hsl(var(--ed-desk-ink))]/70 group-hover/scale:bg-[hsl(var(--ed-desk-ink))]',
+                    hover === i && !isActive && 'h-[2px] !bg-[hsl(var(--ed-desk-ink))]',
                   )}
                   style={{ width: `${hover === i ? w + 0.6 : w}rem` }}
                 />

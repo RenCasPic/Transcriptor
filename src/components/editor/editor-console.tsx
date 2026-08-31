@@ -94,8 +94,8 @@ export function EditorConsole({
       onValueChange={(v) => setMode(v as EditorMode)}
       className="flex min-h-0 flex-1 flex-col bg-[hsl(var(--ed-desk-2))] font-sans text-[hsl(var(--ed-desk-ink))]"
     >
-      {/* CHASIS — selector de estaciones, en grafito */}
-      <div className="shrink-0 border-b border-[hsl(var(--ed-desk-line))] px-4 pb-3 pt-5">
+      {/* CHASIS — selector de estaciones */}
+      <div className="shrink-0 border-b-2 border-[hsl(var(--ed-rule-strong))] bg-[hsl(var(--ed-desk))] px-4 pb-3 pt-5">
         <div className="flex items-baseline justify-between">
           <span className="ed-label text-[hsl(var(--ed-desk-ink))]">{t.editor.panelTitle}</span>
           <SaveStatusIndicator status={saveStatus} />

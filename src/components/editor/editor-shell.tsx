@@ -188,7 +188,7 @@ export function EditorShell({
           <EditorScale json={snapshot.json} scroll={scroll} />
 
           {/* EL MANUSCRITO — objeto físico posado sobre el banco. */}
-          <main className="relative min-w-0 border-x border-[hsl(var(--ed-rule-strong))] bg-[hsl(var(--ed-paper))] shadow-[10px_12px_0_-3px_hsl(var(--ed-rule))] lg:my-6 lg:border">
+          <main className="group/ms relative min-w-0 border-x border-[hsl(var(--ed-rule-strong))] bg-[hsl(var(--ed-paper))] shadow-[10px_12px_0_-3px_hsl(var(--ed-rule))] lg:my-6 lg:border">
             <span className="ed-crop tl" aria-hidden />
             <span className="ed-crop tr" aria-hidden />
             <span className="ed-crop bl" aria-hidden />

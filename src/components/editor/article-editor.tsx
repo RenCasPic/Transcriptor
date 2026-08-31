@@ -192,7 +192,6 @@ export function ArticleEditor({
 
         <p className="ed-label mb-6 text-[hsl(var(--ed-ink-faint))]">
           {contentTypeLabel ?? t.editor.masthead.kicker}
-          <span className="mx-2 text-[hsl(var(--ed-rule-strong))]">·</span>§00
         </p>
 
         <textarea
@@ -210,12 +209,12 @@ export function ArticleEditor({
         />
 
         {/* Datos de registro del manuscrito. */}
-        <div className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2 border-y border-[hsl(var(--ed-rule))] py-2.5 font-mono text-[0.66rem] uppercase tracking-[0.1em] text-[hsl(var(--ed-ink-faint))]">
-          <span className="tabular-nums text-[hsl(var(--ed-ink-soft))]">
+        <div className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2 border-y border-[hsl(var(--ed-rule))] py-2.5 font-mono text-[0.68rem] uppercase tracking-[0.1em] text-[hsl(var(--ed-ink-soft))]">
+          <span className="tabular-nums text-[hsl(var(--ed-ink))]">
             {liveWordCount.toLocaleString(locale)}&nbsp;{t.common.words}
           </span>
           <Rule />
-          <span className="tabular-nums text-[hsl(var(--ed-ink-soft))]">
+          <span className="tabular-nums text-[hsl(var(--ed-ink))]">
             {readingMin}&nbsp;{t.common.minutesReading}
           </span>
           <Rule />
