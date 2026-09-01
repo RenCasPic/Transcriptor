@@ -16,7 +16,8 @@ import type { RewriteInstruction } from '@/lib/ai/provider';
 import type { Json } from '@/lib/types/database';
 import { EditorContextMenu } from './editor-context-menu';
 import { RewritePreviewDialog } from './rewrite-preview-dialog';
-import { SaveStatusIndicator } from './save-status-indicator';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDictionary, useLocale } from '@/lib/i18n/dictionary-provider';
 
@@ -39,7 +40,6 @@ export function ArticleEditor({
   updatedAt,
   coverImageUrl,
   coverImageAlt,
-  contentTypeLabel,
   onContentSnapshot,
   onSaveStatusChange,
 }: {
@@ -52,7 +52,6 @@ export function ArticleEditor({
   updatedAt?: string;
   coverImageUrl?: string | null;
   coverImageAlt?: string | null;
-  contentTypeLabel?: string;
   onContentSnapshot?: (snapshot: { plainText: string; html: string; json: Json; wordCount: number }) => void;
   onSaveStatusChange?: (status: AutosaveStatus) => void;
 }) {
@@ -162,37 +161,30 @@ export function ArticleEditor({
 
   if (!editor) {
     return (
-      <div className="space-y-5 px-8 py-20 pl-16">
-        <Skeleton className="h-3 w-24" />
-        <Skeleton className="h-16 w-4/5" />
+      <Card className="min-w-0 space-y-5 p-6 sm:p-10">
+        <Skeleton className="h-12 w-4/5" />
         <Skeleton className="h-3 w-52" />
         <Skeleton className="h-px w-full" />
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-2/3" />
-      </div>
+      </Card>
     );
   }
 
   const readingMin = estimateReadingTimeMinutes(liveWordCount);
 
   return (
-    // Márgenes editoriales asimétricos: mucho aire a la izquierda (donde vuelan
-    // las coordenadas §), la mancha de texto desplazada.
-    <div className="flex flex-col pl-6 pr-6 sm:pl-16 sm:pr-10">
-      <header className="pt-16">
+    <Card className="flex min-w-0 flex-col p-6 sm:p-10">
+      <header>
         {coverImageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={coverImageUrl}
             alt={coverImageAlt ?? ''}
-            className="mb-10 aspect-[16/6] w-full object-cover grayscale-[0.2]"
+            className="mb-8 aspect-[16/6] w-full rounded-lg border object-cover"
           />
         )}
-
-        <p className="ed-label mb-6 text-[hsl(var(--ed-ink-faint))]">
-          {contentTypeLabel ?? t.editor.masthead.kicker}
-        </p>
 
         <textarea
           value={title}
@@ -200,7 +192,7 @@ export function ArticleEditor({
           placeholder={t.editor.titlePlaceholder}
           rows={1}
           spellCheck
-          className="block w-full resize-none overflow-hidden bg-transparent font-sans text-[2.5rem] font-semibold leading-[1.05] tracking-[-0.02em] text-[hsl(var(--ed-ink))] caret-[hsl(var(--ed-accent))] outline-none placeholder:text-[hsl(var(--ed-ink-faint))] sm:text-[3.4rem]"
+          className="block w-full resize-none overflow-hidden bg-transparent text-3xl font-semibold leading-tight tracking-tight text-foreground caret-primary outline-none placeholder:text-muted-foreground/50 sm:text-4xl"
           onInput={(e) => {
             const el = e.currentTarget;
             el.style.height = 'auto';
@@ -208,51 +200,53 @@ export function ArticleEditor({
           }}
         />
 
-        {/* Datos de registro del manuscrito. */}
-        <div className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-2 border-y border-[hsl(var(--ed-rule))] py-2.5 font-mono text-[0.68rem] uppercase tracking-[0.1em] text-[hsl(var(--ed-ink-soft))]">
-          <span className="tabular-nums text-[hsl(var(--ed-ink))]">
+        {/* Metadatos del documento */}
+        <div className="mt-4 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 border-b pb-4 text-xs text-muted-foreground">
+          <span className="tabular-nums">
             {liveWordCount.toLocaleString(locale)}&nbsp;{t.common.words}
           </span>
-          <Rule />
-          <span className="tabular-nums text-[hsl(var(--ed-ink))]">
+          <span aria-hidden>·</span>
+          <span className="tabular-nums">
             {readingMin}&nbsp;{t.common.minutesReading}
           </span>
-          <Rule />
+          <span aria-hidden>·</span>
           <span className="tabular-nums">v{initialVersion}</span>
-          <Rule />
-          <SaveStatusIndicator status={status} />
           {updatedAt && (
             <>
-              <Rule />
-              <span className="normal-case tracking-normal">
+              <span aria-hidden>·</span>
+              <span>
                 {t.editor.meta.updated} {formatUpdated(updatedAt, locale)}
               </span>
             </>
           )}
-          <span className="ml-auto flex items-center">
-            <button
+          <span className="ml-auto flex items-center gap-0.5">
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
               onClick={() => editor.chain().focus().undo().run()}
               disabled={!editor.can().undo()}
               title={t.editor.toolbar.undo}
-              className="grid h-6 w-6 place-items-center text-[hsl(var(--ed-ink-faint))] transition-colors hover:text-[hsl(var(--ed-ink))] disabled:opacity-25"
             >
               <Undo2 className="h-3.5 w-3.5" />
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
               onClick={() => editor.chain().focus().redo().run()}
               disabled={!editor.can().redo()}
               title={t.editor.toolbar.redo}
-              className="grid h-6 w-6 place-items-center text-[hsl(var(--ed-ink-faint))] transition-colors hover:text-[hsl(var(--ed-ink))] disabled:opacity-25"
             >
               <Redo2 className="h-3.5 w-3.5" />
-            </button>
+            </Button>
           </span>
         </div>
       </header>
 
-      <div className="pb-40 pt-14">
+      <div className="pb-16 pt-6">
         <EditorContextMenu editor={editor} onAiAction={handleAction} disabled={!!rewriteState} />
         <EditorContent editor={editor} />
       </div>
@@ -265,12 +259,8 @@ export function ArticleEditor({
         onAccept={handleAccept}
         onDiscard={handleDiscard}
       />
-    </div>
+    </Card>
   );
-}
-
-function Rule() {
-  return <span aria-hidden className="h-2.5 w-px bg-[hsl(var(--ed-rule-strong))]" />;
 }
 
 function formatUpdated(iso: string, locale: string): string {

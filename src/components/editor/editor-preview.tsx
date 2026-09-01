@@ -1,12 +1,14 @@
 'use client';
 
 import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { estimateReadingTimeMinutes } from '@/lib/content/metrics';
 import { useDictionary, useLocale } from '@/lib/i18n/dictionary-provider';
 
 /**
- * Prueba de imprenta: el artículo tal como lo vería un lector, sin folio,
- * sala de control ni herramientas. Renderiza el HTML actual del editor.
+ * Vista previa: el artículo tal como lo vería un lector, sin herramientas.
+ * Renderiza el HTML actual del editor con el mismo estilo `prose` de la app.
  */
 export function EditorPreview({
   title,
@@ -27,40 +29,35 @@ export function EditorPreview({
   const locale = useLocale();
 
   return (
-    <div className="min-h-[calc(100vh-var(--app-header-h)-3rem)] bg-[hsl(var(--ed-paper))]">
-      <div className="sticky top-12 z-30 flex h-11 items-center justify-between border-b border-[hsl(var(--ed-rule))] bg-[hsl(var(--ed-paper))]/95 px-5 backdrop-blur">
-        <span className="ed-label">{t.editor.preview.label}</span>
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex items-center gap-1.5 font-mono text-[0.68rem] uppercase tracking-[0.12em] text-[hsl(var(--ed-ink-soft))] transition-colors hover:text-[hsl(var(--ed-ink))]"
-        >
-          <X className="h-3.5 w-3.5" />
+    <Card className="mx-auto max-w-3xl overflow-hidden">
+      <div className="flex items-center justify-between border-b bg-background/80 px-4 py-2.5 backdrop-blur">
+        <span className="text-sm font-medium text-muted-foreground">{t.editor.preview.label}</span>
+        <Button variant="ghost" size="sm" className="gap-1.5" onClick={onClose}>
+          <X className="h-4 w-4" />
           {t.editor.preview.exit}
-        </button>
+        </Button>
       </div>
 
-      <article className="mx-auto max-w-[42rem] px-6 py-20 sm:px-8">
+      <article className="px-6 py-10 sm:px-10 sm:py-12">
         {coverImageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={coverImageUrl}
             alt={coverImageAlt ?? ''}
-            className="mb-10 aspect-[16/6] w-full object-cover grayscale-[0.15]"
+            className="mb-8 aspect-[16/6] w-full rounded-lg border object-cover"
           />
         )}
-        <p className="ed-label mb-5">{t.editor.masthead.kicker}</p>
-        <h1 className="font-sans text-[2.6rem] font-semibold leading-[1.06] tracking-[-0.02em] text-[hsl(var(--ed-ink))] sm:text-[3.3rem]">
+        <h1 className="text-3xl font-semibold leading-tight tracking-tight text-foreground sm:text-4xl">
           {title}
         </h1>
-        <p className="mt-6 border-y border-[hsl(var(--ed-rule))] py-3 font-mono text-[0.72rem] uppercase tracking-[0.08em] text-[hsl(var(--ed-ink-faint))]">
-          <span className="text-[hsl(var(--ed-ink-soft))]">{wordCount.toLocaleString(locale)}</span> {t.common.words}
-          <span className="mx-2.5 text-[hsl(var(--ed-rule-strong))]">—</span>
-          <span className="text-[hsl(var(--ed-ink-soft))]">{estimateReadingTimeMinutes(wordCount)}</span>{' '}
+        <p className="mt-3 border-b pb-4 text-xs text-muted-foreground">
+          <span className="tabular-nums">{wordCount.toLocaleString(locale)}</span> {t.common.words}
+          <span aria-hidden className="mx-2">·</span>
+          <span className="tabular-nums">{estimateReadingTimeMinutes(wordCount)}</span>{' '}
           {t.common.minutesReading}
         </p>
-        <div className="tiptap-editor mt-12" dangerouslySetInnerHTML={{ __html: html }} />
+        <div className="tiptap-editor mt-8" dangerouslySetInnerHTML={{ __html: html }} />
       </article>
-    </div>
+    </Card>
   );
 }

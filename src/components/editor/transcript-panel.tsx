@@ -46,30 +46,30 @@ export function TranscriptPanel({
 
   return (
     <div className="flex flex-col">
-      <div className="border-b border-[hsl(var(--ed-rule))] bg-[hsl(var(--ed-paper))] p-4">
+      <div className="border-b bg-background p-3">
         <button
           type="button"
           onClick={() => setCollapsed((prev) => !prev)}
-          className="flex w-full items-center justify-between font-mono text-[0.66rem] uppercase tracking-[0.14em] text-[hsl(var(--ed-ink-soft))]"
+          className="flex w-full items-center justify-between text-sm font-medium text-foreground"
         >
-          <span>
+          <span className="flex items-center gap-2">
             {t.editor.columns.transcript}
-            <span className="ml-2 tabular-nums text-[hsl(var(--ed-ink-faint))]">
-              {segments.length.toString().padStart(3, '0')}
+            <span className="tabular-nums text-xs font-normal text-muted-foreground">
+              {segments.length}
             </span>
           </span>
           <ChevronDown
-            className={cn('h-4 w-4 transition-transform', collapsed && '-rotate-90')}
+            className={cn('h-4 w-4 text-muted-foreground transition-transform', collapsed && '-rotate-90')}
             aria-hidden="true"
           />
           <span className="sr-only">{collapsed ? t.editor.transcript.expand : t.editor.transcript.collapse}</span>
         </button>
         {!collapsed && (
           <div className="relative mt-3">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[hsl(var(--ed-ink-faint))]" />
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder={t.editor.transcript.searchPlaceholder}
-              className="h-8 rounded-none border-[hsl(var(--ed-rule-strong))] bg-transparent pl-8 font-mono text-xs"
+              className="h-8 pl-8 text-sm"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -77,7 +77,7 @@ export function TranscriptPanel({
         )}
       </div>
       {!collapsed && (
-        <div className="p-2">
+        <div className="space-y-0.5 p-2">
           {filtered.map((segment) => {
             const isUsed = usedSegmentIds.has(segment.id);
             const isSelected = selectedSegmentId === segment.id;
@@ -87,40 +87,46 @@ export function TranscriptPanel({
                 id={segmentDomId(segment.id)}
                 onClick={() => onSelectSegment(segment.id)}
                 className={cn(
-                  'group cursor-pointer border-l-2 border-transparent p-2.5 text-sm transition-colors hover:bg-[hsl(var(--ed-paper-sunk))]',
-                  isSelected && 'border-[hsl(var(--ed-accent))] bg-[hsl(var(--ed-paper-sunk))]',
+                  'group cursor-pointer rounded-md border border-transparent p-2.5 text-sm transition-colors hover:bg-accent/60',
+                  isSelected && 'border-primary/40 bg-accent',
                 )}
               >
-                <div className="mb-1 flex items-center gap-2 font-mono text-[0.66rem] text-[hsl(var(--ed-ink-faint))]">
-                  <span className="tabular-nums">{String(segment.index + 1).padStart(3, '0')}</span>
+                <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="tabular-nums">{segment.index + 1}</span>
                   {segment.startSeconds !== null && <span>{secondsToTimestamp(segment.startSeconds)}</span>}
-                  {isUsed && (
-                    <span className="ml-auto flex items-center gap-1 text-[hsl(var(--success))]">
-                      <CheckCircle2 className="h-3 w-3" />
-                      {t.editor.transcript.used}
+                  <span className="ml-auto flex items-center gap-1">
+                    {isUsed && (
+                      <span className="flex items-center gap-1 text-success">
+                        <CheckCircle2 className="h-3 w-3" />
+                        {t.editor.transcript.used}
+                      </span>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 opacity-0 group-hover:opacity-100"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void handleCopy(segment.text);
+                      }}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </span>
+                </div>
+                <p className={cn('leading-relaxed', isUsed ? 'text-foreground' : 'text-muted-foreground')}>
+                  {segment.speaker && (
+                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      {segment.speaker}:{' '}
                     </span>
                   )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-5 w-5 opacity-0 group-hover:opacity-100"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      void handleCopy(segment.text);
-                    }}
-                  >
-                    <Copy className="h-3 w-3" />
-                  </Button>
-                </div>
-                <p className={cn('font-sans leading-relaxed', isUsed ? 'text-[hsl(var(--ed-ink))]' : 'text-[hsl(var(--ed-ink-soft))]')}>
-                  {segment.speaker && <span className="font-mono text-xs uppercase tracking-wide">{segment.speaker}: </span>}
                   {segment.text}
                 </p>
               </div>
             );
           })}
           {filtered.length === 0 && (
-            <p className="p-4 text-center font-mono text-xs text-[hsl(var(--ed-ink-faint))]">
+            <p className="p-4 text-center text-sm text-muted-foreground">
               {t.editor.transcript.noResultsFor} &quot;{search}&quot;
             </p>
           )}

@@ -2,18 +2,16 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Eye, PanelRightOpen } from 'lucide-react';
+import { ArrowLeft, Eye, PanelRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { ArticleEditor } from './article-editor';
-import { EditorScale } from './editor-scale';
-import { EditorRegistration } from './editor-registration';
-import { EditorConsole, type EditorMode } from './editor-console';
+import { EditorSidePanel } from './editor-side-panel';
 import { EditorPreview } from './editor-preview';
 import { RegenerateButton } from './regenerate-button';
 import { SaveStatusIndicator } from './save-status-indicator';
 import { ExportMenu } from './export-menu';
 import { EmbedButton } from './embed-button';
-import { useEditorScroll } from '@/lib/editor/use-editor-scroll';
 import type { AutosaveStatus } from '@/lib/editor/use-autosave';
 import type { TranscriptSegmentItem } from '@/lib/data/transcripts';
 import type { ContentDocumentRecord } from '@/lib/data/documents';
@@ -57,11 +55,9 @@ export function EditorShell({
   currentUserId: string | null;
 }) {
   const t = useDictionary();
-  const scroll = useEditorScroll();
   const [selectedSegmentId, setSelectedSegmentId] = useState<string | null>(null);
   const [panelSheetOpen, setPanelSheetOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
-  const [mode, setMode] = useState<EditorMode>('structure');
   const [saveStatus, setSaveStatus] = useState<AutosaveStatus>('idle');
   const [snapshot, setSnapshot] = useState({
     plainText: '',
@@ -80,7 +76,10 @@ export function EditorShell({
     return map;
   }, [sourceLinks]);
 
-  const usedSegmentIds = useMemo(() => new Set(sourceLinks.map((l) => l.transcript_segment_id)), [sourceLinks]);
+  const usedSegmentIds = useMemo(
+    () => new Set(sourceLinks.map((l) => l.transcript_segment_id)),
+    [sourceLinks],
+  );
 
   const seoData = {
     seoTitle: seo?.seo_title ?? document.title,
@@ -91,10 +90,9 @@ export function EditorShell({
   };
 
   const openWarnings = warnings.filter((w) => w.status === 'open').length;
-  const modeLabel = t.editor.console[mode];
 
-  const consoleEl = (
-    <EditorConsole
+  const sidePanel = (
+    <EditorSidePanel
       documentId={document.id}
       projectId={project.id}
       documentTitle={document.title}
@@ -111,123 +109,99 @@ export function EditorShell({
       onSelectSegment={setSelectedSegmentId}
       versions={versions}
       currentUserId={currentUserId}
-      saveStatus={saveStatus}
-      onModeChange={setMode}
     />
   );
 
-  const link = 'font-mono text-[0.66rem] uppercase tracking-[0.12em] text-[hsl(var(--ed-desk-ink-dim))] transition-colors hover:text-[hsl(var(--ed-desk-ink))]';
-
   return (
-    <div
-      data-mode={mode}
-      className="editor-surface -m-4 min-h-[calc(100vh-var(--app-header-h))] font-sans lg:-m-8"
-    >
-      {/* CINTA — casi nada en calma. Coordenada a la izquierda, maquinaria a la derecha. */}
-      <div className="sticky top-0 z-40 flex h-9 items-center justify-between gap-4 border-b border-[hsl(var(--ed-desk-line))] bg-[hsl(var(--ed-desk))]/95 px-3 backdrop-blur sm:px-5">
-        <div className="flex min-w-0 items-center gap-3">
-          <Link
-            href={`/projects/${project.id}`}
-            aria-label={t.editor.actions.back}
-            className="grid h-6 w-6 place-items-center text-[hsl(var(--ed-desk-ink-dim))] transition-colors hover:text-[hsl(var(--ed-desk-ink))]"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-          </Link>
-          <span className="ed-label text-[hsl(var(--ed-desk-ink-dim))]">{t.editor.masthead.kicker}</span>
-          <span aria-hidden className="hidden h-2.5 w-px bg-[hsl(var(--ed-desk-line))] sm:block" />
-          <span className="truncate font-mono text-[0.72rem] text-[hsl(var(--ed-desk-ink))]">{project.name}</span>
+    <div className="-m-4 flex min-h-[calc(100vh-var(--app-header-h))] flex-col lg:-m-8">
+      {/* Barra de acciones — cromo de la app, pegajosa bajo el header */}
+      <div className="sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b bg-background/85 px-3 backdrop-blur sm:px-4 lg:px-8">
+        <div className="flex min-w-0 items-center gap-2">
+          <Button variant="ghost" size="sm" asChild className="min-w-0 gap-1.5 px-2">
+            <Link href={`/projects/${project.id}`}>
+              <ArrowLeft className="h-4 w-4 shrink-0" />
+              <span className="truncate">{project.name}</span>
+            </Link>
+          </Button>
+          <span className="hidden sm:inline">
+            <SaveStatusIndicator status={saveStatus} />
+          </span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <SaveStatusIndicator status={saveStatus} />
-          <button type="button" className={`hidden items-center gap-1.5 sm:inline-flex ${link}`} onClick={() => setPreviewMode((v) => !v)}>
-            <Eye className="h-3.5 w-3.5" />
+        <div className="flex shrink-0 items-center gap-1.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="hidden gap-1.5 sm:inline-flex"
+            onClick={() => setPreviewMode((v) => !v)}
+          >
+            <Eye className="h-4 w-4" />
             {t.editor.preview.enter}
-          </button>
+          </Button>
           <RegenerateButton
             projectId={project.id}
             currentTargetReadingMinutes={project.target_reading_minutes}
-            className={`hidden gap-1.5 rounded-none px-0 hover:bg-transparent sm:inline-flex ${link} hover:text-[hsl(var(--ed-desk-ink))]`}
+            className="hidden gap-1.5 sm:inline-flex"
           />
           <ExportMenu
             title={document.title}
             html={snapshot.html}
             json={snapshot.json}
-            className={`hidden gap-1.5 rounded-none border-0 bg-transparent px-0 shadow-none hover:bg-transparent sm:inline-flex ${link} hover:text-[hsl(var(--ed-desk-ink))]`}
+            className="hidden gap-1.5 sm:inline-flex"
           />
-          <EmbedButton
-            documentId={document.id}
-            initialIsPublic={document.isPublic}
-            className="h-6 gap-1.5 rounded-none border border-[hsl(var(--ed-accent))] bg-transparent px-2.5 font-mono text-[0.62rem] uppercase tracking-[0.16em] text-[hsl(var(--ed-accent))] shadow-none hover:bg-[hsl(var(--ed-accent))] hover:text-[hsl(var(--ed-desk))]"
-          />
-          <button
-            type="button"
+          <EmbedButton documentId={document.id} initialIsPublic={document.isPublic} />
+          <Button
+            variant="outline"
+            size="icon"
+            className="relative lg:hidden"
             onClick={() => setPanelSheetOpen(true)}
             aria-label={t.editor.panelTitle}
-            className="relative grid h-6 w-6 place-items-center text-[hsl(var(--ed-desk-ink-dim))] lg:hidden"
           >
-            <PanelRightOpen className="h-4 w-4" />
+            <PanelRight className="h-4 w-4" />
             {openWarnings > 0 && (
-              <span className="absolute right-0.5 top-0.5 h-1.5 w-1.5 rounded-full bg-[hsl(var(--ed-accent))]" />
+              <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-primary" />
             )}
-          </button>
+          </Button>
         </div>
       </div>
 
       {previewMode ? (
-        <EditorPreview
-          title={document.title}
-          html={snapshot.html}
-          wordCount={snapshot.wordCount}
-          coverImageUrl={document.coverImageUrl}
-          coverImageAlt={document.coverImageAlt}
-          onClose={() => setPreviewMode(false)}
-        />
+        <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 lg:px-8">
+          <EditorPreview
+            title={document.title}
+            html={snapshot.html}
+            wordCount={snapshot.wordCount}
+            coverImageUrl={document.coverImageUrl}
+            coverImageAlt={document.coverImageAlt}
+            onClose={() => setPreviewMode(false)}
+          />
+        </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[6rem_minmax(0,44rem)_1fr] xl:grid-cols-[7rem_minmax(0,46rem)_1fr]">
-          <EditorScale json={snapshot.json} scroll={scroll} />
+        <div className="mx-auto grid w-full max-w-6xl flex-1 gap-6 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:px-8">
+          <ArticleEditor
+            documentId={document.id}
+            projectId={project.id}
+            initialTitle={document.title}
+            initialContentJson={document.contentJson}
+            initialVersion={document.version}
+            initialWordCount={document.wordCount}
+            updatedAt={document.updatedAt}
+            coverImageUrl={document.coverImageUrl}
+            coverImageAlt={document.coverImageAlt}
+            onContentSnapshot={(next) => setSnapshot(next)}
+            onSaveStatusChange={setSaveStatus}
+          />
 
-          {/* EL MANUSCRITO — objeto físico posado sobre el banco. */}
-          <main className="group/ms relative min-w-0 border-x border-[hsl(var(--ed-rule-strong))] bg-[hsl(var(--ed-paper))] shadow-[10px_12px_0_-3px_hsl(var(--ed-rule))] lg:my-6 lg:border">
-            <span className="ed-crop tl" aria-hidden />
-            <span className="ed-crop tr" aria-hidden />
-            <span className="ed-crop bl" aria-hidden />
-            <span className="ed-crop br" aria-hidden />
-
-            <EditorRegistration scroll={scroll} mode={mode} modeLabel={modeLabel} saveStatus={saveStatus} />
-
-            <ArticleEditor
-              documentId={document.id}
-              projectId={project.id}
-              initialTitle={document.title}
-              initialContentJson={document.contentJson}
-              initialVersion={document.version}
-              initialWordCount={document.wordCount}
-              updatedAt={document.updatedAt}
-              coverImageUrl={document.coverImageUrl}
-              coverImageAlt={document.coverImageAlt}
-              contentTypeLabel={t.editor.masthead.kicker}
-              onContentSnapshot={(next) => setSnapshot(next)}
-              onSaveStatusChange={setSaveStatus}
-            />
-          </main>
-
-          {/* EL BANCO se ve como vacío intencionado; la consola cuelga a la derecha. */}
-          <div className="hidden lg:flex lg:justify-end">
-            <aside className="sticky top-9 flex h-[calc(100vh-2.25rem)] w-[21rem] flex-col overflow-hidden border-l border-[hsl(var(--ed-desk-line))]">
-              {consoleEl}
-            </aside>
-          </div>
+          <aside className="hidden lg:block">
+            <div className="sticky top-[4.5rem] h-[calc(100vh-6.5rem)]">{sidePanel}</div>
+          </aside>
         </div>
       )}
 
       <Sheet open={panelSheetOpen} onOpenChange={setPanelSheetOpen}>
-        <SheetContent
-          side="right"
-          className="editor-surface flex w-[92vw] max-w-sm flex-col border-l border-[hsl(var(--ed-desk-line))] bg-[hsl(var(--ed-desk-2))] p-0"
-        >
+        <SheetContent side="right" className="flex w-[92vw] max-w-sm flex-col p-0">
           <SheetTitle className="sr-only">{t.editor.panelTitle}</SheetTitle>
-          {consoleEl}
+          <div className="min-h-0 flex-1 p-3">{sidePanel}</div>
         </SheetContent>
       </Sheet>
     </div>
