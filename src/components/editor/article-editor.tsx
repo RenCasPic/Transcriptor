@@ -14,7 +14,7 @@ import { rewriteSectionAction } from '@/lib/actions/editor';
 import { createVersionAction } from '@/lib/actions/versions';
 import type { RewriteInstruction } from '@/lib/ai/provider';
 import type { Json } from '@/lib/types/database';
-import { EditorContextMenu } from './editor-context-menu';
+import { EditorToolbar } from './editor-toolbar';
 import { RewritePreviewDialog } from './rewrite-preview-dialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -201,7 +201,7 @@ export function ArticleEditor({
         />
 
         {/* Metadatos del documento */}
-        <div className="mt-4 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 border-b pb-4 text-xs text-muted-foreground">
+        <div className="mt-4 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 pb-4 text-xs text-muted-foreground">
           <span className="tabular-nums">
             {liveWordCount.toLocaleString(locale)}&nbsp;{t.common.words}
           </span>
@@ -246,8 +246,9 @@ export function ArticleEditor({
         </div>
       </header>
 
-      <div className="pb-16 pt-6">
-        <EditorContextMenu editor={editor} onAiAction={handleAction} disabled={!!rewriteState} />
+      <EditorToolbar editor={editor} onAiAction={handleAction} disabled={!!rewriteState} />
+
+      <div className="pb-16 pt-8">
         <EditorContent editor={editor} />
       </div>
 
