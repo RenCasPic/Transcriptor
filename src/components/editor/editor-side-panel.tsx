@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { AlertTriangle, FileText, History, List, Search } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { SeoPanel, type SeoPanelData } from './seo-panel';
 import { WarningsPanel, type WarningItem } from './warnings-panel';
 import { HistoryPanel } from './history-panel';
@@ -83,30 +82,25 @@ export function EditorSidePanel({
         className="flex min-h-0 flex-1 flex-col"
       >
         <div className="border-b p-2">
-          <TooltipProvider delayDuration={300}>
-            <TabsList className="grid h-auto w-full grid-cols-5 gap-0.5 bg-muted">
-              {TABS.map((tabDef) => {
-                const Icon = tabDef.icon;
-                return (
-                  <Tooltip key={tabDef.id}>
-                    <TooltipTrigger asChild>
-                      <TabsTrigger
-                        value={tabDef.id}
-                        aria-label={tabDef.label}
-                        className="group relative py-1.5 text-muted-foreground data-[state=active]:bg-warning data-[state=active]:text-warning-foreground data-[state=active]:shadow-sm"
-                      >
-                        <Icon className="h-4 w-4" />
-                        {tabDef.id === 'alerts' && openWarnings > 0 && (
-                          <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-warning ring-2 ring-muted group-data-[state=active]:hidden" />
-                        )}
-                      </TabsTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>{tabDef.label}</TooltipContent>
-                  </Tooltip>
-                );
-              })}
-            </TabsList>
-          </TooltipProvider>
+          <TabsList className="grid h-auto w-full grid-cols-5 gap-1 bg-muted">
+            {TABS.map((tabDef) => {
+              const Icon = tabDef.icon;
+              return (
+                <TabsTrigger
+                  key={tabDef.id}
+                  value={tabDef.id}
+                  title={tabDef.label}
+                  aria-label={tabDef.label}
+                  className="group relative h-9 rounded-md text-muted-foreground hover:text-foreground data-[state=active]:!bg-warning data-[state=active]:!text-warning-foreground data-[state=active]:shadow-sm"
+                >
+                  <Icon className="h-[1.15rem] w-[1.15rem]" />
+                  {tabDef.id === 'alerts' && openWarnings > 0 && (
+                    <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-warning ring-2 ring-muted group-data-[state=active]:hidden" />
+                  )}
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
