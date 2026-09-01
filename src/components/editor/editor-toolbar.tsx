@@ -2,7 +2,7 @@
 
 import { useEffect, useReducer } from 'react';
 import type { Editor } from '@tiptap/react';
-import { Bold, Italic, Strikethrough, Code, Link as LinkIcon, Quote, List, Sparkles } from 'lucide-react';
+import { AlignJustify, Bold, Italic, Strikethrough, Code, Link as LinkIcon, Quote, List, Sparkles } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -114,6 +114,19 @@ export function EditorToolbar({
       </button>
       <button type="button" title={t.editor.toolbar.bulletList} disabled={disabled} className={cn(btn, editor.isActive('bulletList') && btnActive)} onClick={() => editor.chain().focus().toggleBulletList().run()}>
         <List className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        title={t.editor.toolbar.justify}
+        disabled={disabled}
+        className={cn(btn, editor.isActive({ textAlign: 'justify' }) && btnActive)}
+        onClick={() =>
+          editor.isActive({ textAlign: 'justify' })
+            ? editor.chain().focus().unsetTextAlign().run()
+            : editor.chain().focus().setTextAlign('justify').run()
+        }
+      >
+        <AlignJustify className="h-4 w-4" />
       </button>
 
       <span className="mx-1 h-5 w-px bg-border" />

@@ -43,6 +43,7 @@
     "@tiptap/extension-bubble-menu": "^2.11.2",
     "@tiptap/extension-link": "^2.11.2",
     "@tiptap/extension-placeholder": "^2.11.2",
+    "@tiptap/extension-text-align": "^2.27.2",
     "@tiptap/react": "^2.11.2",
     "@tiptap/starter-kit": "^2.11.2",
     "class-variance-authority": "^0.7.1",

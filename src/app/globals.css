@@ -118,6 +118,10 @@
 .tiptap-editor a {
   text-underline-offset: 2px;
 }
+/* Texto justificado (extensión TextAlign): con guionado para evitar ríos. */
+.tiptap-editor [style*='text-align: justify'] {
+  hyphens: auto;
+}
 .tiptap-editor p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;

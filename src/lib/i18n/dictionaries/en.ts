@@ -473,6 +473,7 @@ export const en: Dictionary = {
       strikethrough: 'Strikethrough',
       code: 'Code',
       horizontalRule: 'Divider',
+      justify: 'Justify',
     },
     titlePlaceholder: 'Article title',
     saveStatus: {

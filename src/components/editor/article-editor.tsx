@@ -5,6 +5,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
+import TextAlign from '@tiptap/extension-text-align';
 import { Undo2, Redo2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { BlockId } from '@/lib/editor/block-id-extension';
@@ -83,6 +84,7 @@ export function ArticleEditor({
       StarterKit.configure({ heading: { levels: [2, 3] } }),
       Link.configure({ openOnClick: false, autolink: true }),
       Placeholder.configure({ placeholder: t.editor.contentPlaceholder }),
+      TextAlign.configure({ types: ['paragraph', 'heading'], alignments: ['left', 'center', 'right', 'justify'] }),
       BlockId,
     ],
     content: initialContentJson as object,

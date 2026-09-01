@@ -478,6 +478,7 @@ export const es = {
       strikethrough: 'Tachado',
       code: 'Código',
       horizontalRule: 'Separador',
+      justify: 'Justificar',
     },
     titlePlaceholder: 'Título del artículo',
     saveStatus: {
