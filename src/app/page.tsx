@@ -13,7 +13,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { StepPreviews } from '@/components/landing/step-previews';
 import { FadeIn } from '@/components/landing/fade-in';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import { getDictionary } from '@/lib/i18n/get-dictionary';
@@ -34,8 +33,6 @@ export default async function LandingPage() {
     { icon: History, title: t.landing.benefits.benefit3Title, description: t.landing.benefits.benefit3Description, color: 'bg-emerald-500/10 text-emerald-600' },
     { icon: ListChecks, title: t.landing.benefits.benefit4Title, description: t.landing.benefits.benefit4Description, color: 'bg-violet-500/10 text-violet-600' },
   ];
-
-  const previewSteps = [t.landing.steps.step1Title, t.landing.steps.step2Title, t.landing.steps.step3Title, t.landing.steps.step4Title];
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -118,8 +115,6 @@ export default async function LandingPage() {
             </div>
           </div>
         </section>
-
-        <StepPreviews title={t.landing.previewsTitle} subtitle={t.landing.previewsSubtitle} steps={previewSteps} />
 
         <section className="py-20">
           <div className="container">

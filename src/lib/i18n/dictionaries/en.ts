@@ -59,8 +59,6 @@ export const en: Dictionary = {
       step4Title: '4. Review and publish',
       step4Description: 'Make sure everything is correct and export your article in the format you need.',
     },
-    previewsTitle: 'See it in action',
-    previewsSubtitle: 'A quick look at each step of the process.',
     benefitsTitle: 'Why TalkToPost',
     benefitsSubtitle: "Fast doesn't have to mean losing control of what you publish.",
     benefits: {

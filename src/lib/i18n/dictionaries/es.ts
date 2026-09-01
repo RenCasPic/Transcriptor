@@ -61,8 +61,6 @@ export const es = {
       step4Title: '4. Revisa y publícalo',
       step4Description: 'Verifica que todo esté correcto y exporta tu artículo en el formato que necesites.',
     },
-    previewsTitle: 'Míralo en acción',
-    previewsSubtitle: 'Una vista rápida de cada paso del proceso.',
     benefitsTitle: 'Por qué TalkToPost',
     benefitsSubtitle: 'Rápido no tiene por qué significar perder el control de lo que publicas.',
     benefits: {
