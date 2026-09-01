@@ -14,10 +14,10 @@ import { useDictionary, useLocale } from '@/lib/i18n/dictionary-provider';
 import { getDomainLabels } from '@/lib/i18n/domain-labels';
 
 /**
- * Campos de "configuración del artículo" (tipo de contenido, tono, audiencia,
- * palabra clave, objetivo, CTA) compartidos por las tarjetas "Subir video" y
- * "Conectar YouTube" del Dashboard, para no duplicar el mismo formulario dos
- * veces.
+ * Campos de "configuración del artículo" (tipo de contenido, tono, tiempo de
+ * lectura, audiencia, palabra clave, CTA, objetivo). Instancia única dentro de
+ * `CreateArticlePanel`: la misma configuración se usa tanto si el contenido se
+ * aporta subiendo un video como pegando un enlace.
  */
 export function ArticleConfigFields({
   idPrefix,

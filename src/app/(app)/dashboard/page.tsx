@@ -1,15 +1,14 @@
 import type { Metadata } from 'next';
 import { AlertTriangle } from 'lucide-react';
-import { UploadVideoCard } from '@/components/dashboard/upload-video-card';
-import { YoutubeUrlCard } from '@/components/dashboard/youtube-url-card';
+import { CreateArticlePanel } from '@/components/dashboard/create-article-panel';
 import { getCurrentWorkspace } from '@/lib/data/workspace';
 import { getDictionary } from '@/lib/i18n/get-dictionary';
 import { isTranscriptionConfigured } from '@/lib/ai/transcription';
 import { isContentGenerationConfigured } from '@/lib/ai/providers';
 import { getMediaLimits } from '@/lib/media/limits';
 
-// Las tarjetas "Subir archivo" / "Pegar enlace" encadenan `generateArticleAction`,
-// que para transcripciones largas puede tardar 1-2 min (generación en dos etapas).
+// "Generar artículo" encadena `generateArticleAction`, que para transcripciones
+// largas puede tardar 1-2 min (generación en dos etapas).
 export const maxDuration = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -26,7 +25,7 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6">
       <div className="text-center">
         <h1 className="text-2xl font-semibold tracking-tight">{t.dashboard.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t.dashboard.subtitle}</p>
@@ -42,10 +41,7 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <UploadVideoCard mediaLimits={getMediaLimits()} />
-        <YoutubeUrlCard />
-      </div>
+      <CreateArticlePanel mediaLimits={getMediaLimits()} />
     </div>
   );
 }
