@@ -93,11 +93,11 @@ export function EditorSidePanel({
                       <TabsTrigger
                         value={tabDef.id}
                         aria-label={tabDef.label}
-                        className="relative py-1.5 text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm"
+                        className="group relative py-1.5 text-muted-foreground data-[state=active]:bg-warning data-[state=active]:text-warning-foreground data-[state=active]:shadow-sm"
                       >
                         <Icon className="h-4 w-4" />
                         {tabDef.id === 'alerts' && openWarnings > 0 && (
-                          <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-primary" />
+                          <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-warning ring-2 ring-muted group-data-[state=active]:hidden" />
                         )}
                       </TabsTrigger>
                     </TooltipTrigger>
