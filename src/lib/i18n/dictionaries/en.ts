@@ -63,7 +63,7 @@ export const en: Dictionary = {
     benefitsSubtitle: "Fast doesn't have to mean losing control of what you publish.",
     benefits: {
       benefit1Title: 'True to what you said',
-      benefit1Description: 'The article is built from your real content, without inventing figures, names, or facts.',
+      benefit1Description: 'Built from your real content — no invented figures, names, or facts.',
       benefit2Title: 'Everything has a source',
       benefit2Description: 'You can trace any part of the article back to the original fragment.',
       benefit3Title: 'You never lose anything',

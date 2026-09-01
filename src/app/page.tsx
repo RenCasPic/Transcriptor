@@ -122,10 +122,10 @@ export default async function LandingPage() {
               <h2 className="text-3xl font-bold tracking-tight">{t.landing.benefitsTitle}</h2>
               <p className="mt-3 text-muted-foreground">{t.landing.benefitsSubtitle}</p>
             </FadeIn>
-            <div className="grid gap-6 sm:auto-rows-fr sm:grid-cols-2">
+            <div className="grid gap-6 sm:grid-cols-2">
               {BENEFITS.map((benefit, index) => (
                 <FadeIn key={benefit.title} delayMs={index * 100}>
-                  <div className="flex h-full gap-4 rounded-xl border border-primary bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                  <div className="flex gap-4 rounded-xl border border-primary bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                     <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${benefit.color}`}>
                       <benefit.icon className="h-5 w-5" />
                     </div>
