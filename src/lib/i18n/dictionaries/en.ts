@@ -51,7 +51,7 @@ export const en: Dictionary = {
     steps: {
       step1Title: '1. Upload your transcript',
       step1Description:
-        'Paste the text, upload a TXT, SRT, VTT file, or a video format like MP4 or MOV, or try a ready-made example.',
+        'Paste the text, upload a TXT, SRT, VTT file, or a video format like MP4 or MOV, or paste a video link.',
       step2Title: '2. AI builds your article',
       step2Description: 'In seconds you get an article with a title, sections, and FAQs.',
       step3Title: '3. Edit it to your liking',

@@ -53,7 +53,7 @@ export const es = {
     steps: {
       step1Title: '1. Sube tu transcripción',
       step1Description:
-        'Pega el texto, sube un archivo TXT, SRT, VTT, o formatos de video como MP4 o MOV, o prueba con un ejemplo ya listo.',
+        'Pega el texto, sube un archivo TXT, SRT, VTT, o formatos de video como MP4 o MOV, o pega el enlace de un video.',
       step2Title: '2. La IA arma tu artículo',
       step2Description: 'En segundos tienes un artículo con título, secciones y preguntas frecuentes.',
       step3Title: '3. Edítalo a tu gusto',
