@@ -403,7 +403,7 @@ export const en: Dictionary = {
       outline: 'Outline',
       seo: 'SEO',
       alerts: 'Alerts',
-      transcript: 'Source',
+      transcript: 'Transcript',
       history: 'History',
       project: 'Details',
     },

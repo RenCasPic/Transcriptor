@@ -408,7 +408,7 @@ export const es = {
       outline: 'Índice',
       seo: 'SEO',
       alerts: 'Alertas',
-      transcript: 'Fuente',
+      transcript: 'Transcripción',
       history: 'Historial',
       project: 'Detalles',
     },
