@@ -2,7 +2,21 @@
 
 import { useEffect, useReducer } from 'react';
 import type { Editor } from '@tiptap/react';
-import { AlignJustify, Bold, Italic, Strikethrough, Code, Link as LinkIcon, Quote, List, Sparkles } from 'lucide-react';
+import {
+  AlignCenter,
+  AlignJustify,
+  AlignLeft,
+  AlignRight,
+  Bold,
+  Italic,
+  Strikethrough,
+  Code,
+  Link as LinkIcon,
+  Quote,
+  List,
+  Sparkles,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,6 +63,13 @@ export function EditorToolbar({
     if (url === '') editor.chain().focus().extendMarkRange('link').unsetLink().run();
     else editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   }
+
+  const ALIGN_OPTIONS: Array<{ value: 'left' | 'center' | 'right' | 'justify'; icon: LucideIcon; label: string }> = [
+    { value: 'left', icon: AlignLeft, label: t.editor.toolbar.alignLeft },
+    { value: 'center', icon: AlignCenter, label: t.editor.toolbar.alignCenter },
+    { value: 'right', icon: AlignRight, label: t.editor.toolbar.alignRight },
+    { value: 'justify', icon: AlignJustify, label: t.editor.toolbar.justify },
+  ];
 
   const AI_ACTIONS: Array<{ value: RewriteInstruction; label: string }> = [
     { value: 'rewrite', label: t.editor.aiMenu.rewrite },
@@ -115,19 +136,21 @@ export function EditorToolbar({
       <button type="button" title={t.editor.toolbar.bulletList} disabled={disabled} className={cn(btn, editor.isActive('bulletList') && btnActive)} onClick={() => editor.chain().focus().toggleBulletList().run()}>
         <List className="h-4 w-4" />
       </button>
-      <button
-        type="button"
-        title={t.editor.toolbar.justify}
-        disabled={disabled}
-        className={cn(btn, editor.isActive({ textAlign: 'justify' }) && btnActive)}
-        onClick={() =>
-          editor.isActive({ textAlign: 'justify' })
-            ? editor.chain().focus().unsetTextAlign().run()
-            : editor.chain().focus().setTextAlign('justify').run()
-        }
-      >
-        <AlignJustify className="h-4 w-4" />
-      </button>
+      {ALIGN_OPTIONS.map((opt) => {
+        const Icon = opt.icon;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            title={opt.label}
+            disabled={disabled}
+            className={cn(btn, editor.isActive({ textAlign: opt.value }) && btnActive)}
+            onClick={() => editor.chain().focus().setTextAlign(opt.value).run()}
+          >
+            <Icon className="h-4 w-4" />
+          </button>
+        );
+      })}
 
       <span className="mx-1 h-5 w-px bg-border" />
 

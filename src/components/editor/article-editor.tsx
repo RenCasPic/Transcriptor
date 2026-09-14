@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
@@ -74,6 +74,7 @@ export function ArticleEditor({
   const [liveWordCount, setLiveWordCount] = useState(initialWordCount);
   const [rewriteState, setRewriteState] = useState<RewriteState | null>(null);
   const { status, scheduleSave } = useAutosave(documentId, initialVersion);
+  const titleRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     onSaveStatusChange?.(status);
@@ -114,6 +115,18 @@ export function ArticleEditor({
     // Solo al montar: sincroniza el estado inicial con el panel.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);
+
+  // Ajusta la altura del título a su contenido: además de en cada tecleo
+  // (título largo que ocupa varias líneas), también cuando el textarea pasa
+  // de no existir (skeleton) a existir en el DOM — si no, un título inicial
+  // de más de una línea queda recortado por el overflow-hidden hasta el
+  // primer cambio.
+  useEffect(() => {
+    const el = titleRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [title, editor]);
 
   function handleTitleChange(value: string) {
     setTitle(value);
@@ -189,17 +202,13 @@ export function ArticleEditor({
         )}
 
         <textarea
+          ref={titleRef}
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
           placeholder={t.editor.titlePlaceholder}
           rows={1}
           spellCheck
           className="block w-full resize-none overflow-hidden bg-transparent text-3xl font-semibold leading-tight tracking-tight text-foreground caret-primary outline-none placeholder:text-muted-foreground/50 sm:text-4xl"
-          onInput={(e) => {
-            const el = e.currentTarget;
-            el.style.height = 'auto';
-            el.style.height = `${el.scrollHeight}px`;
-          }}
         />
 
         {/* Metadatos del documento */}

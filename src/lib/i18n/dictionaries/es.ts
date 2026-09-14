@@ -479,6 +479,9 @@ export const es = {
       code: 'Código',
       horizontalRule: 'Separador',
       justify: 'Justificar',
+      alignLeft: 'Alinear a la izquierda',
+      alignCenter: 'Centrar',
+      alignRight: 'Alinear a la derecha',
     },
     titlePlaceholder: 'Título del artículo',
     saveStatus: {

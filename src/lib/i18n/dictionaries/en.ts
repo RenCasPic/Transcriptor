@@ -474,6 +474,9 @@ export const en: Dictionary = {
       code: 'Code',
       horizontalRule: 'Divider',
       justify: 'Justify',
+      alignLeft: 'Align left',
+      alignCenter: 'Center',
+      alignRight: 'Align right',
     },
     titlePlaceholder: 'Article title',
     saveStatus: {
