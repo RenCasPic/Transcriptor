@@ -6,7 +6,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
-import { Undo2, Redo2 } from 'lucide-react';
+import { Undo2, Redo2, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { BlockId } from '@/lib/editor/block-id-extension';
 import { useAutosave, type AutosaveStatus } from '@/lib/editor/use-autosave';
@@ -23,8 +23,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useDictionary, useLocale } from '@/lib/i18n/dictionary-provider';
 
 interface RewriteState {
-  from: number;
-  to: number;
+  /** A qué se aplica: una selección dentro del cuerpo, o el título del artículo. */
+  target: 'selection' | 'title';
+  /** Solo para `target: 'selection'` — rango de ProseMirror a reemplazar al aceptar. */
+  from?: number;
+  to?: number;
   originalText: string;
   instruction: RewriteInstruction;
   proposedText: string | null;
@@ -69,6 +72,7 @@ export function ArticleEditor({
     convert_to_list: t.editor.aiMenu.convertToList,
     fix_grammar: t.editor.aiMenu.fixGrammar,
     regenerate: t.editor.aiMenu.regenerate,
+    improve_title: t.editor.aiMenu.improveTitle,
   };
   const [title, setTitle] = useState(initialTitle);
   const [liveWordCount, setLiveWordCount] = useState(initialWordCount);
@@ -141,7 +145,7 @@ export function ArticleEditor({
     const text = editor.state.doc.textBetween(from, to, ' ');
     if (!text.trim()) return;
 
-    setRewriteState({ from, to, originalText: text, instruction, proposedText: null, isLoading: true });
+    setRewriteState({ target: 'selection', from, to, originalText: text, instruction, proposedText: null, isLoading: true });
 
     const result = await rewriteSectionAction({ documentId, projectId, text, instruction });
 
@@ -154,13 +158,40 @@ export function ArticleEditor({
     setRewriteState((prev) => (prev ? { ...prev, proposedText: result.data.text, isLoading: false } : prev));
   }
 
+  async function handleImproveTitle() {
+    if (!title.trim()) return;
+
+    setRewriteState({
+      target: 'title',
+      originalText: title,
+      instruction: 'improve_title',
+      proposedText: null,
+      isLoading: true,
+    });
+
+    const result = await rewriteSectionAction({ documentId, projectId, text: title, instruction: 'improve_title' });
+
+    if (!result.success) {
+      toast.error(result.error.message);
+      setRewriteState(null);
+      return;
+    }
+
+    setRewriteState((prev) => (prev ? { ...prev, proposedText: result.data.text, isLoading: false } : prev));
+  }
+
   function handleAccept() {
-    if (!editor || !rewriteState?.proposedText) return;
-    editor
-      .chain()
-      .focus()
-      .insertContentAt({ from: rewriteState.from, to: rewriteState.to }, rewriteState.proposedText)
-      .run();
+    if (!rewriteState?.proposedText) return;
+
+    if (rewriteState.target === 'title') {
+      handleTitleChange(rewriteState.proposedText);
+    } else if (editor && rewriteState.from !== undefined && rewriteState.to !== undefined) {
+      editor
+        .chain()
+        .focus()
+        .insertContentAt({ from: rewriteState.from, to: rewriteState.to }, rewriteState.proposedText)
+        .run();
+    }
 
     void createVersionAction({
       documentId,
@@ -201,15 +232,32 @@ export function ArticleEditor({
           />
         )}
 
-        <textarea
-          ref={titleRef}
-          value={title}
-          onChange={(e) => handleTitleChange(e.target.value)}
-          placeholder={t.editor.titlePlaceholder}
-          rows={1}
-          spellCheck
-          className="block w-full resize-none overflow-hidden bg-transparent text-3xl font-semibold leading-tight tracking-tight text-foreground caret-primary outline-none placeholder:text-muted-foreground/50 sm:text-4xl"
-        />
+        <div className="flex items-start gap-2">
+          <textarea
+            ref={titleRef}
+            value={title}
+            onChange={(e) => handleTitleChange(e.target.value)}
+            placeholder={t.editor.titlePlaceholder}
+            rows={1}
+            spellCheck
+            className="block w-full flex-1 resize-none overflow-hidden bg-transparent text-3xl font-semibold leading-tight tracking-tight text-foreground caret-primary outline-none placeholder:text-muted-foreground/50 sm:text-4xl"
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="mt-1.5 h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+            onClick={handleImproveTitle}
+            disabled={!title.trim() || !!rewriteState}
+            title={t.editor.toolbar.improveTitle}
+          >
+            {rewriteState?.target === 'title' && rewriteState.isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
 
         {/* Metadatos del documento */}
         <div className="mt-4 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 pb-4 text-xs text-muted-foreground">

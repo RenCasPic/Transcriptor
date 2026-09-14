@@ -15,6 +15,7 @@ import {
   Quote,
   List,
   Sparkles,
+  SpellCheck,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -80,7 +81,6 @@ export function EditorToolbar({
     { value: 'more_conversational', label: t.editor.aiMenu.moreConversational },
     { value: 'improve_seo', label: t.editor.aiMenu.improveSeo },
     { value: 'convert_to_list', label: t.editor.aiMenu.convertToList },
-    { value: 'fix_grammar', label: t.editor.aiMenu.fixGrammar },
     { value: 'regenerate', label: t.editor.aiMenu.regenerate },
   ];
 
@@ -153,6 +153,17 @@ export function EditorToolbar({
       })}
 
       <span className="mx-1 h-5 w-px bg-border" />
+
+      <button
+        type="button"
+        title={t.editor.toolbar.spellCheck}
+        disabled={disabled || !hasSelection}
+        className={cn(btn, 'w-auto gap-1.5 px-2 text-xs font-medium')}
+        onClick={() => onAiAction('fix_grammar')}
+      >
+        <SpellCheck className="h-4 w-4" />
+        {t.editor.toolbar.spellCheckShort}
+      </button>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

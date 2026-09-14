@@ -12,6 +12,7 @@ const INSTRUCTION_GUIDANCE: Record<string, string> = {
   convert_to_list: 'Convierte el texto en una lista clara de puntos, conservando el contenido.',
   fix_grammar: 'Corrige la gramática y ortografía sin cambiar el significado ni el estilo.',
   regenerate: 'Redacta una versión completamente nueva de esta sección con el mismo propósito.',
+  improve_title: 'Mejora este título de artículo para que sea más claro, específico y atractivo, sin cambiar el tema. Debe seguir siendo una sola línea, breve (idealmente menos de 70 caracteres) y sin comillas envolventes.',
 };
 
 /** Prompt para transformar una sección seleccionada del artículo dentro del editor. */

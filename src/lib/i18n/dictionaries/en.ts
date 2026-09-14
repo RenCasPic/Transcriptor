@@ -477,6 +477,9 @@ export const en: Dictionary = {
       alignLeft: 'Align left',
       alignCenter: 'Center',
       alignRight: 'Align right',
+      spellCheck: 'Fix spelling & grammar of the selection',
+      spellCheckShort: 'Spelling',
+      improveTitle: 'Improve title with AI',
     },
     titlePlaceholder: 'Article title',
     saveStatus: {
@@ -500,6 +503,7 @@ export const en: Dictionary = {
       convertToList: 'Convert to list',
       fixGrammar: 'Fix grammar',
       regenerate: 'Regenerate section',
+      improveTitle: 'Improve title',
     },
     rewritePreview: {
       title: 'AI action preview',

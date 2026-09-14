@@ -40,7 +40,8 @@ export type RewriteInstruction =
   | 'improve_seo'
   | 'convert_to_list'
   | 'fix_grammar'
-  | 'regenerate';
+  | 'regenerate'
+  | 'improve_title';
 
 export interface RewriteSectionInput {
   text: string;

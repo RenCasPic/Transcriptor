@@ -102,6 +102,7 @@ const RewriteSectionSchema = z.object({
     'convert_to_list',
     'fix_grammar',
     'regenerate',
+    'improve_title',
   ]),
 });
 

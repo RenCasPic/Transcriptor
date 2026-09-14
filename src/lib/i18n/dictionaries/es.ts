@@ -482,6 +482,9 @@ export const es = {
       alignLeft: 'Alinear a la izquierda',
       alignCenter: 'Centrar',
       alignRight: 'Alinear a la derecha',
+      spellCheck: 'Corregir ortografía y gramática de la selección',
+      spellCheckShort: 'Ortografía',
+      improveTitle: 'Mejorar título con IA',
     },
     titlePlaceholder: 'Título del artículo',
     saveStatus: {
@@ -505,6 +508,7 @@ export const es = {
       convertToList: 'Convertir en lista',
       fixGrammar: 'Corregir gramática',
       regenerate: 'Regenerar sección',
+      improveTitle: 'Mejorar título',
     },
     rewritePreview: {
       title: 'Vista previa de la acción de IA',
