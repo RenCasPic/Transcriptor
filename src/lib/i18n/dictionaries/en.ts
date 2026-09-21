@@ -128,6 +128,7 @@ export const en: Dictionary = {
     dropzoneChange: 'Change file',
     videoUrlLabel: 'Video link',
     generateArticle: 'Generate article',
+    generatingHint: 'Generating your article, this may take a few seconds...',
     newProject: 'New project',
     uploadFile: 'Upload file',
     pasteLink: 'Paste link',

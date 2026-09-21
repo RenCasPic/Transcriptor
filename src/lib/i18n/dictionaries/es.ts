@@ -130,6 +130,7 @@ export const es = {
     dropzoneChange: 'Cambiar archivo',
     videoUrlLabel: 'Enlace del video',
     generateArticle: 'Generar artículo',
+    generatingHint: 'Generando tu artículo, esto puede tardar unos segundos...',
     newProject: 'Nuevo proyecto',
     uploadFile: 'Subir archivo',
     pasteLink: 'Pegar enlace',

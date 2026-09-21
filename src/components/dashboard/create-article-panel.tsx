@@ -64,7 +64,7 @@ export function CreateArticlePanel({ mediaLimits }: { mediaLimits: MediaLimits }
   const [videoUrl, setVideoUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [urlError, setUrlError] = useState<{ code: string; message: string } | null>(null);
-  const { stage, run } = useYoutubeImport();
+  const { run } = useYoutubeImport();
 
   // --- Configuración del artículo: UNA sola instancia, compartida ---
   const {
@@ -287,10 +287,10 @@ export function CreateArticlePanel({ mediaLimits }: { mediaLimits: MediaLimits }
                 onChange={(e) => setVideoUrl(e.target.value)}
                 disabled={isSubmitting}
               />
-              {isSubmitting && stage !== 'idle' && (
+              {isSubmitting && (
                 <p className="flex items-center gap-2 pt-1 text-xs text-muted-foreground">
                   <Loader2 className="h-3 w-3 animate-spin" />
-                  {t.projects.source.youtubeStages[stage]}
+                  {t.dashboard.generatingHint}
                 </p>
               )}
             </div>
