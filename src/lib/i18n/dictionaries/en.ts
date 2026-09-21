@@ -17,6 +17,8 @@ export const en: Dictionary = {
     words: 'words',
     minutesReading: 'min read',
     emailPlaceholder: 'you@email.com',
+    showPassword: 'Show password',
+    hidePassword: 'Hide password',
   },
   nav: {
     dashboard: 'Dashboard',

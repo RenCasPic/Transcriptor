@@ -19,6 +19,8 @@ export const es = {
     words: 'palabras',
     minutesReading: 'min de lectura',
     emailPlaceholder: 'tu@correo.com',
+    showPassword: 'Mostrar contraseña',
+    hidePassword: 'Ocultar contraseña',
   },
   nav: {
     dashboard: 'Panel',

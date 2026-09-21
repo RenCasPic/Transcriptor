@@ -8,6 +8,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { SignUpSchema, type SignUpInput } from '@/lib/validations/auth';
 import { signUpAction } from '@/lib/actions/auth';
@@ -67,7 +68,13 @@ export function RegisterForm() {
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="password">{t.auth.register.password}</Label>
-        <Input id="password" type="password" autoComplete="new-password" {...register('password')} />
+        <PasswordInput
+          id="password"
+          autoComplete="new-password"
+          showPasswordLabel={t.common.showPassword}
+          hidePasswordLabel={t.common.hidePassword}
+          {...register('password')}
+        />
         {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
       </div>
       <Button type="submit" className="w-full" disabled={isSubmitting}>
