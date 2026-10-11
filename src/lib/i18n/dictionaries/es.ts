@@ -83,7 +83,81 @@ export const es = {
     },
     ctaTitle: 'Prueba tu primer artículo hoy',
     ctaSubtitle: 'Crea tu cuenta y pruébalo gratis con un ejemplo, sin configurar nada.',
+    pricingNav: 'Precios',
     footerRights: 'Todos los derechos reservados.',
+  },
+  pricing: {
+    metaTitle: 'Precios',
+    metaDescription:
+      'Planes de TalkToPost: empieza gratis y cambia de plan cuando tu volumen lo pida. Precios en USD.',
+    title: 'Precios simples, sin sorpresas',
+    subtitle: 'Empieza gratis y cambia de plan cuando lo necesites.',
+    billingLabel: 'Periodo de facturación',
+    monthly: 'Mensual',
+    annual: 'Anual',
+    saveBadge: 'Ahorra {n}%',
+    perMonth: '/mes',
+    billedMonthly: 'Facturado mensualmente',
+    billedAnnually: 'Facturado {total} al año',
+    noCardNeeded: 'Sin tarjeta de crédito',
+    mostPopular: 'Más popular',
+    comingSoon: 'Próximamente',
+    seeAllLink: 'Ver todos los detalles y preguntas frecuentes',
+    note: 'Precios en USD. Los pagos se habilitarán próximamente; por ahora puedes crear tu cuenta gratis.',
+    plans: {
+      free: {
+        name: 'Gratis',
+        tagline: 'Para probar TalkToPost sin compromiso.',
+        cta: 'Empezar gratis',
+      },
+      creator: {
+        name: 'Creador',
+        tagline: 'Para quien publica con frecuencia.',
+        cta: 'Empezar con Creador',
+      },
+      pro: {
+        name: 'Pro',
+        tagline: 'Para alto volumen y equipos.',
+        cta: 'Empezar con Pro',
+      },
+    },
+    features: {
+      articlesPerMonth: '{n} artículos al mes',
+      fileUpToMinutes: 'Archivos de hasta {n} min',
+      fileUpToHours: 'Archivos de hasta {n} h',
+      aiEditor: 'Editor con IA',
+      exportFormats: 'Exportar a Markdown, HTML y texto',
+      youtubeImport: 'Importación desde YouTube',
+      aiRewriteTitle: 'Reescritura y título con IA',
+      versionHistory: 'Historial de versiones',
+      embedCode: 'Código para incrustar',
+      priorityProcessing: 'Procesamiento prioritario',
+      prioritySupport: 'Soporte prioritario',
+      publishCms: 'Publicar en WordPress, Ghost y Webflow',
+      teamInvite: 'Invitar a tu equipo',
+    },
+    faqTitle: 'Preguntas frecuentes',
+    faq: [
+      {
+        question: '¿Puedo cancelar cuando quiera?',
+        answer:
+          'Sí. Cuando los pagos estén habilitados podrás cancelar tu suscripción en cualquier momento, sin permanencia mínima.',
+      },
+      {
+        question: '¿Qué cuenta como un artículo?',
+        answer:
+          'Cada artículo nuevo que generas a partir de un archivo, un enlace o una transcripción. Editar o exportar un artículo que ya generaste no cuenta como uno nuevo.',
+      },
+      {
+        question: '¿Qué pasa si supero el límite?',
+        answer:
+          'Por ahora no aplicamos límites. Cuando se activen, te avisaremos con anticipación: podrás esperar a que se renueve tu cupo mensual o cambiar a un plan superior.',
+      },
+      {
+        question: '¿Necesito tarjeta para empezar?',
+        answer: 'No. Para crear tu cuenta gratis no necesitas ninguna tarjeta de crédito.',
+      },
+    ],
   },
   auth: {
     login: {

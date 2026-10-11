@@ -81,7 +81,81 @@ export const en: Dictionary = {
     },
     ctaTitle: 'Try your first article today',
     ctaSubtitle: 'Create your account and try it for free with an example — no setup needed.',
+    pricingNav: 'Pricing',
     footerRights: 'All rights reserved.',
+  },
+  pricing: {
+    metaTitle: 'Pricing',
+    metaDescription:
+      'TalkToPost plans: start for free and switch plans when your volume calls for it. Prices in USD.',
+    title: 'Simple pricing, no surprises',
+    subtitle: 'Start for free and switch plans whenever you need to.',
+    billingLabel: 'Billing period',
+    monthly: 'Monthly',
+    annual: 'Annual',
+    saveBadge: 'Save {n}%',
+    perMonth: '/mo',
+    billedMonthly: 'Billed monthly',
+    billedAnnually: 'Billed {total} per year',
+    noCardNeeded: 'No credit card required',
+    mostPopular: 'Most popular',
+    comingSoon: 'Coming soon',
+    seeAllLink: 'See all details and FAQs',
+    note: 'Prices in USD. Payments will be enabled soon; for now you can create your account for free.',
+    plans: {
+      free: {
+        name: 'Free',
+        tagline: 'To try TalkToPost with no commitment.',
+        cta: 'Start for free',
+      },
+      creator: {
+        name: 'Creator',
+        tagline: 'For people who publish often.',
+        cta: 'Start with Creator',
+      },
+      pro: {
+        name: 'Pro',
+        tagline: 'For high volume and teams.',
+        cta: 'Start with Pro',
+      },
+    },
+    features: {
+      articlesPerMonth: '{n} articles per month',
+      fileUpToMinutes: 'Files up to {n} min',
+      fileUpToHours: 'Files up to {n} h',
+      aiEditor: 'AI-powered editor',
+      exportFormats: 'Export to Markdown, HTML and text',
+      youtubeImport: 'Import from YouTube',
+      aiRewriteTitle: 'AI rewriting and title suggestions',
+      versionHistory: 'Version history',
+      embedCode: 'Embed code',
+      priorityProcessing: 'Priority processing',
+      prioritySupport: 'Priority support',
+      publishCms: 'Publish to WordPress, Ghost and Webflow',
+      teamInvite: 'Invite your team',
+    },
+    faqTitle: 'Frequently asked questions',
+    faq: [
+      {
+        question: 'Can I cancel whenever I want?',
+        answer:
+          'Yes. Once payments are enabled you will be able to cancel your subscription at any time, with no minimum commitment.',
+      },
+      {
+        question: 'What counts as an article?',
+        answer:
+          'Each new article you generate from a file, a link or a transcript. Editing or exporting an article you already generated does not count as a new one.',
+      },
+      {
+        question: 'What happens if I go over the limit?',
+        answer:
+          'We do not enforce limits for now. When they are turned on we will let you know in advance: you will be able to wait for your monthly allowance to renew or switch to a higher plan.',
+      },
+      {
+        question: 'Do I need a card to get started?',
+        answer: 'No. You do not need a credit card to create your free account.',
+      },
+    ],
   },
   auth: {
     login: {

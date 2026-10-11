@@ -14,8 +14,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FadeIn } from '@/components/landing/fade-in';
-import { LanguageSwitcher } from '@/components/layout/language-switcher';
-import { ThemeSwitcher } from '@/components/layout/theme-switcher';
+import { SiteHeader } from '@/components/landing/site-header';
+import { SiteFooter } from '@/components/landing/site-footer';
+import { PricingPlans } from '@/components/pricing/pricing-plans';
 import { getDictionary } from '@/lib/i18n/get-dictionary';
 
 export default async function LandingPage() {
@@ -37,29 +38,7 @@ export default async function LandingPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
-        <div className="container flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Sparkles className="h-4 w-4" />
-            </div>
-            {t.common.appName}
-          </Link>
-          <nav className="flex items-center gap-2">
-            <LanguageSwitcher />
-            <ThemeSwitcher />
-            <Button variant="ghost" asChild>
-              <Link href="/login">{t.landing.signIn}</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/register">
-                {t.landing.createFreeAccount}
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="flex-1">
         <section className="relative overflow-hidden py-20 md:py-28">
@@ -142,6 +121,24 @@ export default async function LandingPage() {
           </div>
         </section>
 
+        <section id="precios" className="border-y bg-muted/40 py-20">
+          <div className="container">
+            <FadeIn className="mx-auto mb-10 max-w-2xl text-center">
+              <h2 className="text-3xl font-bold tracking-tight">{t.pricing.title}</h2>
+              <p className="mt-3 text-muted-foreground">{t.pricing.subtitle}</p>
+            </FadeIn>
+            <FadeIn>
+              <PricingPlans />
+            </FadeIn>
+            <FadeIn className="mt-8 text-center">
+              <Link href="/precios" className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+                {t.pricing.seeAllLink}
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </FadeIn>
+          </div>
+        </section>
+
         <section className="border-t bg-primary text-primary-foreground">
           <FadeIn className="container flex flex-col items-center gap-6 py-16 text-center">
             <h2 className="text-3xl font-bold tracking-tight">{t.landing.ctaTitle}</h2>
@@ -156,21 +153,7 @@ export default async function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t py-8">
-        <div className="container flex flex-col items-center justify-between gap-4 text-sm text-muted-foreground sm:flex-row">
-          <p>
-            © {new Date().getFullYear()} {t.common.appName}. {t.landing.footerRights}
-          </p>
-          <div className="flex gap-4">
-            <Link href="/login" className="hover:text-foreground">
-              {t.landing.signIn}
-            </Link>
-            <Link href="/register" className="hover:text-foreground">
-              {t.auth.register.submit}
-            </Link>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
