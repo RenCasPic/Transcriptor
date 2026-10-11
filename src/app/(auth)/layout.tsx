@@ -1,11 +1,13 @@
 import Link from 'next/link';
 import { Sparkles } from 'lucide-react';
+import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import { ThemeSwitcher } from '@/components/layout/theme-switcher';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center gap-8 bg-muted/30 px-4 py-12">
-      <div className="absolute right-3 top-3 sm:right-5 sm:top-5">
+    <div className="relative flex min-h-screen flex-col items-center justify-center gap-8 bg-muted/30 px-4 pb-12 pt-20 sm:py-12">
+      <div className="absolute right-3 top-3 flex items-center gap-1 sm:right-5 sm:top-5">
+        <LanguageSwitcher />
         <ThemeSwitcher />
       </div>
       <Link href="/" className="flex items-center gap-2 text-lg font-semibold">

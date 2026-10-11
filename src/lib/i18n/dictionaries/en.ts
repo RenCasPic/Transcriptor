@@ -36,7 +36,7 @@ export const en: Dictionary = {
   },
   language: {
     label: 'Language',
-    switchTo: 'Switch language',
+    switchTo: 'Change language',
   },
   theme: {
     toggle: 'Change theme',

@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import { ThemeSwitcher } from '@/components/layout/theme-switcher';
 import { signOutAction } from '@/lib/actions/auth';
 import { useDictionary } from '@/lib/i18n/dictionary-provider';
@@ -34,6 +35,7 @@ export function Header({ userName }: { userName: string }) {
       </Link>
 
       <div className="flex items-center gap-1">
+        <LanguageSwitcher />
         <ThemeSwitcher />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
