@@ -52,7 +52,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
               disabled={isPending}
               onClick={() => handleSelect(code)}
               className={cn(
-                'inline-flex h-full items-center rounded-[0.3rem] px-2 leading-none sm:px-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait',
+                'inline-flex h-full items-center rounded-[0.3rem] leading-none px-1.5 sm:px-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait',
                 active
                   ? 'bg-accent font-bold text-primary'
                   : 'font-medium text-muted-foreground hover:text-foreground',

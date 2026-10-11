@@ -40,6 +40,9 @@ export const en: Dictionary = {
   },
   theme: {
     toggle: 'Change theme',
+    lightTitle: 'Light theme',
+    darkTitle: 'Dark theme',
+    systemTitle: 'Use system setting',
     light: 'Light',
     dark: 'Dark',
     system: 'System',

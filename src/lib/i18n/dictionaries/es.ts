@@ -42,6 +42,9 @@ export const es = {
   },
   theme: {
     toggle: 'Cambiar tema',
+    lightTitle: 'Tema claro',
+    darkTitle: 'Tema oscuro',
+    systemTitle: 'Usar el del sistema',
     light: 'Claro',
     dark: 'Oscuro',
     system: 'Sistema',
