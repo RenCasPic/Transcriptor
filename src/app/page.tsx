@@ -15,23 +15,24 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { FadeIn } from '@/components/landing/fade-in';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
+import { ThemeSwitcher } from '@/components/layout/theme-switcher';
 import { getDictionary } from '@/lib/i18n/get-dictionary';
 
 export default async function LandingPage() {
   const { dictionary: t } = await getDictionary();
 
   const STEPS = [
-    { icon: Mic, title: t.landing.steps.step1Title, description: t.landing.steps.step1Description, color: 'bg-indigo-500/10 text-indigo-600' },
-    { icon: Sparkles, title: t.landing.steps.step2Title, description: t.landing.steps.step2Description, color: 'bg-violet-500/10 text-violet-600' },
-    { icon: FileText, title: t.landing.steps.step3Title, description: t.landing.steps.step3Description, color: 'bg-amber-500/10 text-amber-600' },
-    { icon: ShieldCheck, title: t.landing.steps.step4Title, description: t.landing.steps.step4Description, color: 'bg-emerald-500/10 text-emerald-600' },
+    { icon: Mic, title: t.landing.steps.step1Title, description: t.landing.steps.step1Description, color: 'bg-indigo-500/10 text-indigo-600 dark:bg-indigo-400/15 dark:text-indigo-300' },
+    { icon: Sparkles, title: t.landing.steps.step2Title, description: t.landing.steps.step2Description, color: 'bg-violet-500/10 text-violet-600 dark:bg-violet-400/15 dark:text-violet-300' },
+    { icon: FileText, title: t.landing.steps.step3Title, description: t.landing.steps.step3Description, color: 'bg-amber-500/10 text-amber-600 dark:bg-amber-400/15 dark:text-amber-300' },
+    { icon: ShieldCheck, title: t.landing.steps.step4Title, description: t.landing.steps.step4Description, color: 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-300' },
   ];
 
   const BENEFITS = [
-    { icon: Quote, title: t.landing.benefits.benefit1Title, description: t.landing.benefits.benefit1Description, color: 'bg-rose-500/10 text-rose-600' },
-    { icon: SearchCheck, title: t.landing.benefits.benefit2Title, description: t.landing.benefits.benefit2Description, color: 'bg-sky-500/10 text-sky-600' },
-    { icon: History, title: t.landing.benefits.benefit3Title, description: t.landing.benefits.benefit3Description, color: 'bg-emerald-500/10 text-emerald-600' },
-    { icon: ListChecks, title: t.landing.benefits.benefit4Title, description: t.landing.benefits.benefit4Description, color: 'bg-violet-500/10 text-violet-600' },
+    { icon: Quote, title: t.landing.benefits.benefit1Title, description: t.landing.benefits.benefit1Description, color: 'bg-rose-500/10 text-rose-600 dark:bg-rose-400/15 dark:text-rose-300' },
+    { icon: SearchCheck, title: t.landing.benefits.benefit2Title, description: t.landing.benefits.benefit2Description, color: 'bg-sky-500/10 text-sky-600 dark:bg-sky-400/15 dark:text-sky-300' },
+    { icon: History, title: t.landing.benefits.benefit3Title, description: t.landing.benefits.benefit3Description, color: 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-300' },
+    { icon: ListChecks, title: t.landing.benefits.benefit4Title, description: t.landing.benefits.benefit4Description, color: 'bg-violet-500/10 text-violet-600 dark:bg-violet-400/15 dark:text-violet-300' },
   ];
 
   return (
@@ -46,6 +47,7 @@ export default async function LandingPage() {
           </Link>
           <nav className="flex items-center gap-2">
             <LanguageSwitcher />
+            <ThemeSwitcher />
             <Button variant="ghost" asChild>
               <Link href="/login">{t.landing.signIn}</Link>
             </Button>
@@ -65,7 +67,7 @@ export default async function LandingPage() {
             aria-hidden
             className="pointer-events-none absolute inset-x-0 top-[-10rem] -z-10 flex justify-center blur-3xl"
           >
-            <div className="animate-blob h-[36rem] w-[64rem] rounded-full bg-gradient-to-tr from-indigo-400/70 via-violet-400/60 to-amber-300/60" />
+            <div className="animate-blob h-[36rem] w-[64rem] rounded-full bg-gradient-to-tr from-indigo-400/70 via-violet-400/60 to-amber-300/60 dark:from-indigo-500/30 dark:via-violet-500/25 dark:to-amber-400/15" />
           </div>
           <FadeIn className="container flex flex-col items-center gap-6 text-center">
             <Badge variant="secondary" className="gap-1.5">

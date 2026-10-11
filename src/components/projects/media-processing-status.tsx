@@ -109,7 +109,7 @@ export function MediaProcessingStatus({
     <div className="space-y-2 rounded-lg border bg-muted/30 p-4">
       <div className="flex items-center gap-2 text-sm font-medium">
         {phase === 'completed' ? (
-          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+          <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
         ) : (
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
         )}

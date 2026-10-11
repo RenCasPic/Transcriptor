@@ -4,6 +4,8 @@
 
 @layer base {
   :root {
+    color-scheme: light;
+
     --background: 240 45% 99%;
     --foreground: 222 47% 11%;
 
@@ -47,40 +49,47 @@
     --app-header-h: 4rem;
   }
 
+  /* Tema oscuro: neutros con matiz índigo (≈245°), no gris azulado, para
+     conservar la identidad morada/índigo del modo claro. */
   .dark {
-    --background: 222 47% 7%;
-    --foreground: 210 40% 98%;
+    color-scheme: dark;
 
-    --card: 222 47% 9%;
-    --card-foreground: 210 40% 98%;
+    --background: 245 30% 7%;
+    --foreground: 240 25% 96%;
 
-    --popover: 222 47% 9%;
-    --popover-foreground: 210 40% 98%;
+    --card: 245 28% 10%;
+    --card-foreground: 240 25% 96%;
 
-    --primary: 243 75% 65%;
-    --primary-foreground: 222 47% 11%;
+    --popover: 245 28% 11%;
+    --popover-foreground: 240 25% 96%;
 
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    /* Más claro que en modo claro: como texto/borde sobre fondo oscuro necesita
+       contraste ≥ 4.5:1; por eso el texto de los botones pasa a ser oscuro. */
+    --primary: 243 80% 68%;
+    --primary-foreground: 245 40% 8%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --secondary: 245 24% 17%;
+    --secondary-foreground: 240 25% 94%;
 
-    --accent: 217 33% 20%;
-    --accent-foreground: 210 40% 98%;
+    --muted: 245 24% 15%;
+    --muted-foreground: 240 12% 70%;
 
-    --destructive: 0 63% 31%;
+    --accent: 245 32% 20%;
+    --accent-foreground: 240 60% 92%;
+
+    --destructive: 0 72% 60%;
     --destructive-foreground: 210 40% 98%;
 
+    /* El ámbar (íconos activos del editor, avisos) se mantiene igual. */
     --warning: 38 92% 50%;
     --warning-foreground: 26 83% 14%;
 
     --success: 142 71% 45%;
     --success-foreground: 210 40% 98%;
 
-    --border: 217 33% 20%;
-    --input: 217 33% 20%;
-    --ring: 243 75% 65%;
+    --border: 245 22% 20%;
+    --input: 245 22% 20%;
+    --ring: 243 80% 68%;
   }
 }
 
@@ -105,10 +114,30 @@
    plugin `prose` de Tailwind con los colores de la app.
    ============================================================ */
 .tiptap-editor {
-  @apply prose prose-slate max-w-none focus:outline-none dark:prose-invert;
+  @apply prose prose-slate max-w-none focus:outline-none;
   --tw-prose-links: hsl(var(--primary));
   --tw-prose-bullets: hsl(var(--muted-foreground));
   --tw-prose-quote-borders: hsl(var(--primary) / 0.35);
+}
+/* En oscuro, el artículo usa los tokens índigo de la app en lugar de la
+   inversión slate (azul-gris) de `prose-invert`. */
+.dark .tiptap-editor {
+  --tw-prose-body: hsl(240 20% 86%);
+  --tw-prose-headings: hsl(var(--foreground));
+  --tw-prose-lead: hsl(240 15% 76%);
+  --tw-prose-links: hsl(var(--primary));
+  --tw-prose-bold: hsl(var(--foreground));
+  --tw-prose-counters: hsl(var(--muted-foreground));
+  --tw-prose-bullets: hsl(var(--muted-foreground));
+  --tw-prose-hr: hsl(var(--border));
+  --tw-prose-quotes: hsl(var(--foreground));
+  --tw-prose-quote-borders: hsl(var(--primary) / 0.45);
+  --tw-prose-captions: hsl(var(--muted-foreground));
+  --tw-prose-code: hsl(var(--foreground));
+  --tw-prose-pre-code: hsl(240 20% 86%);
+  --tw-prose-pre-bg: hsl(var(--muted));
+  --tw-prose-th-borders: hsl(var(--border));
+  --tw-prose-td-borders: hsl(var(--border));
 }
 .tiptap-editor :where(h1, h2, h3) {
   font-weight: 600;

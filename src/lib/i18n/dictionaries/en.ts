@@ -38,6 +38,12 @@ export const en: Dictionary = {
     label: 'Language',
     switchTo: 'Switch language',
   },
+  theme: {
+    toggle: 'Change theme',
+    light: 'Light',
+    dark: 'Dark',
+    system: 'System',
+  },
   landing: {
     signIn: 'Sign in',
     createFreeAccount: 'Create free account',

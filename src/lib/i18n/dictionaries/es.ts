@@ -40,6 +40,12 @@ export const es = {
     label: 'Idioma',
     switchTo: 'Cambiar idioma',
   },
+  theme: {
+    toggle: 'Cambiar tema',
+    light: 'Claro',
+    dark: 'Oscuro',
+    system: 'Sistema',
+  },
   landing: {
     signIn: 'Iniciar sesión',
     createFreeAccount: 'Crear cuenta gratis',
