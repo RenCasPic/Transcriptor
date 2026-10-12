@@ -54,6 +54,9 @@ export async function signInAction(input: SignInInput): Promise<ActionResult<nul
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
 
   if (error) {
+    // Solo el mensaje/estado de Supabase (sin credenciales): permite ver en los
+    // logs de Vercel por qué falló cuando el aviso al usuario es genérico.
+    console.error('[auth] signInWithPassword falló:', error.status, error.message);
     return err('SIGN_IN_ERROR', translateAuthError(error.message));
   }
 
