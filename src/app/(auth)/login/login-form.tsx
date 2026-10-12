@@ -28,8 +28,16 @@ export function LoginForm() {
 
   async function onSubmit(values: SignInInput) {
     setIsSubmitting(true);
-    const result = await signInAction(values);
-    setIsSubmitting(false);
+    let result;
+    try {
+      result = await signInAction(values);
+    } catch {
+      // Si la Server Action revienta (p. ej. fallo del servidor), no dejar el botón cargando para siempre.
+      toast.error(t.common.error);
+      return;
+    } finally {
+      setIsSubmitting(false);
+    }
 
     if (!result.success) {
       toast.error(result.error.message);
