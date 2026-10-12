@@ -50,25 +50,21 @@ export async function signInAction(input: SignInInput): Promise<ActionResult<nul
     return err('VALIDATION_ERROR', parsed.error.issues[0]?.message ?? 'Datos inválidos');
   }
 
-  // TEMPORAL (diagnóstico del login en producción): cuando el error no es uno
-  // conocido, el aviso añade el motivo técnico (mensaje de Supabase/Node, sin
-  // credenciales) y se registra en los logs. Quitar cuando el login esté estable.
   try {
     const supabase = await createClient();
     const { error } = await supabase.auth.signInWithPassword(parsed.data);
 
     if (error) {
+      // Solo status y mensaje de Supabase (sin credenciales): el aviso al usuario
+      // es genérico, pero el motivo real queda en los logs del servidor.
       console.error('[auth] signInWithPassword falló:', error.status, error.message);
-      const message = translateAuthError(error.message);
-      const known = message !== translateAuthError('');
-      return err('SIGN_IN_ERROR', known ? message : `${message} (${error.status ?? 'sin estado'}: ${error.message})`.slice(0, 220));
+      return err('SIGN_IN_ERROR', translateAuthError(error.message));
     }
 
     return ok(null);
   } catch (e) {
-    const reason = e instanceof Error ? e.message : String(e);
-    console.error('[auth] signInAction lanzó una excepción:', reason);
-    return err('SIGN_IN_ERROR', `${translateAuthError('')} (${reason})`.slice(0, 220));
+    console.error('[auth] signInAction lanzó una excepción:', e instanceof Error ? e.message : String(e));
+    return err('SIGN_IN_ERROR', translateAuthError(''));
   }
 }
 
