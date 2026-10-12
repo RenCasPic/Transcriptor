@@ -313,6 +313,7 @@ export function CreateArticlePanel({ mediaLimits }: { mediaLimits: MediaLimits }
             jobId={active.jobId}
             projectId={active.projectId}
             clientPhase={phase}
+            simple
             uploadProgress={progress}
             onDismiss={() => {
               const projectId = active.projectId;

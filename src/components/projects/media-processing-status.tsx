@@ -32,6 +32,7 @@ export function MediaProcessingStatus({
   clientPhase,
   initialStatus,
   onDismiss,
+  simple = false,
 }: {
   jobId: string | null;
   projectId: string;
@@ -41,6 +42,8 @@ export function MediaProcessingStatus({
   clientPhase?: UploadPhase;
   initialStatus?: TranscriptionJobStatus | null;
   onDismiss?: () => void;
+  /** Un único mensaje genérico ("Generando artículo...") en vez del detalle de cada fase. */
+  simple?: boolean;
 }) {
   const router = useRouter();
   const t = useDictionary();
@@ -95,6 +98,15 @@ export function MediaProcessingStatus({
         onDismiss={onDismiss ?? (() => router.refresh())}
         tips={[mp.errorTip1, mp.errorTip2]}
       />
+    );
+  }
+
+  if (simple) {
+    return (
+      <div className="flex items-center gap-2 rounded-lg border bg-muted/30 p-4 text-sm font-medium">
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        <span>{t.dashboard.generatingHint}</span>
+      </div>
     );
   }
 
