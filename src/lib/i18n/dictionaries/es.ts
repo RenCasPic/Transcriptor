@@ -269,6 +269,8 @@ export const es = {
   settings: {
     title: 'Configuración',
     subtitle: 'Gestiona tu cuenta y tu espacio de trabajo',
+    back: 'Volver',
+    backToArticle: 'Volver al artículo',
     tabs: {
       profile: 'Perfil',
       workspace: 'Espacio de trabajo',

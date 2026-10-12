@@ -267,6 +267,8 @@ export const en: Dictionary = {
   settings: {
     title: 'Settings',
     subtitle: 'Manage your account and workspace',
+    back: 'Back',
+    backToArticle: 'Back to the article',
     tabs: {
       profile: 'Profile',
       workspace: 'Workspace',

@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Sparkles, LogOut, User, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -15,9 +17,17 @@ import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import { ThemeSwitcher } from '@/components/layout/theme-switcher';
 import { signOutAction } from '@/lib/actions/auth';
 import { useDictionary } from '@/lib/i18n/dictionary-provider';
+import { rememberAppPath } from '@/lib/navigation/last-app-path';
 
 export function Header({ userName }: { userName: string }) {
   const dictionary = useDictionary();
+  const pathname = usePathname();
+
+  // Para poder volver desde Configuración a la página donde se estaba trabajando.
+  useEffect(() => {
+    rememberAppPath(pathname);
+  }, [pathname]);
+
   const initials = userName
     .split(' ')
     .map((part) => part[0])
