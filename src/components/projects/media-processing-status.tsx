@@ -42,7 +42,7 @@ export function MediaProcessingStatus({
   clientPhase?: UploadPhase;
   initialStatus?: TranscriptionJobStatus | null;
   onDismiss?: () => void;
-  /** Un único mensaje genérico ("Generando artículo...") en vez del detalle de cada fase. */
+  /** Muestra siempre "Generando artículo..." como título en vez del nombre de cada fase (la barra se mantiene). */
   simple?: boolean;
 }) {
   const router = useRouter();
@@ -101,21 +101,12 @@ export function MediaProcessingStatus({
     );
   }
 
-  if (simple) {
-    return (
-      <div className="flex items-center gap-2 rounded-lg border bg-muted/30 p-4 text-sm font-medium">
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-        <span>{t.dashboard.generatingHint}</span>
-      </div>
-    );
-  }
-
   const isClientPhase = phase === 'loading_converter' || phase === 'extracting' || phase === 'uploading';
   // La descarga del core no da un % fiable: se muestra indeterminado.
   const indeterminate = phase === 'loading_converter';
   const pct = isClientPhase ? (uploadProgress ?? 0) : status?.progress ?? 5;
   const clampedPct = Math.min(100, Math.max(0, Math.round(pct)));
-  const label = mp[phase];
+  const label = simple && phase !== 'completed' ? t.dashboard.generatingHint : mp[phase];
 
   return (
     <div className="space-y-2 rounded-lg border bg-muted/30 p-4">
