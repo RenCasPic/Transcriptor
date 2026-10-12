@@ -50,17 +50,26 @@ export async function signInAction(input: SignInInput): Promise<ActionResult<nul
     return err('VALIDATION_ERROR', parsed.error.issues[0]?.message ?? 'Datos inválidos');
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  // TEMPORAL (diagnóstico del login en producción): cuando el error no es uno
+  // conocido, el aviso añade el motivo técnico (mensaje de Supabase/Node, sin
+  // credenciales) y se registra en los logs. Quitar cuando el login esté estable.
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.signInWithPassword(parsed.data);
 
-  if (error) {
-    // Solo el mensaje/estado de Supabase (sin credenciales): permite ver en los
-    // logs de Vercel por qué falló cuando el aviso al usuario es genérico.
-    console.error('[auth] signInWithPassword falló:', error.status, error.message);
-    return err('SIGN_IN_ERROR', translateAuthError(error.message));
+    if (error) {
+      console.error('[auth] signInWithPassword falló:', error.status, error.message);
+      const message = translateAuthError(error.message);
+      const known = message !== translateAuthError('');
+      return err('SIGN_IN_ERROR', known ? message : `${message} (${error.status ?? 'sin estado'}: ${error.message})`.slice(0, 220));
+    }
+
+    return ok(null);
+  } catch (e) {
+    const reason = e instanceof Error ? e.message : String(e);
+    console.error('[auth] signInAction lanzó una excepción:', reason);
+    return err('SIGN_IN_ERROR', `${translateAuthError('')} (${reason})`.slice(0, 220));
   }
-
-  return ok(null);
 }
 
 export async function signOutAction(): Promise<void> {
