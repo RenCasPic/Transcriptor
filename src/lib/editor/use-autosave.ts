@@ -34,7 +34,10 @@ export function useAutosave(documentId: string, initialVersion: number) {
     const result = await saveDocumentAction({
       documentId,
       title: snapshot.title,
-      contentJson: snapshot.contentJson,
+      // editor.getJSON() devuelve `attrs` con prototipo nulo (ProseMirror) y React 19
+      // no puede enviarlos a una Server Action ("temporary client reference"):
+      // se pasa por JSON para que lleguen como objetos planos.
+      contentJson: JSON.parse(JSON.stringify(snapshot.contentJson)),
       contentHtml: snapshot.contentHtml,
       expectedVersion: versionRef.current,
     });
