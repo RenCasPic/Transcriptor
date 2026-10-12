@@ -11,6 +11,7 @@ import {
 } from '@/lib/data/documents';
 import { getDocumentVersions } from '@/lib/data/versions';
 import { createClient } from '@/lib/supabase/server';
+import { isImageGenerationConfigured } from '@/lib/ai/images/config';
 
 export const metadata: Metadata = { title: 'Editor' };
 
@@ -57,6 +58,7 @@ export default async function EditorPage({ params }: EditorPageProps) {
       sourceLinks={sourceLinks}
       versions={versions}
       currentUserId={user?.id ?? null}
+      imagesAvailable={isImageGenerationConfigured()}
     />
   );
 }

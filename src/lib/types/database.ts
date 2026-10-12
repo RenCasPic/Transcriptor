@@ -45,7 +45,11 @@ export type WarningType =
   | 'name_verification'
   | 'date_verification'
   | 'possible_hallucination'
-  | 'missing_source';
+  | 'missing_source'
+  | 'image_generation';
+
+/** Qué imágenes generar al crear el artículo (ver migración 0022). */
+export type ImageMode = 'none' | 'cover' | 'cover_and_inline';
 
 export type WarningStatus = 'open' | 'reviewed' | 'resolved' | 'dismissed';
 
@@ -138,6 +142,7 @@ export interface Database {
           objective: string | null;
           call_to_action: string | null;
           target_reading_minutes: number | null;
+          image_mode: ImageMode;
           status: ProjectStatus;
           created_at: string;
           updated_at: string;
@@ -156,6 +161,7 @@ export interface Database {
           objective?: string | null;
           call_to_action?: string | null;
           target_reading_minutes?: number | null;
+          image_mode?: ImageMode;
           status?: ProjectStatus;
           created_at?: string;
           updated_at?: string;
@@ -256,6 +262,7 @@ export interface Database {
           published_at: string | null;
           cover_image_url: string | null;
           cover_image_alt: string | null;
+          cover_image_prompt: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -275,6 +282,7 @@ export interface Database {
           published_at?: string | null;
           cover_image_url?: string | null;
           cover_image_alt?: string | null;
+          cover_image_prompt?: string | null;
           created_at?: string;
           updated_at?: string;
         };

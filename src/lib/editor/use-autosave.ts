@@ -79,11 +79,24 @@ export function useAutosave(documentId: string, initialVersion: number) {
     [flush],
   );
 
+  /**
+   * Guarda YA los cambios pendientes (sin esperar al debounce) y espera a que
+   * termine cualquier guardado en curso. Lo usan los cambios de imagen para que
+   * la versión del historial refleje el contenido recién modificado.
+   */
+  const flushNow = useCallback(async () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    for (let i = 0; i < 50 && savingRef.current; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+    await flush();
+  }, [flush]);
+
   useEffect(() => {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
 
-  return { status, scheduleSave, wordCount, readingTimeMinutes, currentVersion: () => versionRef.current };
+  return { status, scheduleSave, flushNow, wordCount, readingTimeMinutes, currentVersion: () => versionRef.current };
 }

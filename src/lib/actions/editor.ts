@@ -55,8 +55,10 @@ export async function saveDocumentAction(input: z.infer<typeof SaveDocumentSchem
 
   const { default: DOMPurify } = await import('isomorphic-dompurify');
   const sanitizedHtml = DOMPurify.sanitize(parsed.data.contentHtml, {
-    ALLOWED_TAGS: ['p', 'h2', 'h3', 'ul', 'ol', 'li', 'blockquote', 'strong', 'em', 'a', 'br'],
-    ALLOWED_ATTR: ['href', 'target', 'rel', 'data-block-id'],
+    ALLOWED_TAGS: ['p', 'h2', 'h3', 'ul', 'ol', 'li', 'blockquote', 'strong', 'em', 'a', 'br', 'img'],
+    ALLOWED_ATTR: ['href', 'target', 'rel', 'data-block-id', 'src', 'alt', 'title', 'loading'],
+    // Solo http(s)/mailto/tel/anclas/rutas: bloquea javascript: y data: (también en <img src>).
+    ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|tel:|#|\/)/i,
   });
 
   const contentJson = parsed.data.contentJson as Json;

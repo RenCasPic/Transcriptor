@@ -46,7 +46,14 @@ type ContentSource = 'upload' | 'url';
  * (`useMediaUpload`), la de import de YouTube (`useYoutubeImport`), las
  * validaciones y las Server Actions se reutilizan sin cambios.
  */
-export function CreateArticlePanel({ mediaLimits }: { mediaLimits: MediaLimits }) {
+export function CreateArticlePanel({
+  mediaLimits,
+  imagesAvailable = true,
+}: {
+  mediaLimits: MediaLimits;
+  /** Hay clave de OpenAI en el servidor (habilita la opción "Imágenes"). */
+  imagesAvailable?: boolean;
+}) {
   const t = useDictionary();
   const router = useRouter();
 
@@ -75,7 +82,12 @@ export function CreateArticlePanel({ mediaLimits }: { mediaLimits: MediaLimits }
     formState: { errors },
   } = useForm<ArticleConfigInput>({
     resolver: zodResolver(ArticleConfigSchema),
-    defaultValues: { contentType: 'guide', tone: 'professional', targetReadingMinutes: null },
+    defaultValues: {
+      contentType: 'guide',
+      tone: 'professional',
+      targetReadingMinutes: null,
+      imageMode: 'cover_and_inline',
+    },
   });
 
   const maxMb = Math.round(mediaLimits.maxSourceBytes / (1024 * 1024));
@@ -299,7 +311,13 @@ export function CreateArticlePanel({ mediaLimits }: { mediaLimits: MediaLimits }
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             {t.dashboard.customizeTitle}
           </h2>
-          <ArticleConfigFields idPrefix="article" register={register} control={control} errors={errors} />
+          <ArticleConfigFields
+            idPrefix="article"
+            register={register}
+            control={control}
+            errors={errors}
+            imagesAvailable={imagesAvailable}
+          />
         </section>
 
         {/* Progreso / errores — compartidos, según el método activo */}

@@ -54,7 +54,7 @@ export default async function EmbedPage({ params }: EmbedPageProps) {
         </p>
         {document.excerpt && <p className="mt-3 text-lg text-muted-foreground">{document.excerpt}</p>}
         <div
-          className="prose prose-neutral mt-8 max-w-none"
+          className="prose prose-neutral prose-img:my-8 prose-img:w-full prose-img:rounded-xl mt-8 max-w-none"
           dangerouslySetInnerHTML={{ __html: document.contentHtml }}
         />
       </article>

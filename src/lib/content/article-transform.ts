@@ -80,6 +80,17 @@ export function articleNodesToProseMirrorJson(nodes: ArticleNode[], faq: FaqItem
   return { type: 'doc', content } as Json;
 }
 
+/**
+ * `src` de un nodo `image` solo si es una URL http(s): evita `javascript:` y
+ * `data:` en el HTML/Markdown que se genera en el servidor (el HTML guardado
+ * desde el editor además pasa por DOMPurify).
+ */
+export function safeImageSrc(attrs: unknown): string | null {
+  const src = (attrs as { src?: unknown } | null | undefined)?.src;
+  if (typeof src !== 'string') return null;
+  return /^https?:\/\/[^\s"'<>]+$/i.test(src) ? src : null;
+}
+
 function escapeHtml(text: string): string {
   return text
     .replace(/&/g, '&amp;')
@@ -127,6 +138,12 @@ export function proseMirrorJsonToHtml(doc: Json): string {
             .join('');
           return `<${tag}${blockIdAttr}>${items}</${tag}>`;
         }
+        case 'image': {
+          const src = safeImageSrc(block.attrs);
+          if (!src) return '';
+          const alt = escapeHtml(String((block.attrs as { alt?: string | null }).alt ?? ''));
+          return `<img src="${escapeHtml(src)}" alt="${alt}" loading="lazy">`;
+        }
         case 'paragraph':
         default:
           return `<p${blockIdAttr}>${renderInline(content as never)}</p>`;
@@ -172,11 +189,21 @@ export function proseMirrorJsonToMarkdown(doc: Json): string {
               return `${i + 1}. ${renderInline((liContent?.[0]?.content as never) ?? [])}`;
             })
             .join('\n');
+        case 'image': {
+          const src = safeImageSrc(block.attrs);
+          if (!src) return '';
+          const alt = String((block.attrs as { alt?: string | null }).alt ?? '')
+            .replace(/[[\]]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+          return `![${alt}](${src})`;
+        }
         case 'paragraph':
         default:
           return renderInline(content as never);
       }
     })
+    .filter((chunk) => chunk !== '')
     .join('\n\n');
 }
 

@@ -22,22 +22,33 @@ export function ExportMenu({
   title,
   html,
   json,
+  coverImageUrl,
+  coverImageAlt,
   className,
 }: {
   title: string;
   html: string;
   json: Json;
+  coverImageUrl?: string | null;
+  coverImageAlt?: string | null;
   className?: string;
 }) {
   const t = useDictionary();
   const filenameBase = slugify(title) || 'articulo';
 
+  // La portada es un campo aparte del contenido: en las exportaciones va como primera imagen.
+  const cover = coverImageUrl && /^https?:\/\//i.test(coverImageUrl) ? coverImageUrl : null;
+  const coverAlt = (coverImageAlt ?? title).replace(/"/g, '&quot;').replace(/</g, '&lt;');
+
   function handleExportMarkdown() {
-    downloadTextFile(`${filenameBase}.md`, proseMirrorJsonToMarkdown(json), 'text/markdown;charset=utf-8');
+    const body = proseMirrorJsonToMarkdown(json);
+    const coverMd = cover ? `![${(coverImageAlt ?? title).replace(/[[\]]/g, '')}](${cover})\n\n` : '';
+    downloadTextFile(`${filenameBase}.md`, coverMd + body, 'text/markdown;charset=utf-8');
   }
 
   function handleExportHtml() {
-    downloadTextFile(`${filenameBase}.html`, html, 'text/html;charset=utf-8');
+    const coverHtml = cover ? `<img src="${cover}" alt="${coverAlt}">\n` : '';
+    downloadTextFile(`${filenameBase}.html`, coverHtml + html, 'text/html;charset=utf-8');
   }
 
   function handleExportPlainText() {

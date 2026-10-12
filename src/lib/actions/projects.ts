@@ -10,6 +10,7 @@ import {
   UpdateProjectSchema,
   ImportTranscriptSchema,
   ArticleConfigSchema,
+  DEFAULT_IMAGE_MODE,
   type CreateProjectInput,
   type UpdateProjectInput,
   type ImportTranscriptInput,
@@ -116,23 +117,33 @@ export async function createQuickProjectAction(
   const { namePrefix } = QUICK_PROJECT_DEFAULTS[parsed.data.source];
   const name = `${namePrefix} — ${new Date().toLocaleString('es', { dateStyle: 'medium', timeStyle: 'short' })}`;
 
-  const { data, error } = await supabase
-    .from('projects')
-    .insert({
-      workspace_id: workspace.id,
-      created_by: user.id,
-      name,
-      content_type: parsed.data.contentType,
-      tone: parsed.data.tone,
-      language: 'es',
-      audience: parsed.data.audience || null,
-      primary_keyword: parsed.data.primaryKeyword || null,
-      objective: parsed.data.objective || null,
-      call_to_action: parsed.data.callToAction || null,
-      ...targetReadingMinutesInsert(parsed.data.targetReadingMinutes),
-    })
-    .select('id')
-    .single();
+  const row = {
+    workspace_id: workspace.id,
+    created_by: user.id,
+    name,
+    content_type: parsed.data.contentType,
+    tone: parsed.data.tone,
+    language: 'es',
+    audience: parsed.data.audience || null,
+    primary_keyword: parsed.data.primaryKeyword || null,
+    objective: parsed.data.objective || null,
+    call_to_action: parsed.data.callToAction || null,
+    ...targetReadingMinutesInsert(parsed.data.targetReadingMinutes),
+    // El valor por defecto de la BD ya es "portada + imágenes": solo se envía si el usuario eligió otro.
+    ...(parsed.data.imageMode && parsed.data.imageMode !== DEFAULT_IMAGE_MODE
+      ? { image_mode: parsed.data.imageMode }
+      : {}),
+  };
+
+  let { data, error } = await supabase.from('projects').insert(row).select('id').single();
+
+  // Ventana de migración: si `image_mode` aún no existe (migración 0022 sin
+  // aplicar), se crea el proyecto sin esa opción en vez de bloquear la creación.
+  if (error?.code === '42703' && 'image_mode' in row) {
+    const { image_mode: _omit, ...withoutImageMode } = row;
+    void _omit;
+    ({ data, error } = await supabase.from('projects').insert(withoutImageMode).select('id').single());
+  }
 
   if (error || !data) {
     console.error('createQuickProjectAction failed:', error);

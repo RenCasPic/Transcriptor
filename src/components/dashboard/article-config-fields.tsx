@@ -8,8 +8,11 @@ import {
   CONTENT_TYPES,
   ARTICLE_TONES,
   READING_TIME_OPTIONS,
+  IMAGE_MODES,
+  DEFAULT_IMAGE_MODE,
   type ArticleConfigInput,
 } from '@/lib/validations/project';
+import { approxImagesCostUsd } from '@/lib/ai/images/cost';
 import { useDictionary, useLocale } from '@/lib/i18n/dictionary-provider';
 import { getDomainLabels } from '@/lib/i18n/domain-labels';
 
@@ -24,11 +27,14 @@ export function ArticleConfigFields({
   register,
   control,
   errors,
+  imagesAvailable = true,
 }: {
   idPrefix: string;
   register: UseFormRegister<ArticleConfigInput>;
   control: Control<ArticleConfigInput>;
   errors: FieldErrors<ArticleConfigInput>;
+  /** Hay clave de OpenAI en el servidor: sin ella la opción "Imágenes" se deshabilita. */
+  imagesAvailable?: boolean;
 }) {
   const t = useDictionary();
   const locale = useLocale();
@@ -105,6 +111,57 @@ export function ArticleConfigFields({
           )}
         />
         <p className="text-xs text-muted-foreground">{t.projects.new.readingTimeHint}</p>
+      </div>
+
+      <div className="space-y-1.5 sm:col-span-2">
+        <Label htmlFor={`${idPrefix}-imageMode`}>{t.projects.new.imagesLabel}</Label>
+        <Controller
+          control={control}
+          name="imageMode"
+          render={({ field }) => {
+            const value = imagesAvailable ? (field.value ?? DEFAULT_IMAGE_MODE) : 'none';
+            const imageLabels = {
+              none: t.projects.new.imagesNone,
+              cover: t.projects.new.imagesCover,
+              cover_and_inline: t.projects.new.imagesCoverAndInline,
+            } as const;
+            const cost = approxImagesCostUsd(value).toFixed(2);
+            const costHint =
+              value === 'none'
+                ? t.projects.new.imagesCostNone
+                : (value === 'cover' ? t.projects.new.imagesCostCover : t.projects.new.imagesCostFull).replace(
+                    '{cost}',
+                    cost,
+                  );
+            return (
+              <>
+                <Select
+                  value={value}
+                  onValueChange={field.onChange}
+                  disabled={!imagesAvailable}
+                >
+                  <SelectTrigger
+                    id={`${idPrefix}-imageMode`}
+                    title={imagesAvailable ? undefined : t.projects.new.imagesUnavailable}
+                    aria-describedby={`${idPrefix}-imageMode-hint`}
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {IMAGE_MODES.map((mode) => (
+                      <SelectItem key={mode} value={mode}>
+                        {imageLabels[mode]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p id={`${idPrefix}-imageMode-hint`} className="text-xs text-muted-foreground">
+                  {imagesAvailable ? costHint : t.projects.new.imagesUnavailable}
+                </p>
+              </>
+            );
+          }}
+        />
       </div>
 
       <div className="space-y-1.5 sm:col-span-2">

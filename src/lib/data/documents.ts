@@ -16,6 +16,8 @@ export interface ContentDocumentRecord {
   isPublic: boolean;
   coverImageUrl: string | null;
   coverImageAlt: string | null;
+  /** Descripción con la que se generó la portada (null si es subida o de Pexels). */
+  coverImagePrompt: string | null;
   updatedAt: string;
 }
 
@@ -44,6 +46,7 @@ export async function getDocumentByProject(projectId: string): Promise<ContentDo
     isPublic: data.is_public,
     coverImageUrl: data.cover_image_url,
     coverImageAlt: data.cover_image_alt,
+    coverImagePrompt: data.cover_image_prompt ?? null,
     updatedAt: data.updated_at,
   };
 }

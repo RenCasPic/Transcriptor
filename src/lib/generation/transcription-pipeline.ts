@@ -77,6 +77,7 @@ export async function runTranscriptionJob(
   };
 
   const { jobId } = params;
+  const jobStartedAt = Date.now();
 
   const { data: job } = await supabase
     .from('generation_jobs')
@@ -206,6 +207,7 @@ export async function runTranscriptionJob(
       const generated = await deps.runGeneration(supabase, {
         projectId: job.project_id,
         actorId: null,
+        startedAt: jobStartedAt,
       });
       documentId = generated.documentId;
     } else {

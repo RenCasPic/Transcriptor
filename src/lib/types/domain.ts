@@ -74,6 +74,7 @@ export const WARNING_TYPE_LABELS: Record<WarningType, string> = {
   date_verification: 'Verificar fecha',
   possible_hallucination: 'Posible alucinación',
   missing_source: 'Fuente faltante',
+  image_generation: 'Imagen no generada',
 };
 
 export const WARNING_STATUS_LABELS: Record<WarningStatus, string> = {

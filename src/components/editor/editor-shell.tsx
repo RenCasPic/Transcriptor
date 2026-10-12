@@ -12,6 +12,7 @@ import { RegenerateButton } from './regenerate-button';
 import { SaveStatusIndicator } from './save-status-indicator';
 import { ExportMenu } from './export-menu';
 import { EmbedButton } from './embed-button';
+import type { CoverState } from './editor-cover';
 import type { AutosaveStatus } from '@/lib/editor/use-autosave';
 import type { TranscriptSegmentItem } from '@/lib/data/transcripts';
 import type { ContentDocumentRecord } from '@/lib/data/documents';
@@ -44,6 +45,7 @@ export function EditorShell({
   sourceLinks,
   versions,
   currentUserId,
+  imagesAvailable = true,
 }: {
   project: ProjectRow;
   document: ContentDocumentRecord;
@@ -53,12 +55,19 @@ export function EditorShell({
   sourceLinks: SourceLinkRow[];
   versions: DocumentVersionItem[];
   currentUserId: string | null;
+  /** Hay clave de OpenAI en el servidor (habilita generar imágenes con IA en el editor). */
+  imagesAvailable?: boolean;
 }) {
   const t = useDictionary();
   const [selectedSegmentId, setSelectedSegmentId] = useState<string | null>(null);
   const [panelSheetOpen, setPanelSheetOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
   const [saveStatus, setSaveStatus] = useState<AutosaveStatus>('idle');
+  const [cover, setCover] = useState<CoverState>({
+    url: document.coverImageUrl,
+    alt: document.coverImageAlt,
+    prompt: document.coverImagePrompt,
+  });
   const [snapshot, setSnapshot] = useState({
     plainText: '',
     html: document.contentHtml,
@@ -147,6 +156,8 @@ export function EditorShell({
             title={document.title}
             html={snapshot.html}
             json={snapshot.json}
+            coverImageUrl={cover.url}
+            coverImageAlt={cover.alt}
             className="hidden gap-1.5 sm:inline-flex"
           />
           <EmbedButton documentId={document.id} initialIsPublic={document.isPublic} />
@@ -171,8 +182,8 @@ export function EditorShell({
             title={document.title}
             html={snapshot.html}
             wordCount={snapshot.wordCount}
-            coverImageUrl={document.coverImageUrl}
-            coverImageAlt={document.coverImageAlt}
+            coverImageUrl={cover.url}
+            coverImageAlt={cover.alt}
             onClose={() => setPreviewMode(false)}
           />
         </div>
@@ -186,8 +197,12 @@ export function EditorShell({
             initialVersion={document.version}
             initialWordCount={document.wordCount}
             updatedAt={document.updatedAt}
-            coverImageUrl={document.coverImageUrl}
-            coverImageAlt={document.coverImageAlt}
+            coverImageUrl={cover.url}
+            coverImageAlt={cover.alt}
+            coverImagePrompt={cover.prompt}
+            workspaceId={project.workspace_id}
+            imagesAvailable={imagesAvailable}
+            onCoverChange={setCover}
             onContentSnapshot={(next) => setSnapshot(next)}
             onSaveStatusChange={setSaveStatus}
           />

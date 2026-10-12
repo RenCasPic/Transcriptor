@@ -20,6 +20,10 @@ export const ARTICLE_TONES = [
   'friendly',
 ] as const;
 
+/** Opciones de la lista "Imágenes" al crear el artículo (la primera vez, el valor por defecto es el último). */
+export const IMAGE_MODES = ['none', 'cover', 'cover_and_inline'] as const;
+export const DEFAULT_IMAGE_MODE = 'cover_and_inline' as const;
+
 /**
  * Opciones de "tiempo de lectura objetivo" (minutos). El valor controla la
  * extensión del artículo generado (≈ minutos * 200 palabras). `null` =
@@ -44,6 +48,8 @@ export const CreateProjectSchema = z.object({
   objective: z.string().max(500).optional().or(z.literal('')),
   callToAction: z.string().max(300).optional().or(z.literal('')),
   targetReadingMinutes: targetReadingMinutesSchema.optional(),
+  /** Qué imágenes generar con IA al crear el artículo (por defecto: portada + imágenes en el artículo). */
+  imageMode: z.enum(IMAGE_MODES).optional(),
 });
 
 export type CreateProjectInput = z.infer<typeof CreateProjectSchema>;

@@ -59,6 +59,7 @@ const es: DomainLabels = {
     date_verification: 'Verificar fecha',
     possible_hallucination: 'Posible alucinación',
     missing_source: 'Fuente faltante',
+    image_generation: 'Imagen no generada',
   },
   warningStatus: {
     open: 'Abierta',
@@ -117,6 +118,7 @@ const en: DomainLabels = {
     date_verification: 'Verify date',
     possible_hallucination: 'Possible hallucination',
     missing_source: 'Missing source',
+    image_generation: 'Image not generated',
   },
   warningStatus: {
     open: 'Open',

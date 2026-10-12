@@ -1,5 +1,6 @@
 import type { GeneratedArticle, SeoMetadata } from '@/lib/validations/article';
 import type { ArticleTone, ContentType } from '@/lib/types/database';
+import type { ArticleSection, ImagePlan, ImagePlanItem } from '@/lib/images/plan';
 
 export interface TranscriptSegmentInput {
   id: string;
@@ -60,11 +61,35 @@ export interface SeoInput {
   language: string;
 }
 
+export interface ImagePlanInput {
+  title: string;
+  excerpt: string;
+  language: string;
+  sections: ArticleSection[];
+  /** Cuántas imágenes dentro del artículo (0 = ninguna). */
+  inlineCount: number;
+  includeCover: boolean;
+}
+
+export interface ImageSuggestionInput {
+  title: string;
+  text: string;
+  language: string;
+}
+
 /** Abstracción sobre cualquier proveedor de generación de contenido con IA. */
 export interface ContentGenerationProvider {
   generateArticle(input: GenerateArticleInput): Promise<GeneratedArticle>;
   rewriteSection(input: RewriteSectionInput): Promise<string>;
   generateSeoMetadata(input: SeoInput): Promise<SeoMetadata>;
+  /**
+   * Escribe las descripciones visuales (prompts de imagen) + texto alternativo de
+   * la portada y de las secciones elegidas, a partir del contenido real. Devuelve
+   * el plan sin normalizar: lo valida `normalizeImagePlan`.
+   */
+  planArticleImages(input: ImagePlanInput): Promise<ImagePlan>;
+  /** Sugiere la descripción (prompt + alt) de una imagen para un fragmento de texto. */
+  suggestImagePrompt(input: ImageSuggestionInput): Promise<ImagePlanItem>;
 }
 
 export interface TranscriptionInput {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
@@ -9,6 +9,12 @@ import TextAlign from '@tiptap/extension-text-align';
 import { Undo2, Redo2, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { BlockId } from '@/lib/editor/block-id-extension';
+import { ArticleImage } from './article-image-extension';
+import { EditorCover, type CoverState } from './editor-cover';
+import { EditorImageProvider } from './image-context';
+import { ImageGenerateDialog } from './image-generate-dialog';
+import { ImageUploadError, uploadImageFile } from '@/lib/images/client-upload';
+import { MEDIA_UPLOAD_ACCEPT } from '@/lib/images/accept';
 import { useAutosave, type AutosaveStatus } from '@/lib/editor/use-autosave';
 import { countWords, estimateReadingTimeMinutes } from '@/lib/content/metrics';
 import { rewriteSectionAction } from '@/lib/actions/editor';
@@ -44,6 +50,10 @@ export function ArticleEditor({
   updatedAt,
   coverImageUrl,
   coverImageAlt,
+  coverImagePrompt,
+  workspaceId,
+  imagesAvailable = true,
+  onCoverChange,
   onContentSnapshot,
   onSaveStatusChange,
 }: {
@@ -56,6 +66,11 @@ export function ArticleEditor({
   updatedAt?: string;
   coverImageUrl?: string | null;
   coverImageAlt?: string | null;
+  coverImagePrompt?: string | null;
+  workspaceId: string;
+  /** Hay clave de OpenAI en el servidor (habilita generar/regenerar imágenes con IA). */
+  imagesAvailable?: boolean;
+  onCoverChange?: (cover: CoverState) => void;
   onContentSnapshot?: (snapshot: { plainText: string; html: string; json: Json; wordCount: number }) => void;
   onSaveStatusChange?: (status: AutosaveStatus) => void;
 }) {
@@ -77,7 +92,16 @@ export function ArticleEditor({
   const [title, setTitle] = useState(initialTitle);
   const [liveWordCount, setLiveWordCount] = useState(initialWordCount);
   const [rewriteState, setRewriteState] = useState<RewriteState | null>(null);
-  const { status, scheduleSave } = useAutosave(documentId, initialVersion);
+  const { status, scheduleSave, flushNow } = useAutosave(documentId, initialVersion);
+  const [cover, setCover] = useState<CoverState>({
+    url: coverImageUrl ?? null,
+    alt: coverImageAlt ?? null,
+    prompt: coverImagePrompt ?? null,
+  });
+  const [insertDialog, setInsertDialog] = useState<{ pos: number; text: string } | null>(null);
+  const [insertUploading, setInsertUploading] = useState(false);
+  const insertFileRef = useRef<HTMLInputElement>(null);
+  const insertPosRef = useRef<number | null>(null);
   const titleRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -91,6 +115,7 @@ export function ArticleEditor({
       Placeholder.configure({ placeholder: t.editor.contentPlaceholder }),
       TextAlign.configure({ types: ['paragraph', 'heading'], alignments: ['left', 'center', 'right', 'justify'] }),
       BlockId,
+      ArticleImage,
     ],
     content: initialContentJson as object,
     immediatelyRender: false,
@@ -205,6 +230,79 @@ export function ArticleEditor({
     setRewriteState(null);
   }
 
+  /** Tras cambiar una imagen: guarda al instante y deja una versión en el historial. */
+  const commitImageChange = useCallback(
+    (reason: string) => {
+      void (async () => {
+        await flushNow();
+        await createVersionAction({ documentId, reason });
+      })();
+    },
+    [flushNow, documentId],
+  );
+
+  const imageContext = useMemo(
+    () => ({ documentId, projectId, workspaceId, imagesAvailable, commitImageChange }),
+    [documentId, projectId, workspaceId, imagesAvailable, commitImageChange],
+  );
+
+  function handleCoverChange(next: CoverState) {
+    setCover(next);
+    onCoverChange?.(next);
+  }
+
+  /** Posición (final del bloque donde está el cursor) y texto de ese bloque, para insertar una imagen debajo. */
+  function currentInsertionPoint(): { pos: number; text: string } | null {
+    if (!editor) return null;
+    const { $from } = editor.state.selection;
+    if ($from.depth < 1) return { pos: $from.pos, text: '' };
+    return { pos: $from.after(1), text: $from.node(1).textContent };
+  }
+
+  function insertImageNode(pos: number, image: { src: string; alt: string; prompt: string | null }, reason: string) {
+    if (!editor) return;
+    editor
+      .chain()
+      .focus()
+      .insertContentAt(pos, { type: 'image', attrs: { src: image.src, alt: image.alt, title: null, prompt: image.prompt } })
+      .run();
+    commitImageChange(reason);
+    toast.success(t.editor.images.inserted);
+  }
+
+  function handleInsertImage(mode: 'ai' | 'upload') {
+    const point = currentInsertionPoint();
+    if (!point) return;
+    if (mode === 'ai') {
+      setInsertDialog(point);
+    } else {
+      insertPosRef.current = point.pos;
+      insertFileRef.current?.click();
+    }
+  }
+
+  async function handleInsertFile(file: File | undefined) {
+    const pos = insertPosRef.current;
+    if (!file || pos === null) return;
+    setInsertUploading(true);
+    try {
+      const { url } = await uploadImageFile(file, { workspaceId, projectId });
+      insertImageNode(pos, { src: url, alt: title, prompt: null }, t.editor.images.versionInserted);
+    } catch (error) {
+      const code = error instanceof ImageUploadError ? error.code : 'UPLOAD';
+      toast.error(
+        code === 'TYPE'
+          ? t.editor.images.uploadTypeError
+          : code === 'SIZE'
+            ? t.editor.images.uploadSizeError
+            : t.editor.images.uploadFailed,
+      );
+    } finally {
+      setInsertUploading(false);
+      insertPosRef.current = null;
+    }
+  }
+
   if (!editor) {
     return (
       <Card className="min-w-0 space-y-5 p-6 sm:p-10">
@@ -223,14 +321,15 @@ export function ArticleEditor({
   return (
     <Card className="flex min-w-0 flex-col p-6 sm:p-10">
       <header>
-        {coverImageUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={coverImageUrl}
-            alt={coverImageAlt ?? ''}
-            className="mb-8 aspect-[16/6] w-full rounded-lg border object-cover"
-          />
-        )}
+        <EditorCover
+          documentId={documentId}
+          projectId={projectId}
+          workspaceId={workspaceId}
+          title={title}
+          imagesAvailable={imagesAvailable}
+          cover={cover}
+          onChange={handleCoverChange}
+        />
 
         <div className="flex items-start gap-2">
           <textarea
@@ -305,11 +404,51 @@ export function ArticleEditor({
         </div>
       </header>
 
-      <EditorToolbar editor={editor} onAiAction={handleAction} disabled={!!rewriteState} />
+      <EditorToolbar
+        editor={editor}
+        onAiAction={handleAction}
+        onInsertImage={handleInsertImage}
+        imagesAvailable={imagesAvailable}
+        disabled={!!rewriteState || insertUploading}
+      />
 
       <div className="pb-16 pt-8">
-        <EditorContent editor={editor} />
+        <EditorImageProvider value={imageContext}>
+          <EditorContent editor={editor} />
+        </EditorImageProvider>
       </div>
+
+      <input
+        ref={insertFileRef}
+        type="file"
+        accept={MEDIA_UPLOAD_ACCEPT}
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = '';
+          void handleInsertFile(file);
+        }}
+      />
+
+      <ImageGenerateDialog
+        open={!!insertDialog}
+        onOpenChange={(open) => !open && setInsertDialog(null)}
+        documentId={documentId}
+        title={t.editor.images.insertTitle}
+        description={t.editor.images.insertDescription}
+        initialPrompt=""
+        initialAlt=""
+        suggestFromText={insertDialog?.text || title}
+        imagesAvailable={imagesAvailable}
+        onAccept={(choice) => {
+          if (!insertDialog) return;
+          insertImageNode(
+            insertDialog.pos,
+            { src: choice.url, alt: choice.alt || title, prompt: choice.prompt },
+            t.editor.images.versionInserted,
+          );
+        }}
+      />
 
       <RewritePreviewDialog
         open={!!rewriteState}

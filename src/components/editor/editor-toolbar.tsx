@@ -16,6 +16,8 @@ import {
   List,
   Sparkles,
   SpellCheck,
+  ImagePlus,
+  Upload,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -38,10 +40,15 @@ import { alignText, isTextAligned } from '@/lib/editor/text-align';
 export function EditorToolbar({
   editor,
   onAiAction,
+  onInsertImage,
+  imagesAvailable = true,
   disabled = false,
 }: {
   editor: Editor;
   onAiAction: (instruction: RewriteInstruction) => void;
+  /** Inserta una imagen debajo del bloque donde está el cursor (generada con IA o subida). */
+  onInsertImage?: (mode: 'ai' | 'upload') => void;
+  imagesAvailable?: boolean;
   disabled?: boolean;
 }) {
   const t = useDictionary();
@@ -137,6 +144,30 @@ export function EditorToolbar({
       <button type="button" title={t.editor.toolbar.bulletList} disabled={disabled} className={cn(btn, editor.isActive('bulletList') && btnActive)} onClick={() => editor.chain().focus().toggleBulletList().run()}>
         <List className="h-4 w-4" />
       </button>
+      {onInsertImage && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button type="button" title={t.editor.toolbar.insertImage} disabled={disabled} className={btn}>
+              <ImagePlus className="h-4 w-4" />
+              <span className="sr-only">{t.editor.toolbar.insertImage}</span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem
+              disabled={!imagesAvailable}
+              title={imagesAvailable ? undefined : t.editor.images.unavailableHint}
+              onClick={() => onInsertImage('ai')}
+            >
+              <Sparkles className="h-4 w-4" />
+              {t.editor.images.insertAi}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onInsertImage('upload')}>
+              <Upload className="h-4 w-4" />
+              {t.editor.images.insertUpload}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
       {ALIGN_OPTIONS.map((opt) => {
         const Icon = opt.icon;
         return (

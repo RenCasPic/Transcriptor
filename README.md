@@ -87,6 +87,9 @@ AI_PROVIDER=openai     # openai (default) | anthropic | groq
 AI_API_KEY=            # key del proveedor de IA (para OpenAI empieza por "sk-")
 AI_MODEL=              # opcional; default: openai -> gpt-4o-mini
 AI_MAX_PROMPT_TOKENS=  # opcional; tope de tokens de entrada (default 110000)
+AI_IMAGE_MODEL=        # opcional; modelo de imágenes (default gpt-image-2.5-flare)
+AI_IMAGE_QUALITY=      # opcional; low | medium | high | auto (default medium)
+AI_IMAGE_SIZE=         # opcional; 1536x1024 (default) | 1024x1024 | 1024x1536 | auto
 ```
 
 - **`openai`** (default, modelo `gpt-4o-mini`): barato (fracciones de céntimo por artículo) y con 128k de contexto — **cabe cualquier transcripción realista de una sola pasada** (hasta varias horas). Necesitas una cuenta con saldo.
@@ -94,6 +97,20 @@ AI_MAX_PROMPT_TOKENS=  # opcional; tope de tokens de entrada (default 110000)
 - **`groq`**: `AI_API_KEY` (o `GROQ_API_KEY`). ⚠️ El plan **gratuito** de Groq limita a ~8000 tokens/min por modelo: sirve para transcripción pero **no** para generar artículos de contenido real (`413`). Solo úsalo para generación con el **Dev Tier** de Groq.
 
 **La generación de artículos requiere una API key.** Sin `AI_API_KEY` (ni `GROQ_API_KEY` cuando `AI_PROVIDER=groq`), `generateArticleAction` devuelve un `ActionResult` de error explícito (`AI_NOT_CONFIGURED`) — no hay proveedor "mock" ni contenido de ejemplo.
+
+#### Imágenes con IA (OpenAI)
+
+> Requiere la migración `0022` aplicada (`supabase db push`, o pega
+> `supabase/migrations/0022_article_images.sql` en el SQL Editor de Supabase).
+
+En "Crea tu artículo" hay una opción **Imágenes**: *Sin imágenes*, *Solo portada* o *Portada + imágenes en el artículo* (por defecto). Después de redactar las secciones, la IA de texto escribe la descripción visual de cada imagen a partir del contenido real de su sección (estilo fotográfico editorial coherente, **sin texto ni logos**, con texto alternativo en el idioma del artículo) y se generan con la API de imágenes de OpenAI, como máximo **3 a la vez**: una portada y una imagen cada 2-3 secciones H2 (máximo 4). Se guardan en el bucket público `article-images` de Supabase Storage (cada workspace solo gestiona las suyas) y se insertan como nodos de imagen justo después del H2 de su sección.
+
+- **Usa la misma `AI_API_KEY`** que los textos (requiere `AI_PROVIDER=openai`). Sin clave, la opción queda deshabilitada y la portada sigue viniendo de Pexels.
+- **Costo aproximado:** ~US$0.04 por imagen con los valores por defecto (calidad `medium`, `1536x1024`): *Solo portada* ≈ US$0.04 y *Portada + imágenes* hasta ≈ US$0.20 por artículo. Depende del modelo y de la tarifa vigente de OpenAI.
+- **Nunca rompe la generación:** si una imagen falla (contenido rechazado, sin créditos, tiempo agotado...), el artículo se guarda completo sin esa imagen y se muestra un aviso en el panel de alertas del editor. Si falla la portada, se usa Pexels. Si tras redactar el texto queda poco tiempo (`maxDuration = 300`), el texto se guarda primero y las imágenes se generan en segundo plano (`after()`) y se insertan al terminar.
+- **En el editor:** al pasar el cursor sobre una imagen hay *Regenerar* (descripción editable → vista previa → aceptar/descartar), *Reemplazar* (subir tu propia imagen JPG/PNG/WebP de hasta 10 MB), *Editar texto alternativo* y *Eliminar*. La barra tiene un botón para insertar una imagen donde está el cursor y la portada tiene *Regenerar portada* / *Subir portada*. Cada cambio se autoguarda y queda en el historial de versiones.
+- Las imágenes se ven en el editor, la vista previa, `/embed`, la exportación HTML (`<img alt>`) y Markdown (`![alt](url)`).
+- **Errores claros:** sin clave, sin créditos, contenido rechazado por OpenAI, límite de solicitudes o verificación de organización pendiente (OpenAI puede exigirla para los modelos de imágenes).
 
 **Longitud del artículo (transcripciones largas).** gpt-4o-mini no desarrolla bien una transcripción larga en una sola llamada: la comprime en un resumen corto aunque le quepa en contexto. Para transcripciones de más de `AI_SINGLE_PASS_MAX_SEGMENTS` segmentos (~70, ≈ 8 min) la generación pasa a **varias etapas**:
 

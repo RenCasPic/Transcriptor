@@ -6,6 +6,7 @@ import { getDictionary } from '@/lib/i18n/get-dictionary';
 import { isTranscriptionConfigured } from '@/lib/ai/transcription';
 import { isContentGenerationConfigured } from '@/lib/ai/providers';
 import { getMediaLimits } from '@/lib/media/limits';
+import { isImageGenerationConfigured } from '@/lib/ai/images/config';
 
 // "Generar artículo" encadena `generateArticleAction`, que para transcripciones
 // largas puede tardar 1-2 min (generación en dos etapas).
@@ -41,7 +42,7 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <CreateArticlePanel mediaLimits={getMediaLimits()} />
+      <CreateArticlePanel mediaLimits={getMediaLimits()} imagesAvailable={isImageGenerationConfigured()} />
     </div>
   );
 }

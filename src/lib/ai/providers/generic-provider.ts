@@ -1,9 +1,19 @@
 import type {
   ContentGenerationProvider,
   GenerateArticleInput,
+  ImagePlanInput,
+  ImageSuggestionInput,
   RewriteSectionInput,
   SeoInput,
 } from '@/lib/ai/provider';
+import {
+  ImagePlanRawSchema,
+  ImagePromptSuggestionSchema,
+  normalizeImagePlan,
+  type ImagePlan,
+  type ImagePlanItem,
+} from '@/lib/images/plan';
+import { buildImagePlanPrompt, buildImageSuggestionPrompt } from '@/lib/prompts/images';
 import {
   GeneratedArticleSchema,
   SeoMetadataSchema,
@@ -95,7 +105,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * Respeta `retry-after` (o el "try again in Xs" del cuerpo) para el tiempo de
  * espera, con un tope.
  */
-async function postWithRetry(url: string, init: RequestInit): Promise<Response> {
+export async function postWithRetry(url: string, init: RequestInit): Promise<Response> {
   for (let attempt = 0; ; attempt++) {
     let response: Response;
     try {
@@ -277,6 +287,15 @@ function remapSegmentRefs(article: GeneratedArticle, input: GenerateArticleInput
     ...article,
     content: article.content.map((node) => ({ ...node, sourceSegmentIds: mapRefs(node.sourceSegmentIds) })),
     faq: article.faq.map((item) => ({ ...item, sourceSegmentIds: mapRefs(item.sourceSegmentIds) })),
+  };
+}
+
+/** Añade el estilo visual común a cada descripción del plan (coherencia entre imágenes). */
+function withSharedStyle(plan: ImagePlan, style: string): ImagePlan {
+  const suffix = ` Shared visual style: ${style.trim().replace(/\.$/, '')}.`;
+  return {
+    cover: plan.cover ? { ...plan.cover, prompt: plan.cover.prompt + suffix } : null,
+    inline: plan.inline.map((item) => ({ ...item, prompt: item.prompt + suffix })),
   };
 }
 
@@ -539,6 +558,33 @@ ${ARTICLE_JSON_SHAPE}`;
       maxTokens: 1024,
     });
     return text.trim();
+  }
+
+  async planArticleImages(input: ImagePlanInput): Promise<ImagePlan> {
+    const raw = await this.caller.call({
+      system: JSON_SYSTEM_PROMPT,
+      prompt: buildImagePlanPrompt(input),
+      maxTokens: 1800,
+      jsonMode: true,
+    });
+    const parsed = ImagePlanRawSchema.safeParse(extractJson(raw));
+    if (!parsed.success) throw new Error('AI_PROVIDER_INVALID_IMAGE_PLAN');
+    const plan = normalizeImagePlan(parsed.data, input);
+    // El estilo común viaja dentro de cada descripción para que las imágenes sean coherentes.
+    const style = (extractJson(raw) as { style?: unknown }).style;
+    return typeof style === 'string' && style.trim() ? withSharedStyle(plan, style) : plan;
+  }
+
+  async suggestImagePrompt(input: ImageSuggestionInput): Promise<ImagePlanItem> {
+    const raw = await this.caller.call({
+      system: JSON_SYSTEM_PROMPT,
+      prompt: buildImageSuggestionPrompt(input),
+      maxTokens: 500,
+      jsonMode: true,
+    });
+    const parsed = ImagePromptSuggestionSchema.safeParse(extractJson(raw));
+    if (!parsed.success) throw new Error('AI_PROVIDER_INVALID_IMAGE_PLAN');
+    return parsed.data;
   }
 
   async generateSeoMetadata(input: SeoInput): Promise<SeoMetadata> {
