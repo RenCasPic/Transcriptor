@@ -27,6 +27,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useDictionary } from '@/lib/i18n/dictionary-provider';
 import type { RewriteInstruction } from '@/lib/ai/provider';
+import { alignText, isTextAligned } from '@/lib/editor/text-align';
 
 /**
  * Barra horizontal de edición de texto, siempre visible sobre el artículo.
@@ -144,8 +145,8 @@ export function EditorToolbar({
             type="button"
             title={opt.label}
             disabled={disabled}
-            className={cn(btn, editor.isActive({ textAlign: opt.value }) && btnActive)}
-            onClick={() => editor.chain().focus().setTextAlign(opt.value).run()}
+            className={cn(btn, isTextAligned(editor, opt.value) && btnActive)}
+            onClick={() => alignText(editor, opt.value)}
           >
             <Icon className="h-4 w-4" />
           </button>
