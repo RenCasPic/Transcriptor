@@ -31,12 +31,15 @@ export function Header({ userName }: { userName: string }) {
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
           <Sparkles className="h-4 w-4" />
         </div>
-        <span className="hidden min-[440px]:inline">{dictionary.common.appName}</span>
+        {dictionary.common.appName}
       </Link>
 
       <div className="flex items-center gap-1">
-        <LanguageSwitcher />
-        <ThemeSwitcher />
+        {/* En pantallas estrechas los selectores pasan al menú del avatar. */}
+        <div className="hidden items-center gap-1 min-[440px]:flex">
+          <LanguageSwitcher />
+          <ThemeSwitcher />
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="gap-2 px-2">
@@ -46,7 +49,12 @@ export function Header({ userName }: { userName: string }) {
               <span className="hidden text-sm font-medium sm:inline">{userName}</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuContent align="end" className="w-56 min-[440px]:w-48">
+            <div className="space-y-2 px-2 py-1.5 min-[440px]:hidden">
+              <LanguageSwitcher className="flex w-full [&>button]:flex-1" />
+              <ThemeSwitcher className="flex w-full" />
+            </div>
+            <DropdownMenuSeparator className="min-[440px]:hidden" />
             <DropdownMenuItem asChild>
               <Link href="/settings/profile" className="flex items-center gap-2">
                 <User className="h-4 w-4" />

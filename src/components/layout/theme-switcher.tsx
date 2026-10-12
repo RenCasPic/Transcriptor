@@ -12,9 +12,10 @@ const ICONS: Record<Theme, typeof Sun> = { light: Sun, dark: Moon, system: Monit
 /**
  * Selector de tema "☀ Claro | 🌙 Oscuro | 🖥 Sistema": las tres opciones siempre
  * visibles y un solo clic para cambiar. Mismo formato que LanguageSwitcher; en
- * pantallas menores a lg muestra solo los iconos.
+ * pantallas menores a lg muestra solo los iconos (salvo `showLabels`, que
+ * muestra siempre los nombres, p. ej. dentro del menú móvil).
  */
-export function ThemeSwitcher({ className }: { className?: string }) {
+export function ThemeSwitcher({ className, showLabels = false }: { className?: string; showLabels?: boolean }) {
   const t = useDictionary();
   const { theme, setTheme } = useTheme();
 
@@ -50,12 +51,12 @@ export function ThemeSwitcher({ className }: { className?: string }) {
             aria-pressed={active}
             onClick={() => setTheme(value)}
             className={cn(
-              'inline-flex h-full items-center justify-center gap-1.5 rounded-[0.3rem] px-1.5 leading-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:px-2.5',
+              'inline-flex h-full flex-1 items-center justify-center gap-1.5 rounded-[0.3rem] px-1.5 leading-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:px-2.5',
               active ? 'bg-accent font-bold text-primary' : 'font-medium text-muted-foreground hover:text-foreground',
             )}
           >
             <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
-            <span className="hidden lg:inline">{copy[value].label}</span>
+            <span className={showLabels ? undefined : 'hidden lg:inline'}>{copy[value].label}</span>
           </button>
         );
       })}

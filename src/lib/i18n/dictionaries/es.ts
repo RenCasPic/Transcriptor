@@ -41,6 +41,7 @@ export const es = {
     switchTo: 'Cambiar idioma',
   },
   theme: {
+    label: 'Tema',
     toggle: 'Cambiar tema',
     lightTitle: 'Tema claro',
     darkTitle: 'Tema oscuro',
@@ -87,6 +88,7 @@ export const es = {
     ctaTitle: 'Prueba tu primer artículo hoy',
     ctaSubtitle: 'Crea tu cuenta y pruébalo gratis con un ejemplo, sin configurar nada.',
     pricingNav: 'Precios',
+    menu: 'Menú',
     footerRights: 'Todos los derechos reservados.',
   },
   pricing: {

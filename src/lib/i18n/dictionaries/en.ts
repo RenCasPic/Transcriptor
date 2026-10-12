@@ -39,6 +39,7 @@ export const en: Dictionary = {
     switchTo: 'Change language',
   },
   theme: {
+    label: 'Theme',
     toggle: 'Change theme',
     lightTitle: 'Light theme',
     darkTitle: 'Dark theme',
@@ -85,6 +86,7 @@ export const en: Dictionary = {
     ctaTitle: 'Try your first article today',
     ctaSubtitle: 'Create your account and try it for free with an example — no setup needed.',
     pricingNav: 'Pricing',
+    menu: 'Menu',
     footerRights: 'All rights reserved.',
   },
   pricing: {
