@@ -14,6 +14,7 @@ import { ArticleConfigFields } from './article-config-fields';
 import { ImportErrorPanel } from './import-error-panel';
 import { youtubeImportErrorPresentation } from './youtube-import-error-presentation';
 import { MediaProcessingStatus } from '@/components/projects/media-processing-status';
+import { GeneratingProgress } from '@/components/dashboard/generating-progress';
 import { ArticleConfigSchema, type ArticleConfigInput } from '@/lib/validations/project';
 import {
   createQuickProjectAction,
@@ -287,12 +288,6 @@ export function CreateArticlePanel({ mediaLimits }: { mediaLimits: MediaLimits }
                 onChange={(e) => setVideoUrl(e.target.value)}
                 disabled={isSubmitting}
               />
-              {isSubmitting && (
-                <p className="flex items-center gap-2 pt-1 text-xs text-muted-foreground">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  {t.dashboard.generatingHint}
-                </p>
-              )}
             </div>
           )}
         </section>
@@ -322,6 +317,8 @@ export function CreateArticlePanel({ mediaLimits }: { mediaLimits: MediaLimits }
             }}
           />
         )}
+
+        {source !== 'upload' && isSubmitting && <GeneratingProgress label={t.dashboard.generatingHint} />}
 
         {uploadError && (
           <ImportErrorPanel
