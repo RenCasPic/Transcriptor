@@ -98,7 +98,7 @@ export function ArticleEditor({
     alt: coverImageAlt ?? null,
     prompt: coverImagePrompt ?? null,
   });
-  const [insertDialog, setInsertDialog] = useState<{ pos: number; text: string } | null>(null);
+  const [insertDialog, setInsertDialog] = useState<{ pos: number; text: string; key: string } | null>(null);
   const [insertUploading, setInsertUploading] = useState(false);
   const insertFileRef = useRef<HTMLInputElement>(null);
   const insertPosRef = useRef<number | null>(null);
@@ -259,12 +259,25 @@ export function ArticleEditor({
     return { pos: $from.after(1), text: $from.node(1).textContent };
   }
 
-  function insertImageNode(pos: number, image: { src: string; alt: string; prompt: string | null }, reason: string) {
+  function insertImageNode(
+    pos: number,
+    image: { src: string; alt: string; prompt: string | null; imageId?: string },
+    reason: string,
+  ) {
     if (!editor) return;
     editor
       .chain()
       .focus()
-      .insertContentAt(pos, { type: 'image', attrs: { src: image.src, alt: image.alt, title: null, prompt: image.prompt } })
+      .insertContentAt(pos, {
+        type: 'image',
+        attrs: {
+          src: image.src,
+          alt: image.alt,
+          title: null,
+          prompt: image.prompt,
+          imageId: image.imageId ?? crypto.randomUUID(),
+        },
+      })
       .run();
     commitImageChange(reason);
     toast.success(t.editor.images.inserted);
@@ -274,7 +287,8 @@ export function ArticleEditor({
     const point = currentInsertionPoint();
     if (!point) return;
     if (mode === 'ai') {
-      setInsertDialog(point);
+      // Cada imagen nueva tiene su propia clave (y su propio límite de regeneraciones).
+      setInsertDialog({ ...point, key: crypto.randomUUID() });
     } else {
       insertPosRef.current = point.pos;
       insertFileRef.current?.click();
@@ -434,6 +448,7 @@ export function ArticleEditor({
         open={!!insertDialog}
         onOpenChange={(open) => !open && setInsertDialog(null)}
         documentId={documentId}
+        imageKey={insertDialog?.key ?? 'pending'}
         title={t.editor.images.insertTitle}
         description={t.editor.images.insertDescription}
         initialPrompt=""
@@ -444,7 +459,7 @@ export function ArticleEditor({
           if (!insertDialog) return;
           insertImageNode(
             insertDialog.pos,
-            { src: choice.url, alt: choice.alt || title, prompt: choice.prompt },
+            { src: choice.url, alt: choice.alt || title, prompt: choice.prompt, imageId: insertDialog.key },
             t.editor.images.versionInserted,
           );
         }}

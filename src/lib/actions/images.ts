@@ -14,6 +14,11 @@ import {
   type ImageErrorCode,
 } from '@/lib/ai/images/openai-image';
 import { finalizeImagePrompt } from '@/lib/images/plan';
+import {
+  getMaxRegenerationsPerImage,
+  isMissingRegenerationSchema,
+  remainingRegenerations,
+} from '@/lib/images/limits';
 import { deleteArticleImage, pathFromPublicUrl, uploadArticleImage } from '@/lib/images/storage';
 import { createVersionAction } from '@/lib/actions/versions';
 
@@ -54,16 +59,21 @@ const GenerateImageSchema = z.object({
   documentId: z.string().uuid(),
   /** Descripción visual de la imagen (la edita el usuario). */
   prompt: z.string().trim().min(5, 'Escribe una descripción de al menos 5 caracteres.').max(1000),
+  /** Qué imagen se regenera: 'cover' o el id de la imagen del cuerpo (para el límite por imagen). */
+  imageKey: z.string().trim().min(1).max(80),
 });
 
 /**
  * Genera UNA imagen a partir de una descripción y la sube al bucket del
  * workspace. Devuelve su URL pública para mostrarla como vista previa: el
  * documento NO se modifica hasta que el usuario la acepta en el editor.
+ *
+ * Cada imagen tiene un tope de generaciones (`AI_IMAGE_MAX_REGENERATIONS`, 3 por
+ * defecto): se reserva una antes de llamar a la IA y, si la IA falla, se devuelve.
  */
 export async function generateArticleImageAction(
   input: z.infer<typeof GenerateImageSchema>,
-): Promise<ActionResult<{ url: string; path: string }>> {
+): Promise<ActionResult<{ url: string; path: string; remaining: number; max: number }>> {
   const parsed = GenerateImageSchema.safeParse(input);
   if (!parsed.success) return err('VALIDATION_ERROR', parsed.error.issues[0]?.message ?? 'Datos inválidos.');
 
@@ -80,6 +90,28 @@ export async function generateArticleImageAction(
     );
   }
 
+  // Tope de generaciones por imagen: se reserva una ANTES de gastar en la IA.
+  const max = getMaxRegenerationsPerImage();
+  let used = 1;
+  let reserved = false;
+  const reservation = await ctx.supabase.rpc('use_image_regeneration', {
+    p_document_id: parsed.data.documentId,
+    p_image_key: parsed.data.imageKey,
+    p_max: max,
+  });
+  if (reservation.error) {
+    // Migración 0023 sin aplicar: se genera igualmente, sin límite.
+    if (!isMissingRegenerationSchema(reservation.error)) {
+      console.error('[images] No se pudo reservar la regeneración:', reservation.error.message);
+      return imageError('FAILED');
+    }
+  } else if (reservation.data === null) {
+    return err('REGEN_LIMIT', regenLimitMessageEs(max));
+  } else {
+    used = reservation.data;
+    reserved = true;
+  }
+
   try {
     const file = await generateImage(finalizeImagePrompt(parsed.data.prompt));
     const uploaded = await uploadArticleImage(ctx.supabase, {
@@ -87,12 +119,52 @@ export async function generateArticleImageAction(
       projectId: ctx.project.id,
       file,
     });
-    return ok(uploaded);
+    return ok({ ...uploaded, remaining: remainingRegenerations(used, max), max });
   } catch (error) {
+    // Un intento fallido no cuenta para el límite.
+    if (reserved) {
+      await ctx.supabase.rpc('release_image_regeneration', {
+        p_document_id: parsed.data.documentId,
+        p_image_key: parsed.data.imageKey,
+      });
+    }
     if (error instanceof ImageGenerationError) return imageError(error.code);
     console.error('[images] generateArticleImageAction falló:', error);
     return imageError('FAILED');
   }
+}
+
+function regenLimitMessageEs(max: number): string {
+  return `Alcanzaste el límite de ${max} regeneraciones de esta imagen. Puedes subir tu propia imagen con "Reemplazar".`;
+}
+
+const RegenStatusSchema = z.object({
+  documentId: z.string().uuid(),
+  imageKey: z.string().trim().min(1).max(80),
+});
+
+/** Cuántas regeneraciones lleva una imagen y cuántas le quedan (para mostrarlo en el diálogo). */
+export async function getImageRegenerationStatusAction(
+  input: z.infer<typeof RegenStatusSchema>,
+): Promise<ActionResult<{ remaining: number; max: number }>> {
+  const parsed = RegenStatusSchema.safeParse(input);
+  if (!parsed.success) return err('VALIDATION_ERROR', 'Datos inválidos.');
+
+  const ctx = await loadDocumentContext(parsed.data.documentId);
+  if (!ctx.ok) return ctx.error;
+
+  const max = getMaxRegenerationsPerImage();
+  const { data, error } = await ctx.supabase
+    .from('document_image_regenerations')
+    .select('count')
+    .eq('document_id', parsed.data.documentId)
+    .eq('image_key', parsed.data.imageKey)
+    .maybeSingle();
+
+  if (error && !isMissingRegenerationSchema(error)) {
+    console.error('[images] No se pudo leer el contador de regeneraciones:', error.message);
+  }
+  return ok({ remaining: remainingRegenerations(data?.count ?? 0, max), max });
 }
 
 const DiscardImageSchema = z.object({

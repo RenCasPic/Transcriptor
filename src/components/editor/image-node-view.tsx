@@ -26,6 +26,8 @@ export function ImageNodeView({ node, updateAttributes, deleteNode, selected, ed
   const ctx = useEditorImageContext();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dialog, setDialog] = useState<'regenerate' | 'alt' | null>(null);
+  // Clave estable de esta imagen para el límite de regeneraciones (se asigna la primera vez que se necesita).
+  const imageKey = String(node.attrs.imageId ?? '') || null;
   const [uploading, setUploading] = useState(false);
 
   const src = String(node.attrs.src ?? '');
@@ -74,7 +76,10 @@ export function ImageNodeView({ node, updateAttributes, deleteNode, selected, ed
           <button
             type="button"
             className={ACTION_BUTTON}
-            onClick={() => setDialog('regenerate')}
+            onClick={() => {
+              if (!imageKey) updateAttributes({ imageId: crypto.randomUUID() });
+              setDialog('regenerate');
+            }}
             title={ctx.imagesAvailable ? labels.regenerate : labels.unavailableHint}
             aria-label={labels.regenerate}
           >
@@ -134,6 +139,8 @@ export function ImageNodeView({ node, updateAttributes, deleteNode, selected, ed
         open={dialog === 'regenerate'}
         onOpenChange={(open) => !open && setDialog(null)}
         documentId={ctx.documentId}
+        imageKey={imageKey ?? 'pending'}
+        replacesCurrent
         title={labels.regenerateTitle}
         description={labels.regenerateDescription}
         initialPrompt={prompt || alt}

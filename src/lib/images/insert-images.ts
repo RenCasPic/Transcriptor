@@ -19,10 +19,17 @@ export interface InsertImagesResult {
 type PmNode = { type?: string; attrs?: Record<string, unknown>; content?: unknown[] } & Record<string, unknown>;
 
 /** Nodo `image` de TipTap/ProseMirror. */
-export function imageNode(image: { src: string; alt: string; prompt?: string | null }): Json {
+export function imageNode(image: { src: string; alt: string; prompt?: string | null; imageId?: string }): Json {
   return {
     type: 'image',
-    attrs: { src: image.src, alt: image.alt, title: null, prompt: image.prompt ?? null },
+    // `imageId` identifica la imagen para contar sus regeneraciones desde el editor.
+    attrs: {
+      src: image.src,
+      alt: image.alt,
+      title: null,
+      prompt: image.prompt ?? null,
+      imageId: image.imageId ?? crypto.randomUUID(),
+    },
   } as Json;
 }
 

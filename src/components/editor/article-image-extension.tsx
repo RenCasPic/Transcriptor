@@ -13,6 +13,8 @@ export const ArticleImage = Image.extend({
     return {
       ...this.parent?.(),
       prompt: { default: null, rendered: false },
+      // Identifica la imagen para contar sus regeneraciones (no se escribe en el HTML).
+      imageId: { default: null, rendered: false },
     };
   },
   addNodeView() {

@@ -609,6 +609,10 @@ export const es = {
       generateAnother: 'Generar otra',
       generating: 'Generando imagen...',
       generatingHint: 'Puede tardar hasta un minuto.',
+      replaceNotice: 'Al usar la imagen nueva se reemplazará la imagen actual en el artículo.',
+      regenerationsLeft: 'Te quedan {n} de {max} regeneraciones de esta imagen.',
+      regenerationsExhausted:
+        'Alcanzaste el límite de regeneraciones de esta imagen. Puedes subir tu propia imagen con "Reemplazar".',
       accept: 'Usar esta imagen',
       discard: 'Descartar',
       previewAlt: 'Vista previa de la imagen generada',
@@ -651,6 +655,8 @@ export const es = {
         VERIFICATION_REQUIRED: 'OpenAI requiere verificar tu organización para usar este modelo de imágenes.',
         TIMEOUT: 'La imagen tardó demasiado en generarse. Inténtalo de nuevo.',
         INVALID_RESPONSE: 'OpenAI devolvió una respuesta no válida. Inténtalo de nuevo.',
+        REGEN_LIMIT:
+          'Alcanzaste el límite de regeneraciones de esta imagen. Puedes subir tu propia imagen con "Reemplazar".',
         FAILED: 'No se pudo generar la imagen. Inténtalo de nuevo.',
         default: 'No se pudo completar la acción. Inténtalo de nuevo.',
       },

@@ -90,6 +90,7 @@ AI_MAX_PROMPT_TOKENS=  # opcional; tope de tokens de entrada (default 110000)
 AI_IMAGE_MODEL=        # opcional; modelo de imágenes (default gpt-image-2.5-flare)
 AI_IMAGE_QUALITY=      # opcional; low | medium | high | auto (default medium)
 AI_IMAGE_SIZE=         # opcional; 1536x1024 (default) | 1024x1024 | 1024x1536 | auto
+AI_IMAGE_MAX_REGENERATIONS=  # opcional; regeneraciones por imagen desde el editor (default 3)
 ```
 
 - **`openai`** (default, modelo `gpt-4o-mini`): barato (fracciones de céntimo por artículo) y con 128k de contexto — **cabe cualquier transcripción realista de una sola pasada** (hasta varias horas). Necesitas una cuenta con saldo.
@@ -109,6 +110,7 @@ En "Crea tu artículo" hay una opción **Imágenes**: *Sin imágenes*, *Solo por
 - **Costo aproximado:** ~US$0.04 por imagen con los valores por defecto (calidad `medium`, `1536x1024`): *Solo portada* ≈ US$0.04 y *Portada + imágenes* hasta ≈ US$0.20 por artículo. Depende del modelo y de la tarifa vigente de OpenAI.
 - **Nunca rompe la generación:** si una imagen falla (contenido rechazado, sin créditos, tiempo agotado...), el artículo se guarda completo sin esa imagen y se muestra un aviso en el panel de alertas del editor. Si falla la portada, se usa Pexels. Si tras redactar el texto queda poco tiempo (`maxDuration = 300`), el texto se guarda primero y las imágenes se generan en segundo plano (`after()`) y se insertan al terminar.
 - **En el editor:** al pasar el cursor sobre una imagen hay *Regenerar* (descripción editable → vista previa → aceptar/descartar), *Reemplazar* (subir tu propia imagen JPG/PNG/WebP de hasta 10 MB), *Editar texto alternativo* y *Eliminar*. La barra tiene un botón para insertar una imagen donde está el cursor y la portada tiene *Regenerar portada* / *Subir portada*. Cada cambio se autoguarda y queda en el historial de versiones.
+- **Límite de regeneraciones:** cada imagen (y la portada) puede regenerarse como máximo `AI_IMAGE_MAX_REGENERATIONS` veces (3 por defecto) desde el editor; el diálogo muestra cuántas quedan y avisa de que la imagen nueva reemplazará a la actual. Un intento que falla no cuenta. Al agotarse se puede seguir con "Reemplazar" (subir una imagen propia). Requiere la migración `0023`; sin ella no hay límite.
 - Las imágenes se ven en el editor, la vista previa, `/embed`, la exportación HTML (`<img alt>`) y Markdown (`![alt](url)`).
 - **Errores claros:** sin clave, sin créditos, contenido rechazado por OpenAI, límite de solicitudes o verificación de organización pendiente (OpenAI puede exigirla para los modelos de imágenes).
 

@@ -603,6 +603,10 @@ export const en: Dictionary = {
       generateAnother: 'Generate another',
       generating: 'Generating image...',
       generatingHint: 'This can take up to a minute.',
+      replaceNotice: 'Using the new image will replace the current image in the article.',
+      regenerationsLeft: 'You have {n} of {max} regenerations left for this image.',
+      regenerationsExhausted:
+        'You reached the regeneration limit for this image. You can upload your own image with "Replace".',
       accept: 'Use this image',
       discard: 'Discard',
       previewAlt: 'Preview of the generated image',
@@ -644,6 +648,8 @@ export const en: Dictionary = {
         VERIFICATION_REQUIRED: 'OpenAI requires verifying your organization to use this image model.',
         TIMEOUT: 'The image took too long to generate. Please try again.',
         INVALID_RESPONSE: 'OpenAI returned an invalid response. Please try again.',
+        REGEN_LIMIT:
+          'You reached the regeneration limit for this image. You can upload your own image with "Replace".',
         FAILED: 'The image could not be generated. Please try again.',
         default: 'The action could not be completed. Please try again.',
       },

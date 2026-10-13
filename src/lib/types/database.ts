@@ -477,9 +477,34 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['project_templates']['Insert']>;
         Relationships: [];
       };
+      document_image_regenerations: {
+        Row: {
+          document_id: string;
+          image_key: string;
+          count: number;
+          updated_at: string;
+        };
+        Insert: {
+          document_id: string;
+          image_key: string;
+          count?: number;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['document_image_regenerations']['Insert']>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      use_image_regeneration: {
+        Args: { p_document_id: string; p_image_key: string; p_max: number };
+        Returns: number | null;
+      };
+      release_image_regeneration: {
+        Args: { p_document_id: string; p_image_key: string };
+        Returns: undefined;
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

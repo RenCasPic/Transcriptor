@@ -227,6 +227,13 @@ export async function runArticleGenerationPipeline(
     await supabase.from('content_source_links').insert(sourceLinks);
   }
 
+  // Al regenerar el artículo las imágenes son nuevas: se reinician sus contadores de regeneración.
+  try {
+    await supabase.from('document_image_regenerations').delete().eq('document_id', document.id);
+  } catch {
+    /* tabla inexistente (migración 0023 sin aplicar): nada que reiniciar */
+  }
+
   await recordImageWarnings(supabase, document.id, imageFailures);
 
   if (deferImages && imageJobParams) {

@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   discardGeneratedImageAction,
   generateArticleImageAction,
+  getImageRegenerationStatusAction,
   suggestImagePromptAction,
 } from '@/lib/actions/images';
 import { useDictionary } from '@/lib/i18n/dictionary-provider';
@@ -38,6 +39,8 @@ export function ImageGenerateDialog({
   open,
   onOpenChange,
   documentId,
+  imageKey,
+  replacesCurrent = false,
   title,
   description,
   initialPrompt,
@@ -49,6 +52,10 @@ export function ImageGenerateDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   documentId: string;
+  /** Identifica la imagen para el límite de regeneraciones: 'cover' o el `imageId` de la imagen del cuerpo. */
+  imageKey: string;
+  /** Si al aceptar se reemplaza una imagen existente (regenerar): muestra el aviso correspondiente. */
+  replacesCurrent?: boolean;
   title: string;
   description: string;
   initialPrompt: string;
@@ -65,6 +72,8 @@ export function ImageGenerateDialog({
   const [status, setStatus] = useState<'idle' | 'suggesting' | 'generating' | 'accepting'>('idle');
   const generatedRef = useRef<string | null>(null);
   generatedRef.current = generatedUrl;
+  // Generaciones que le quedan a esta imagen (null = aún no se sabe).
+  const [limits, setLimits] = useState<{ remaining: number; max: number } | null>(null);
 
   // Al abrir: valores iniciales y, si procede, descripción sugerida por la IA.
   useEffect(() => {
@@ -73,6 +82,10 @@ export function ImageGenerateDialog({
     setAlt(initialAlt);
     setGeneratedUrl(null);
     setStatus('idle');
+    setLimits(null);
+    void getImageRegenerationStatusAction({ documentId, imageKey }).then((result) => {
+      if (result.success) setLimits(result.data);
+    });
 
     if (initialPrompt.trim() || !suggestFromText?.trim() || !imagesAvailable) return;
     let cancelled = false;
@@ -105,12 +118,14 @@ export function ImageGenerateDialog({
   async function handleGenerate() {
     const previous = generatedRef.current;
     setStatus('generating');
-    const result = await generateArticleImageAction({ documentId, prompt });
+    const result = await generateArticleImageAction({ documentId, prompt, imageKey });
     if (!result.success) {
       toast.error(errorMessage(result.error.code, result.error.message));
+      if (result.error.code === 'REGEN_LIMIT') setLimits((prev) => (prev ? { ...prev, remaining: 0 } : prev));
       setStatus('idle');
       return;
     }
+    setLimits({ remaining: result.data.remaining, max: result.data.max });
     setGeneratedUrl(result.data.url);
     setStatus('idle');
     // Al generar otra, la vista previa anterior (no aceptada) se borra.
@@ -140,6 +155,8 @@ export function ImageGenerateDialog({
   }
 
   const busy = status !== 'idle';
+  const exhausted = limits !== null && limits.remaining <= 0;
+  const canGenerate = !busy && imagesAvailable && !exhausted && prompt.trim().length >= 5;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -183,6 +200,22 @@ export function ImageGenerateDialog({
             <p className="text-xs text-muted-foreground">{t.editor.images.altHelp}</p>
           </div>
 
+          {replacesCurrent && (
+            <p className="rounded-md border border-primary/30 bg-primary/5 p-3 text-sm text-foreground">
+              {t.editor.images.replaceNotice}
+            </p>
+          )}
+
+          {limits && (
+            <p className={exhausted ? 'text-sm font-medium text-destructive' : 'text-xs text-muted-foreground'}>
+              {exhausted
+                ? t.editor.images.regenerationsExhausted
+                : t.editor.images.regenerationsLeft
+                    .replace('{n}', String(limits.remaining))
+                    .replace('{max}', String(limits.max))}
+            </p>
+          )}
+
           {!imagesAvailable && (
             <p className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-muted-foreground">
               {t.editor.images.unavailableHint}
@@ -218,7 +251,7 @@ export function ImageGenerateDialog({
               >
                 {t.editor.images.discard}
               </Button>
-              <Button variant="outline" disabled={busy || !imagesAvailable || prompt.trim().length < 5} onClick={handleGenerate}>
+              <Button variant="outline" disabled={!canGenerate} onClick={handleGenerate}>
                 {t.editor.images.generateAnother}
               </Button>
               <Button disabled={busy} onClick={handleAccept}>
@@ -232,7 +265,7 @@ export function ImageGenerateDialog({
                 {t.editor.images.cancel}
               </Button>
               <Button
-                disabled={busy || !imagesAvailable || prompt.trim().length < 5}
+                disabled={!canGenerate}
                 title={imagesAvailable ? undefined : t.editor.images.unavailableHint}
                 onClick={handleGenerate}
               >

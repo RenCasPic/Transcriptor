@@ -8,6 +8,7 @@ import { useDictionary } from '@/lib/i18n/dictionary-provider';
 import { setCoverImageAction, updateCoverAltAction } from '@/lib/actions/images';
 import { createVersionAction } from '@/lib/actions/versions';
 import { ImageUploadError, uploadImageFile } from '@/lib/images/client-upload';
+import { COVER_IMAGE_KEY } from '@/lib/images/limits';
 import { MEDIA_UPLOAD_ACCEPT } from '@/lib/images/accept';
 import { ImageGenerateDialog, type GeneratedImageChoice } from './image-generate-dialog';
 import { ImageAltDialog } from './image-alt-dialog';
@@ -172,6 +173,8 @@ export function EditorCover({
         open={dialog === 'regenerate'}
         onOpenChange={(open) => !open && setDialog(null)}
         documentId={documentId}
+        imageKey={COVER_IMAGE_KEY}
+        replacesCurrent={!!cover.url}
         title={labels.cover.regenerateTitle}
         description={labels.cover.regenerateDescription}
         initialPrompt={cover.prompt || `${labels.cover.defaultPrompt}: ${title}`}
