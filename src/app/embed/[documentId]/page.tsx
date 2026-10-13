@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Sparkles } from 'lucide-react';
+import { Logo } from '@/components/brand/logo';
 import { getPublicDocument } from '@/lib/data/embed';
 import { getDictionary } from '@/lib/i18n/get-dictionary';
 
@@ -61,9 +61,8 @@ export default async function EmbedPage({ params }: EmbedPageProps) {
       <footer className="border-t py-4">
         <div className="mx-auto flex max-w-2xl items-center justify-center gap-1.5 px-6 text-xs text-muted-foreground">
           {t.embed.poweredBy}
-          <Link href="/" target="_blank" className="inline-flex items-center gap-1 font-medium text-foreground hover:underline">
-            <Sparkles className="h-3 w-3" />
-            TalkToPost
+          <Link href="/" target="_blank" aria-label="TalkToPost" className="inline-flex items-center hover:opacity-80">
+            <Logo size={18} />
           </Link>
         </div>
       </footer>

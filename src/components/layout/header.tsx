@@ -3,7 +3,8 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Sparkles, LogOut, User, Building2 } from 'lucide-react';
+import { LogOut, User, Building2 } from 'lucide-react';
+import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
@@ -37,11 +38,8 @@ export function Header({ userName }: { userName: string }) {
 
   return (
     <header className="flex h-16 items-center justify-between border-b bg-background px-3 sm:px-4 lg:px-6">
-      <Link href="/" className="flex items-center gap-2 font-semibold">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <Sparkles className="h-4 w-4" />
-        </div>
-        {dictionary.common.appName}
+      <Link href="/" aria-label={dictionary.common.appName} className="flex items-center">
+        <Logo />
       </Link>
 
       <div className="flex items-center gap-1">

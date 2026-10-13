@@ -11,6 +11,8 @@ const PUBLIC_PATHS = [
   '/reset-password',
   '/precios',
   '/manifest.webmanifest',
+  // Imagen para compartir el enlace (Open Graph): la piden bots sin sesión.
+  '/opengraph-image',
 ];
 
 function isPublicPath(pathname: string) {

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Menu } from 'lucide-react';
+import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
@@ -23,7 +24,9 @@ export function MobileMenu() {
         </Button>
       </SheetTrigger>
       <SheetContent className="flex w-[88%] max-w-xs flex-col gap-6 p-4" aria-describedby={undefined}>
-        <SheetTitle>{t.common.appName}</SheetTitle>
+        <SheetTitle>
+          <Logo />
+        </SheetTitle>
 
         <nav className="flex flex-col gap-1">
           <SheetClose asChild>

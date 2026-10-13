@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import { Logo } from '@/components/brand/logo';
 import { Button } from '@/components/ui/button';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import { ThemeSwitcher } from '@/components/layout/theme-switcher';
@@ -16,11 +17,8 @@ export async function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
       <div className="container flex h-16 items-center justify-between gap-2 px-3 sm:px-6">
-        <Link href="/" className="flex shrink-0 items-center gap-2 font-semibold">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Sparkles className="h-4 w-4" />
-          </div>
-          <span className="text-[0.95rem] sm:text-base">{t.common.appName}</span>
+        <Link href="/" aria-label={t.common.appName} className="flex shrink-0 items-center">
+          <Logo />
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex lg:gap-2">

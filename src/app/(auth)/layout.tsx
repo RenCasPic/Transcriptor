@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Sparkles } from 'lucide-react';
+import { Logo } from '@/components/brand/logo';
 import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import { ThemeSwitcher } from '@/components/layout/theme-switcher';
 
@@ -10,11 +10,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <LanguageSwitcher />
         <ThemeSwitcher />
       </div>
-      <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <Sparkles className="h-4 w-4" />
-        </div>
-        TalkToPost
+      <Link href="/" aria-label="TalkToPost" className="flex items-center">
+        <Logo size={40} />
       </Link>
       <div className="w-full max-w-md rounded-xl border border-primary bg-background p-8 shadow-sm">{children}</div>
     </div>
