@@ -18,7 +18,8 @@ export async function SiteHeader() {
     <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
       <div className="container flex h-16 items-center justify-between gap-2 px-3 sm:px-6">
         <Link href="/" aria-label={t.common.appName} className="flex shrink-0 items-center">
-          <Logo />
+          {/* Crece cuando hay espacio y se encoge en pantallas estrechas (32-44 px). */}
+          <Logo sizeClassName="[--logo-size:clamp(32px,calc((100vw_-_200px)_/_3.7),44px)] md:[--logo-size:38px] lg:[--logo-size:clamp(34px,calc(34px_+_(100vw_-_1024px)_*_0.07),44px)]" />
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex lg:gap-2">

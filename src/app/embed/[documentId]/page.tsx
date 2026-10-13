@@ -62,7 +62,7 @@ export default async function EmbedPage({ params }: EmbedPageProps) {
         <div className="mx-auto flex max-w-2xl items-center justify-center gap-1.5 px-6 text-xs text-muted-foreground">
           {t.embed.poweredBy}
           <Link href="/" target="_blank" aria-label="TalkToPost" className="inline-flex items-center hover:opacity-80">
-            <Logo size={18} />
+            <Logo size={24} />
           </Link>
         </div>
       </footer>

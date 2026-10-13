@@ -11,7 +11,7 @@ export async function SiteFooter() {
       <div className="container flex flex-col items-center justify-between gap-4 text-sm text-muted-foreground sm:flex-row">
         <div className="flex flex-col items-center gap-2 sm:items-start">
           <Link href="/" aria-label={t.common.appName}>
-            <Logo size={24} />
+            <Logo size={32} />
           </Link>
           <p>
             © {new Date().getFullYear()} {t.common.appName}. {t.landing.footerRights}

@@ -11,7 +11,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <ThemeSwitcher />
       </div>
       <Link href="/" aria-label="TalkToPost" className="flex items-center">
-        <Logo size={40} />
+        <Logo size={56} />
       </Link>
       <div className="w-full max-w-md rounded-xl border border-primary bg-background p-8 shadow-sm">{children}</div>
     </div>

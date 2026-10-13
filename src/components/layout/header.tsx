@@ -39,7 +39,8 @@ export function Header({ userName }: { userName: string }) {
   return (
     <header className="flex h-16 items-center justify-between border-b bg-background px-3 sm:px-4 lg:px-6">
       <Link href="/" aria-label={dictionary.common.appName} className="flex items-center">
-        <Logo />
+        {/* Crece cuando hay espacio y se encoge en pantallas estrechas (32-44 px). */}
+        <Logo sizeClassName="[--logo-size:clamp(32px,calc((100vw_-_320px)_/_3.7),44px)]" />
       </Link>
 
       <div className="flex items-center gap-1">

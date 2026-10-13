@@ -25,7 +25,7 @@ export function MobileMenu() {
       </SheetTrigger>
       <SheetContent className="flex w-[88%] max-w-xs flex-col gap-6 p-4" aria-describedby={undefined}>
         <SheetTitle>
-          <Logo />
+          <Logo size={36} />
         </SheetTitle>
 
         <nav className="flex flex-col gap-1">

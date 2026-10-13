@@ -15,11 +15,13 @@ export function logoStrokeWidths(size: number): { wave: number; line: number } {
 export function LogoMark({
   size = 32,
   className,
+  style,
   title,
 }: {
   /** Lado en px. Con 32 o menos se usan los trazos engrosados. */
   size?: number;
   className?: string;
+  style?: React.CSSProperties;
   /** Si se da, el símbolo se anuncia como imagen; si no, se oculta a lectores de pantalla (decorativo). */
   title?: string;
 }) {
@@ -32,6 +34,7 @@ export function LogoMark({
       width={size}
       height={size}
       className={className}
+      style={style}
       role={title ? 'img' : undefined}
       aria-label={title}
       aria-hidden={title ? undefined : true}

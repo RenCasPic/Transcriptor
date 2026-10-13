@@ -60,8 +60,18 @@ describe('Logo', () => {
     expect(html).toContain('aria-label="TalkToPost"');
   });
 
-  it('el tamaño de letra sale del tamaño del símbolo', () => {
-    expect(renderToStaticMarkup(<Logo size={40} />)).toContain('font-size:20px');
-    expect(renderToStaticMarkup(<Logo size={24} />)).toContain('font-size:12px');
+  it('el tamaño sale de la variable --logo-size (símbolo y letra proporcionales)', () => {
+    const html = renderToStaticMarkup(<Logo size={40} />);
+    expect(html).toContain('--logo-size:40px');
+    expect(html).toContain('width:var(--logo-size)');
+    expect(html).toContain('font-size:0.5em');
+  });
+
+  it('con tamaño adaptable el tamaño lo dan las clases (sin variable fija) y los trazos salen de `size`', () => {
+    const html = renderToStaticMarkup(<Logo size={44} sizeClassName="[--logo-size:32px] md:[--logo-size:40px]" />);
+    expect(html).toContain('[--logo-size:32px] md:[--logo-size:40px]');
+    expect(html).not.toContain('--logo-size:44px');
+    expect(html).toContain('font-size:var(--logo-size)');
+    expect(html).toContain('stroke-width="3.2"');
   });
 });
