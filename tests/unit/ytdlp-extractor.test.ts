@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from 'node:events';
 import { Readable } from 'node:stream';
-import { YtDlpAudioExtractor, mapYtDlpError, ytDlpProxyArgs } from '@/lib/integrations/audio-extractor/ytdlp-extractor';
+import { YtDlpAudioExtractor, mapYtDlpError } from '@/lib/integrations/audio-extractor/ytdlp-extractor';
 import type {
   ExtractionAttemptRecord,
   ExtractionLogger,
@@ -180,39 +180,5 @@ describe('mapYtDlpError', () => {
 
   it('lo desconocido cae en YOUTUBE_AUDIO_EXTRACTION_FAILED', () => {
     expect(mapYtDlpError('ERROR: something weird happened', 1).message).toMatch(/^YOUTUBE_AUDIO_EXTRACTION_FAILED:/);
-  });
-});
-
-describe('YTDLP_PROXY', () => {
-  it('sin la variable no añade argumentos (comportamiento anterior)', () => {
-    expect(ytDlpProxyArgs({})).toEqual([]);
-    expect(ytDlpProxyArgs({ YTDLP_PROXY: '   ' })).toEqual([]);
-  });
-
-  it('con la variable pasa --proxy a yt-dlp', () => {
-    expect(ytDlpProxyArgs({ YTDLP_PROXY: ' http://user:pass@proxy.example.com:8080 ' })).toEqual([
-      '--proxy',
-      'http://user:pass@proxy.example.com:8080',
-    ]);
-  });
-
-  it('la sonda de metadata sale por el proxy cuando está configurado', async () => {
-    const previous = process.env.YTDLP_PROXY;
-    process.env.YTDLP_PROXY = 'http://proxy.example.com:8080';
-    try {
-      const calls: string[][] = [];
-      const spawn = vi.fn((_bin: string, args: string[]) => {
-        calls.push(args);
-        return fakeChild({ stdout: META_OK });
-      });
-      await new YtDlpAudioExtractor().extract(URL, {
-        deps: { spawn: spawn as never, binaryPath: '/fake/yt-dlp', ytdlpVersion: 'x', downloadAudio: fakeDownload().fn },
-      });
-      const probe = calls.find((args) => args.includes('-J'));
-      expect(probe?.slice(0, 2)).toEqual(['--proxy', 'http://proxy.example.com:8080']);
-    } finally {
-      if (previous === undefined) delete process.env.YTDLP_PROXY;
-      else process.env.YTDLP_PROXY = previous;
-    }
   });
 });

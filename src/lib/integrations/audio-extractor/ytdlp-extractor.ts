@@ -34,18 +34,6 @@ const COMPRESSED_AUDIO_ARGS = [
   'ExtractAudio:-ac 1 -ar 16000',
 ];
 
-/**
- * Argumentos de proxy para yt-dlp. YouTube bloquea las IP de centros de datos
- * (Vercel, AWS...) con "Sign in to confirm you're not a bot": con
- * `YTDLP_PROXY` (p. ej. un proxy residencial) la descarga sale por esa IP. Sin
- * la variable, yt-dlp se comporta exactamente igual que antes. La URL puede
- * llevar usuario y contraseña, así que NUNCA se registra en logs.
- */
-export function ytDlpProxyArgs(env: Record<string, string | undefined> = process.env): string[] {
-  const proxy = env.YTDLP_PROXY?.trim();
-  return proxy ? ['--proxy', proxy] : [];
-}
-
 interface AudioKind {
   mimeType: string;
   fileExtension: string;
@@ -202,7 +190,7 @@ export class YtDlpAudioExtractor implements AudioExtractor {
     return new Promise((resolve, reject) => {
       const child = spawn(
         binary,
-        [...ytDlpProxyArgs(), '-J', '--no-warnings', '--no-playlist', '-f', AUDIO_FORMAT_SELECTOR, videoUrl],
+        ['-J', '--no-warnings', '--no-playlist', '-f', AUDIO_FORMAT_SELECTOR, videoUrl],
         { stdio: ['ignore', 'pipe', 'pipe'] },
       );
       let stdout = '';
@@ -267,7 +255,7 @@ async function downloadAudioToTempFile(
     void cleanupTempDir(dir);
   };
 
-  const args = [...ytDlpProxyArgs(), '--no-warnings', '--no-progress', '--no-playlist', '--no-part'];
+  const args = ['--no-warnings', '--no-progress', '--no-playlist', '--no-part'];
   if (ffmpeg) {
     args.push(...COMPRESSED_AUDIO_ARGS, '-f', 'bestaudio/ba');
     const ffmpegDir = path.dirname(ffmpeg.ffmpeg);
