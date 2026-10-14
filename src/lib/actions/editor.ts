@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { sanitizeArticleHtml } from '@/lib/content/sanitize';
 import { ok, err, type ActionResult } from '@/lib/types/domain';
 import { countWords, estimateReadingTimeMinutes } from '@/lib/content/metrics';
 import { proseMirrorJsonToMarkdown, proseMirrorJsonToPlainText } from '@/lib/content/article-transform';
@@ -53,13 +54,7 @@ export async function saveDocumentAction(input: z.infer<typeof SaveDocumentSchem
     return err('VERSION_CONFLICT', 'El documento fue modificado en otra sesión. Recarga la página para continuar.');
   }
 
-  const { default: DOMPurify } = await import('isomorphic-dompurify');
-  const sanitizedHtml = DOMPurify.sanitize(parsed.data.contentHtml, {
-    ALLOWED_TAGS: ['p', 'h2', 'h3', 'ul', 'ol', 'li', 'blockquote', 'strong', 'em', 'a', 'br', 'img'],
-    ALLOWED_ATTR: ['href', 'target', 'rel', 'data-block-id', 'src', 'alt', 'title', 'loading'],
-    // Solo http(s)/mailto/tel/anclas/rutas: bloquea javascript: y data: (también en <img src>).
-    ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|tel:|#|\/)/i,
-  });
+  const sanitizedHtml = sanitizeArticleHtml(parsed.data.contentHtml);
 
   const contentJson = parsed.data.contentJson as Json;
   const plainText = proseMirrorJsonToPlainText(contentJson);

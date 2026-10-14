@@ -20,11 +20,6 @@ const nextConfig = {
   // audio de archivos grandes, ver src/lib/media/audio-chunker).
   serverExternalPackages: [
     '@distube/ytdl-core',
-    // isomorphic-dompurify arrastra jsdom, que lee un CSS por ruta relativa
-    // (default-stylesheet.css): empaquetado por webpack en el bundle de las
-    // Server Actions falla con ENOENT al guardar el documento del editor.
-    'isomorphic-dompurify',
-    'jsdom',
     '@ffmpeg-installer/ffmpeg',
     '@ffprobe-installer/ffprobe',
   ],

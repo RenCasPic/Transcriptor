@@ -50,7 +50,7 @@ No existe una capa de permisos en la aplicación aparte de RLS. Todas las polít
 
 ## 7. Sanitización de HTML en el borde de escritura
 
-`content_html` se sanitiza con `isomorphic-dompurify` dentro de `saveDocumentAction`, con una lista blanca de tags/atributos, antes de persistirse. El contenido ya sanitizado es lo único que se renderiza con `dangerouslySetInnerHTML` (comparador de versiones, meta description preview), por lo que nunca se inyecta HTML no confiable.
+`content_html` se sanitiza con `sanitize-html` (`src/lib/content/sanitize.ts`) dentro de `saveDocumentAction`, con una lista blanca de tags/atributos, antes de persistirse. El contenido ya sanitizado es lo único que se renderiza con `dangerouslySetInnerHTML` (comparador de versiones, meta description preview), por lo que nunca se inyecta HTML no confiable.
 
 ## 8. Rate limiting en memoria (limitación conocida)
 

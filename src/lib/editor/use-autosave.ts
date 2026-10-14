@@ -14,6 +14,8 @@ export interface DocumentSnapshot {
 }
 
 const AUTOSAVE_DEBOUNCE_MS = 1200;
+const SAVE_TIMEOUT_MS = 45_000;
+const AUTOSAVE_ERROR_MESSAGE = 'No se pudo guardar. Reintentaremos al seguir editando; si persiste, recarga la página.';
 
 export function useAutosave(documentId: string, initialVersion: number) {
   const [status, setStatus] = useState<AutosaveStatus>('idle');
@@ -31,16 +33,32 @@ export function useAutosave(documentId: string, initialVersion: number) {
     savingRef.current = true;
     setStatus('saving');
 
-    const result = await saveDocumentAction({
-      documentId,
-      title: snapshot.title,
-      // editor.getJSON() devuelve `attrs` con prototipo nulo (ProseMirror) y React 19
-      // no puede enviarlos a una Server Action ("temporary client reference"):
-      // se pasa por JSON para que lleguen como objetos planos.
-      contentJson: JSON.parse(JSON.stringify(snapshot.contentJson)),
-      contentHtml: snapshot.contentHtml,
-      expectedVersion: versionRef.current,
-    });
+    let result: Awaited<ReturnType<typeof saveDocumentAction>>;
+    try {
+      // Con tope de tiempo: si el servidor no responde, no se queda "Guardando..." para siempre.
+      result = await Promise.race([
+        saveDocumentAction({
+          documentId,
+          title: snapshot.title,
+          // editor.getJSON() devuelve `attrs` con prototipo nulo (ProseMirror) y React 19
+          // no puede enviarlos a una Server Action ("temporary client reference"):
+          // se pasa por JSON para que lleguen como objetos planos.
+          contentJson: JSON.parse(JSON.stringify(snapshot.contentJson)),
+          contentHtml: snapshot.contentHtml,
+          expectedVersion: versionRef.current,
+        }),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('SAVE_TIMEOUT')), SAVE_TIMEOUT_MS)),
+      ]);
+    } catch (error) {
+      // La Server Action lanzó una excepción (fallo del servidor, red, tiempo agotado...):
+      // se libera el guardado, se avisa y los cambios quedan pendientes para reintentar.
+      console.error('[autosave] El guardado falló:', error);
+      savingRef.current = false;
+      if (!pendingRef.current) pendingRef.current = snapshot;
+      setStatus('error');
+      toast.error(AUTOSAVE_ERROR_MESSAGE);
+      return;
+    }
 
     savingRef.current = false;
 
