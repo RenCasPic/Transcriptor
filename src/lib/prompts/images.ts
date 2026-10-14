@@ -10,7 +10,7 @@ export interface ImagePlanPromptInput {
 }
 
 const VISUAL_RULES = `Reglas para CADA descripción de imagen ("prompt"):
-- Escríbela en INGLÉS, en 1-3 frases concretas: sujeto, escena, ambiente, composición. Describe algo que se pueda FOTOGRAFIAR.
+- Escríbela en el IDIOMA DEL ARTÍCULO (NO en inglés, salvo que el artículo esté en inglés), en 1-3 frases concretas: sujeto, escena, ambiente, composición. Describe algo que se pueda FOTOGRAFIAR.
 - Estilo fotográfico editorial. TODAS las imágenes del artículo deben compartir la misma paleta de color, iluminación y ambiente (define uno en "style").
 - SIN texto, letras, números, logos, marcas ni capturas de pantalla dentro de la imagen.
 - Basa la descripción SOLO en lo que el texto de esa sección dice realmente. No inventes personas concretas, marcas, cifras ni nada que contradiga el artículo.
@@ -42,7 +42,7 @@ Secciones (H2) del artículo, con un resumen de su texto:
 ${sectionList || '(sin secciones)'}
 
 Devuelve:
-- "style": una frase en inglés con el estilo visual común (paleta, luz, ambiente) para todas las imágenes.
+- "style": una frase corta, en el idioma del artículo, con el estilo visual común (paleta, luz, ambiente) para todas las imágenes.
 ${coverPart}
 ${inlinePart}
 

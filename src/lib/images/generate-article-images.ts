@@ -124,7 +124,14 @@ export async function generateArticleImages(params: GenerateArticleImagesParams)
       plan = await params.deps.plan(planInput);
     } catch (error) {
       console.error('[images] No se pudo planificar con la IA; se usa el plan básico:', error);
-      plan = fallbackImagePlan({ title: params.title, excerpt: params.excerpt, sections, includeCover, inlineCount });
+      plan = fallbackImagePlan({
+        title: params.title,
+        excerpt: params.excerpt,
+        sections,
+        includeCover,
+        inlineCount,
+        language: params.language,
+      });
     }
 
     const jobs: Job[] = [];

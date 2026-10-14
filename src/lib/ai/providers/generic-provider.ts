@@ -10,6 +10,7 @@ import {
   ImagePlanRawSchema,
   ImagePromptSuggestionSchema,
   normalizeImagePlan,
+  sharedStyleSuffix,
   type ImagePlan,
   type ImagePlanItem,
 } from '@/lib/images/plan';
@@ -291,8 +292,8 @@ function remapSegmentRefs(article: GeneratedArticle, input: GenerateArticleInput
 }
 
 /** Añade el estilo visual común a cada descripción del plan (coherencia entre imágenes). */
-function withSharedStyle(plan: ImagePlan, style: string): ImagePlan {
-  const suffix = ` Shared visual style: ${style.trim().replace(/\.$/, '')}.`;
+function withSharedStyle(plan: ImagePlan, style: string, language: string): ImagePlan {
+  const suffix = sharedStyleSuffix(style, language);
   return {
     cover: plan.cover ? { ...plan.cover, prompt: plan.cover.prompt + suffix } : null,
     inline: plan.inline.map((item) => ({ ...item, prompt: item.prompt + suffix })),
@@ -572,7 +573,7 @@ ${ARTICLE_JSON_SHAPE}`;
     const plan = normalizeImagePlan(parsed.data, input);
     // El estilo común viaja dentro de cada descripción para que las imágenes sean coherentes.
     const style = (extractJson(raw) as { style?: unknown }).style;
-    return typeof style === 'string' && style.trim() ? withSharedStyle(plan, style) : plan;
+    return typeof style === 'string' && style.trim() ? withSharedStyle(plan, style, input.language) : plan;
   }
 
   async suggestImagePrompt(input: ImageSuggestionInput): Promise<ImagePlanItem> {

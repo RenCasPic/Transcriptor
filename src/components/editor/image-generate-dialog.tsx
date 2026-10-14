@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Loader2, Sparkles } from 'lucide-react';
+import { AlertTriangle, Loader2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -201,9 +201,13 @@ export function ImageGenerateDialog({
           </div>
 
           {replacesCurrent && (
-            <p className="rounded-md border border-primary/30 bg-primary/5 p-3 text-sm text-foreground">
-              {t.editor.images.replaceNotice}
-            </p>
+            <div
+              role="note"
+              className="flex items-start gap-3 rounded-lg border-2 border-warning bg-warning/15 p-3.5 text-sm font-semibold text-foreground"
+            >
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-warning" aria-hidden />
+              <span>{t.editor.images.replaceNotice}</span>
+            </div>
           )}
 
           {limits && (

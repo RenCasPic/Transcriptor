@@ -48,6 +48,17 @@ export const IMAGE_STYLE_RULES =
   'clean uncluttered composition, landscape orientation. ' +
   'ABSOLUTELY NO text, letters, numbers, words, captions, logos, brand marks, watermarks, signs or user-interface screenshots anywhere in the image.';
 
+/** ¿El artículo está en español? (los textos de respaldo y la etiqueta del estilo salen en el idioma del artículo). */
+export function isSpanish(language: string | null | undefined): boolean {
+  return (language ?? '').toLowerCase().startsWith('es');
+}
+
+/** Frase que une la descripción de una imagen con el estilo visual común, en el idioma del artículo. */
+export function sharedStyleSuffix(style: string, language: string | null | undefined): string {
+  const clean = style.trim().replace(/\.$/, '');
+  return isSpanish(language) ? ` Estilo visual común: ${clean}.` : ` Shared visual style: ${clean}.`;
+}
+
 /** Prompt final enviado al modelo de imágenes: la descripción + las reglas de estilo. */
 export function finalizeImagePrompt(description: string, style?: string): string {
   const parts = [description.trim().replace(/\s+/g, ' ')];
@@ -116,16 +127,19 @@ export function fallbackImagePlan(params: {
   sections: ArticleSection[];
   includeCover: boolean;
   inlineCount: number;
+  /** Idioma del artículo: la descripción de respaldo se escribe en él. */
+  language?: string;
 }): ImagePlan {
   const { title, excerpt, sections, includeCover, inlineCount } = params;
-  const cover = includeCover
-    ? { prompt: `A photograph that visually represents the topic: ${title}. ${excerpt}`.slice(0, 600), alt: title }
-    : null;
+  const es = isSpanish(params.language);
+  const coverLead = es ? 'Una fotografía que represente visualmente el tema:' : 'A photograph that visually represents the topic:';
+  const sectionLead = es ? 'Una fotografía que represente visualmente:' : 'A photograph that visually represents:';
+  const cover = includeCover ? { prompt: `${coverLead} ${title}. ${excerpt}`.slice(0, 600), alt: title } : null;
   const inline = pickEvenlySpaced(sections.length, inlineCount).map((sectionIndex) => {
     const section = sections[sectionIndex]!;
     return {
       sectionIndex,
-      prompt: `A photograph that visually represents: ${section.heading}. ${section.text}`.slice(0, 600),
+      prompt: `${sectionLead} ${section.heading}. ${section.text}`.slice(0, 600),
       alt: section.heading || title,
     };
   });
@@ -138,7 +152,14 @@ export function fallbackImagePlan(params: {
  */
 export function normalizeImagePlan(
   raw: ImagePlanRaw | null,
-  params: { title: string; excerpt: string; sections: ArticleSection[]; includeCover: boolean; inlineCount: number },
+  params: {
+    title: string;
+    excerpt: string;
+    sections: ArticleSection[];
+    includeCover: boolean;
+    inlineCount: number;
+    language?: string;
+  },
 ): ImagePlan {
   const fallback = fallbackImagePlan(params);
   if (!raw) return fallback;

@@ -15,7 +15,9 @@ import {
   inlineImageCount,
   normalizeImagePlan,
   pickEvenlySpaced,
+  sharedStyleSuffix,
 } from '@/lib/images/plan';
+import { buildImagePlanPrompt } from '@/lib/prompts/images';
 import { generateArticleImages, type ImageDeps } from '@/lib/images/generate-article-images';
 import { ImageGenerationError, classifyImageHttpError } from '@/lib/ai/images/openai-image';
 import { getImageConfig, isImageGenerationConfigured } from '@/lib/ai/images/config';
@@ -320,5 +322,40 @@ describe('configuración y errores de OpenAI', () => {
       'VERIFICATION_REQUIRED',
     );
     expect(classifyImageHttpError(500, '')).toBe('FAILED');
+  });
+});
+
+describe('descripciones de imagen en el idioma del artículo', () => {
+  const sections = extractArticleSections(nodes(4));
+  const base = { title: 'Libres del pecado', excerpt: 'Un resumen', sections, includeCover: true, inlineCount: 1 };
+
+  it('el plan de respaldo se escribe en español para artículos en español', () => {
+    const plan = fallbackImagePlan({ ...base, language: 'es' });
+    expect(plan.cover?.prompt).toMatch(/^Una fotografía que represente/);
+    expect(plan.inline[0]?.prompt).toMatch(/^Una fotografía que represente/);
+    expect(plan.cover?.prompt).not.toMatch(/A photograph/);
+  });
+
+  it('y en inglés para artículos en inglés', () => {
+    const plan = fallbackImagePlan({ ...base, language: 'en' });
+    expect(plan.cover?.prompt).toMatch(/^A photograph that visually represents/);
+  });
+
+  it('el estilo común se añade con la etiqueta del idioma', () => {
+    expect(sharedStyleSuffix('luz suave, tonos cálidos.', 'es')).toBe(' Estilo visual común: luz suave, tonos cálidos.');
+    expect(sharedStyleSuffix('soft light', 'en')).toBe(' Shared visual style: soft light.');
+  });
+
+  it('el prompt para la IA de texto pide las descripciones en el idioma del artículo, no en inglés', () => {
+    const prompt = buildImagePlanPrompt({
+      title: 'T',
+      excerpt: 'E',
+      language: 'es',
+      sections,
+      inlineCount: 1,
+      includeCover: true,
+    });
+    expect(prompt).toMatch(/IDIOMA DEL ARTÍCULO \(NO en inglés/);
+    expect(prompt).not.toMatch(/Escríbela en INGLÉS/);
   });
 });
