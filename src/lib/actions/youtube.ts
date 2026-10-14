@@ -6,7 +6,8 @@ import { createClient } from '@/lib/supabase/server';
 import { ok, err, type ActionResult } from '@/lib/types/domain';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { saveTranscript } from '@/lib/generation/save-transcript';
-import { extractYoutubeVideoId, fetchYoutubeTranscript, isValidYoutubeVideoId } from '@/lib/integrations/youtube-transcript';
+import { extractYoutubeVideoId, isValidYoutubeVideoId } from '@/lib/integrations/youtube-transcript';
+import { fetchYoutubeTranscriptWithFallback } from '@/lib/integrations/youtube-subtitles-ytdlp';
 import { getAudioExtractor } from '@/lib/integrations/audio-extractor';
 import { getTranscriptionProvider } from '@/lib/ai/transcription';
 import type { TranscriptResult } from '@/lib/ai/provider';
@@ -122,7 +123,7 @@ export async function importYoutubeVideoAction(
   await supabase.from('projects').update({ status: 'processing' }).eq('id', parsed.data.projectId);
 
   try {
-    const transcript = await fetchYoutubeTranscript(videoId, parsed.data.language);
+    const transcript = await fetchYoutubeTranscriptWithFallback(videoId, parsed.data.language);
 
     const saved = await saveTranscript(supabase, {
       projectId: parsed.data.projectId,

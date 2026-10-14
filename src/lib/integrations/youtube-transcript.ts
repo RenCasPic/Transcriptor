@@ -118,7 +118,7 @@ function selectCaptionTrack(tracks: CaptionTrack[], preferredLanguage: string): 
   return manual.find(matchesLang) ?? manual[0] ?? tracks.find(matchesLang) ?? tracks[0] ?? null;
 }
 
-interface TimedTextEvent {
+export interface TimedTextEvent {
   tStartMs: number;
   dDurationMs?: number;
   segs?: Array<{ utf8?: string }>;
@@ -136,6 +136,30 @@ export interface YoutubeTranscriptResult {
   title: string;
   fullText: string;
   segments: YoutubeTranscriptSegment[];
+}
+
+/** Convierte los eventos de un archivo de subtítulos `json3` de YouTube en segmentos de transcripción. */
+export function timedTextEventsToSegments(events: TimedTextEvent[]): YoutubeTranscriptSegment[] {
+  const segments: YoutubeTranscriptSegment[] = [];
+
+  for (const event of events) {
+    const text = (event.segs ?? [])
+      .map((seg) => seg.utf8 ?? '')
+      .join('')
+      .replace(/\n/g, ' ')
+      .trim();
+    if (!text) continue;
+
+    segments.push({
+      index: segments.length,
+      speaker: null,
+      startSeconds: (event.tStartMs ?? 0) / 1000,
+      endSeconds: ((event.tStartMs ?? 0) + (event.dDurationMs ?? 0)) / 1000,
+      text,
+    });
+  }
+
+  return segments;
 }
 
 const BROWSER_USER_AGENT =
@@ -180,24 +204,7 @@ export async function fetchYoutubeTranscript(
   } catch {
     throw new Error('TRANSCRIPT_FETCH_PARSE_ERROR');
   }
-  const segments: YoutubeTranscriptSegment[] = [];
-
-  for (const event of data.events ?? []) {
-    const text = (event.segs ?? [])
-      .map((seg) => seg.utf8 ?? '')
-      .join('')
-      .replace(/\n/g, ' ')
-      .trim();
-    if (!text) continue;
-
-    segments.push({
-      index: segments.length,
-      speaker: null,
-      startSeconds: event.tStartMs / 1000,
-      endSeconds: (event.tStartMs + (event.dDurationMs ?? 0)) / 1000,
-      text,
-    });
-  }
+  const segments = timedTextEventsToSegments(data.events ?? []);
 
   if (segments.length === 0) {
     throw new Error('EMPTY_TRANSCRIPT');
