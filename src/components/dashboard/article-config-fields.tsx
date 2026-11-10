@@ -1,5 +1,5 @@
 import type { Control, FieldErrors, UseFormRegister } from 'react-hook-form';
-import { Controller } from 'react-hook-form';
+import { Controller, useWatch } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -39,6 +39,7 @@ export function ArticleConfigFields({
   const t = useDictionary();
   const locale = useLocale();
   const domainLabels = getDomainLabels(locale);
+  const contentType = useWatch({ control, name: 'contentType' });
 
   return (
     <div className="grid gap-3 sm:grid-cols-2">
@@ -62,6 +63,7 @@ export function ArticleConfigFields({
             </Select>
           )}
         />
+        <p className="text-xs text-muted-foreground">{t.projects.new.contentTypeHints[contentType]}</p>
       </div>
 
       <div className="space-y-1.5">

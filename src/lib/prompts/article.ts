@@ -1,4 +1,5 @@
 import { COMMON_RULES, toneInstruction } from './rules';
+import { contentTypeBlueprint, contentTypeInstructions, faqInstruction } from './content-types';
 import type { GenerateArticleInput } from '@/lib/ai/provider';
 import type { ExtractedNote, ArticleOutline } from '@/lib/validations/article';
 
@@ -29,17 +30,6 @@ condensa lo accesorio y las repeticiones. NUNCA inventes datos, ejemplos ni afir
 la extensión, y NUNCA elimines una idea sustantiva de la fuente para acortar.`;
 }
 
-const CONTENT_TYPE_GUIDANCE: Record<string, string> = {
-  tutorial: 'Estructura el contenido como pasos secuenciales, numerados cuando sea posible.',
-  guide: 'Organiza el contenido en secciones temáticas que guíen al lector de lo general a lo específico.',
-  list: 'Organiza el contenido como una lista de elementos claramente diferenciados con su propio encabezado.',
-  interview: 'Conserva la voz y las afirmaciones de cada persona entrevistada, atribuyéndolas correctamente.',
-  summary: 'Prioriza la síntesis de los puntos más importantes sin perder matices relevantes.',
-  case_study: 'Estructura el contenido como contexto, problema, solución aplicada y resultados obtenidos.',
-  opinion: 'Deja clara la perspectiva expuesta en la transcripción sin presentarla como consenso general.',
-  qa: 'Estructura el contenido como preguntas y respuestas claramente diferenciadas.',
-};
-
 /** Prompt principal para redactar el artículo completo a partir de la transcripción. */
 export function buildArticlePrompt(input: GenerateArticleInput): string {
   const { project, transcript } = input;
@@ -65,7 +55,8 @@ Lo ÚNICO que se elimina: saludos y despedidas, muletillas y titubeos, digresion
 tema, y repeticiones literales. NO elimines una idea, un ejemplo o un dato solo porque el artículo
 quedaría más corto.
 
-Tipo de contenido: ${project.contentType}. ${CONTENT_TYPE_GUIDANCE[project.contentType] ?? ''}
+${contentTypeInstructions(project.contentType)}
+Estas instrucciones de organización y formato del tipo de contenido tienen prioridad sobre las pautas generales de abajo sobre listas y encabezados.
 Audiencia: ${project.audience ?? 'general'}
 ${toneInstruction(project.tone)}
 Objetivo del artículo: ${project.objective ?? 'informar de manera clara y útil, aprovechando todo el contenido de la conversación'}
@@ -85,8 +76,7 @@ Genera:
   quote para reproducir una frase textual relevante del orador. Cada bloque lleva sourceSegmentIds:
   la lista de etiquetas de segmento (p. ej. "s0", "s12") que respaldan ese bloque; copia la etiqueta
   EXACTA que aparece entre corchetes al inicio de cada línea de la transcripción, no inventes etiquetas.
-- faq: 3-6 preguntas frecuentes derivadas del contenido, respondidas con la información de la
-  transcripción, cada una con sourceSegmentIds (mismo criterio).
+${faqInstruction(project.contentType, 'transcripción')} Cada una con sourceSegmentIds (mismo criterio).
 - seo: título SEO, slug, meta description, palabra clave principal y palabras clave secundarias.
 - warnings: cualquier afirmación (cifra, nombre, fecha) que no esté completamente respaldada por la
   fuente, indicando el id del bloque afectado y un mensaje explicando la incertidumbre.
@@ -95,8 +85,21 @@ Transcripción (cada línea empieza con su etiqueta de segmento entre corchetes;
 ${transcript.segments.map((s) => `[s${s.index}] ${s.speaker ? `${s.speaker}: ` : ''}${s.text}`).join('\n')}`;
 }
 
-function projectContext(project: GenerateArticleInput['project']): string {
-  return `Tipo de contenido: ${project.contentType}. ${CONTENT_TYPE_GUIDANCE[project.contentType] ?? ''}
+/** Qué parte de las instrucciones del tipo de contenido se inyecta según la etapa. */
+type TypeDetail = 'structure' | 'section' | 'meta';
+
+function projectContext(project: GenerateArticleInput['project'], detail: TypeDetail): string {
+  const blueprint = contentTypeBlueprint(project.contentType);
+  const typeLines =
+    detail === 'structure'
+      ? `${blueprint.structure}
+${blueprint.outline}`
+      : detail === 'section'
+        ? `${blueprint.format}
+${blueprint.section}`
+        : blueprint.format;
+  return `Tipo de contenido: ${project.contentType}.
+${typeLines}
 Audiencia: ${project.audience ?? 'general'}
 ${toneInstruction(project.tone)}
 Objetivo del artículo: ${project.objective ?? 'informar de manera clara y útil, aprovechando todo el contenido de la conversación'}
@@ -120,16 +123,16 @@ export function buildOutlinePrompt(input: GenerateArticleInput, notes: Extracted
   return `Tienes ${notes.length} NOTAS numeradas extraídas de una conversación (charla/podcast/entrevista),
 en orden cronológico. Diseña el ESQUELETO de un artículo editorial que las desarrolle TODAS.
 
-${projectContext(project)}
+${projectContext(project, 'structure')}
 ${lengthGuidance(project.targetReadingMinutes)}
 Título provisional del usuario (puedes mejorarlo): ${project.provisionalTitle ?? 'ninguno'}
 
 Devuelve un JSON { "title": string, "sections": [{ "heading": string, "noteRefs": number[] }] }:
-- Entre ${Math.max(3, suggested - 2)} y ${suggested + 4} secciones temáticas, en un orden que fluya para el lector.
+- Entre ${Math.max(3, suggested - 2)} y ${suggested + 4} secciones temáticas, en un orden que fluya para el lector (si las instrucciones del tipo de contenido piden otra organización o un número distinto de secciones, siguen esas).
 - "noteRefs": los NÚMEROS de las notas que cubre esa sección. CADA nota (1..${notes.length}) debe estar
   asignada exactamente a una sección; ninguna puede quedar sin asignar. Está bien que una nota de
   contexto aparezca en la sección introductoria.
-- Los headings deben ser descriptivos y específicos del contenido, no genéricos.
+- Los headings deben ser descriptivos y específicos del contenido, no genéricos (salvo que el tipo de contenido pida nombres fijos de sección, numeración o formato de pregunta).
 
 NOTAS:
 ${numberedNotes(notes)}`;
@@ -156,13 +159,13 @@ export function buildSectionPrompt(
 
   return `Escribe SOLO la sección "${heading}" de un artículo editorial (sección ${position.index + 1} de ${position.total}).
 
-${projectContext(project)}
+${projectContext(project, 'section')}
 ${project.callToAction && isClose ? `Cierra la sección integrando esta llamada a la acción de forma natural: ${project.callToAction}` : ''}
 ${project.primaryKeyword ? `Si encaja de forma natural, usa la expresión "${project.primaryKeyword}".` : ''}
 
 Desarrolla en prosa TODOS los puntos de abajo, sin omitir ninguno: la idea, el porqué, los ejemplos
 concretos, las cifras, los nombres, los matices y las conclusiones. ${lengthLine} ${isIntro ? 'Es la introducción: presenta el tema del artículo antes de entrar en detalle.' : 'No repitas lo ya dicho en secciones anteriores; entra directo al contenido de esta sección.'}
-Usa "list" solo si los puntos enumeran elementos, y "quote" para reproducir una frase textual del orador.
+Usa "list" solo si los puntos enumeran elementos (o si el tipo de contenido lo pide, p. ej. pasos numerados), y "quote" para reproducir una frase textual del orador.
 
 ${COMMON_RULES}
 
@@ -184,16 +187,17 @@ export function buildArticleMetaPrompt(
   return `Un artículo titulado "${outline.title}" desarrolla estas secciones:
 ${outline.sections.map((s) => `- ${s.heading}`).join('\n')}
 
-${projectContext(project)}
+${projectContext(project, 'meta')}
 ${project.primaryKeyword ? `Palabra clave principal: ${project.primaryKeyword}` : ''}
 
 A partir de las NOTAS de abajo (el contenido real de la conversación), devuelve un JSON:
 {
   "excerpt": string,   // 1-2 frases que resuman de qué trata el artículo
-  "faq": [{ "question": string, "answer": string, "noteRefs": number[] }],  // 3-6, respondidas con las notas
+  "faq": [{ "question": string, "answer": string, "noteRefs": number[] }],  // ver la regla de faq abajo
   "seo": { "title": string, "slug": string, "metaDescription": string, "primaryKeyword"?: string, "secondaryKeywords": string[] },
   "warnings": [{ "blockId": null, "type": "unsupported_claim"|"number_verification"|"name_verification"|"date_verification"|"possible_hallucination"|"missing_source", "message": string }]
 }
+${faqInstruction(project.contentType, 'notas')}
 - "noteRefs" de cada FAQ: los números de las notas que respaldan la respuesta.
 - "warnings": cifras, nombres o fechas de las notas que convenga verificar (blockId siempre null aquí).
 
