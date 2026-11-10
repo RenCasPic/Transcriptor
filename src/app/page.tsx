@@ -79,7 +79,7 @@ export default async function LandingPage() {
             </FadeIn>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {STEPS.map((step, index) => (
-                <FadeIn key={step.title} delayMs={index * 100}>
+                <FadeIn key={step.title} delayMs={index * 100} className="h-full">
                   <Card className="h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                     <CardHeader>
                       <div className={`mb-2 flex h-10 w-10 items-center justify-center rounded-lg ${step.color}`}>
@@ -105,8 +105,8 @@ export default async function LandingPage() {
             </FadeIn>
             <div className="grid gap-6 sm:grid-cols-2">
               {BENEFITS.map((benefit, index) => (
-                <FadeIn key={benefit.title} delayMs={index * 100}>
-                  <div className="flex gap-4 rounded-xl border border-primary bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                <FadeIn key={benefit.title} delayMs={index * 100} className="h-full">
+                  <div className="flex h-full gap-4 rounded-xl border border-primary bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                     <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${benefit.color}`}>
                       <benefit.icon className="h-5 w-5" />
                     </div>
