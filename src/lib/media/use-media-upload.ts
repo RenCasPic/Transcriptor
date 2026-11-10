@@ -8,6 +8,7 @@ import {
 } from '@/lib/actions/transcription';
 import { validateMediaUpload, mediaFormatForExtension, extensionOf } from '@/lib/media/formats';
 import { prepareMediaForUpload } from '@/lib/media/extract-audio-client';
+import { PROVIDER_REQUEST_MAX_BYTES } from '@/lib/media/limits';
 import type { ActionResult } from '@/lib/types/domain';
 
 export type UploadPhase =
@@ -91,6 +92,7 @@ export function useMediaUpload() {
       try {
         const prepared = await prepareMediaForUpload(file, {
           skipExtractBelowBytes: clientExtractThresholdBytes,
+          remuxMaxBytes: Math.min(maxUploadBytes, PROVIDER_REQUEST_MAX_BYTES),
           onStage: (stage) => setPhase(stage === 'loading' ? 'loading_converter' : 'extracting'),
           onProgress: (pct) => setProgress(pct),
           signal: abort.signal,

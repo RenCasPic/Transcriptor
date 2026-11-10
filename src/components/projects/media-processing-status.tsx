@@ -121,7 +121,13 @@ export function MediaProcessingStatus({
       </div>
       {!indeterminate && <Progress value={clampedPct} />}
       <p className="text-xs text-muted-foreground">
-        {phase === 'completed' ? mp.completedHint : pollError ? mp.pollRetry : mp.leaveHint}
+        {phase === 'completed'
+          ? mp.completedHint
+          : isClientPhase
+            ? mp.keepOpenHint
+            : pollError
+              ? mp.pollRetry
+              : mp.leaveHint}
       </p>
     </div>
   );

@@ -409,6 +409,8 @@ export const en: Dictionary = {
         completed: 'Processing complete',
         completedHint: 'Opening the editor...',
         leaveHint: 'You can close this page; processing continues. Come back any time to check the status.',
+        keepOpenHint:
+          "Don't close or leave this tab until the conversion finishes: long videos can take a few minutes.",
         pollRetry: 'Retrying to fetch the status...',
         errorTitle: 'Could not process the file',
         errorTip1: 'You can retry by uploading the file again.',

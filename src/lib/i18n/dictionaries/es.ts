@@ -414,6 +414,8 @@ export const es = {
         completedHint: 'Abriendo el editor...',
         leaveHint:
           'Puedes cerrar esta página; el procesamiento continúa. Vuelve cuando quieras para ver el estado.',
+        keepOpenHint:
+          'No cierres ni cambies de pestaña hasta que termine la conversión: con videos largos puede tardar unos minutos.',
         pollRetry: 'Reintentando obtener el estado...',
         errorTitle: 'No se pudo procesar el archivo',
         errorTip1: 'Puedes reintentar subiendo el archivo de nuevo.',

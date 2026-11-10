@@ -41,6 +41,17 @@ const nextConfig = {
       bodySizeLimit: '4mb',
     },
   },
+  // El core de ffmpeg.wasm (~32 MB, /public/ffmpeg) no cambia entre despliegues
+  // salvo al actualizar @ffmpeg/core: con caché larga, el navegador lo descarga
+  // una sola vez en vez de en cada conversión de video.
+  async headers() {
+    return [
+      {
+        source: '/ffmpeg/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=2592000' }],
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {
