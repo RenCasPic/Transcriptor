@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { estimateReadingTimeMinutes } from '@/lib/content/metrics';
+import { decorateArticleHtml } from '@/lib/content/article-presentation';
 import { useDictionary, useLocale } from '@/lib/i18n/dictionary-provider';
 
 /**
@@ -16,10 +17,13 @@ export function EditorPreview({
   wordCount,
   coverImageUrl,
   coverImageAlt,
+  contentType,
   onClose,
 }: {
   title: string;
   html: string;
+  /** Tipo de contenido del proyecto: define la presentación visual del artículo. */
+  contentType?: string | null;
   wordCount: number;
   coverImageUrl?: string | null;
   coverImageAlt?: string | null;
@@ -56,7 +60,11 @@ export function EditorPreview({
           <span className="tabular-nums">{estimateReadingTimeMinutes(wordCount)}</span>{' '}
           {t.common.minutesReading}
         </p>
-        <div className="tiptap-editor mt-8" dangerouslySetInnerHTML={{ __html: html }} />
+        <div
+          className="tiptap-editor article-view mt-8"
+          data-content-type={contentType ?? undefined}
+          dangerouslySetInnerHTML={{ __html: decorateArticleHtml(html, contentType) }}
+        />
       </article>
     </Card>
   );

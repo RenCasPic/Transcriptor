@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export interface PublicDocument {
   id: string;
@@ -12,6 +13,8 @@ export interface PublicDocument {
   metaDescription: string | null;
   coverImageUrl: string | null;
   coverImageAlt: string | null;
+  /** Tipo de contenido del proyecto (define la presentación visual); null si no se pudo leer. */
+  contentType: string | null;
 }
 
 /**
@@ -26,7 +29,7 @@ export async function getPublicDocument(documentId: string): Promise<PublicDocum
   const { data: document } = await supabase
     .from('content_documents')
     .select(
-      'id, title, excerpt, content_html, word_count, reading_time_minutes, updated_at, is_public, cover_image_url, cover_image_alt',
+      'id, project_id, title, excerpt, content_html, word_count, reading_time_minutes, updated_at, is_public, cover_image_url, cover_image_alt',
     )
     .eq('id', documentId)
     .eq('is_public', true)
@@ -52,5 +55,25 @@ export async function getPublicDocument(documentId: string): Promise<PublicDocum
     metaDescription: seo?.meta_description ?? null,
     coverImageUrl: document.cover_image_url,
     coverImageAlt: document.cover_image_alt,
+    contentType: await readProjectContentType(document.project_id),
   };
+}
+
+/**
+ * El proyecto no es público (RLS), así que el tipo de contenido se lee con el
+ * cliente administrativo SOLO después de comprobar que el documento es público,
+ * y se devuelve únicamente ese campo. Si falla, el artículo se muestra sin el
+ * estilo por tipo en vez de romper la página.
+ */
+async function readProjectContentType(projectId: string): Promise<string | null> {
+  try {
+    const { data } = await createAdminClient()
+      .from('projects')
+      .select('content_type')
+      .eq('id', projectId)
+      .maybeSingle();
+    return data?.content_type ?? null;
+  } catch {
+    return null;
+  }
 }

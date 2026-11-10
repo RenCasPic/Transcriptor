@@ -184,6 +184,7 @@ export function EditorShell({
             wordCount={snapshot.wordCount}
             coverImageUrl={cover.url}
             coverImageAlt={cover.alt}
+            contentType={project.content_type}
             onClose={() => setPreviewMode(false)}
           />
         </div>

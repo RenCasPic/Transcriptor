@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Logo } from '@/components/brand/logo';
 import { getPublicDocument } from '@/lib/data/embed';
+import { decorateArticleHtml } from '@/lib/content/article-presentation';
 import { getDictionary } from '@/lib/i18n/get-dictionary';
 
 interface EmbedPageProps {
@@ -54,8 +55,9 @@ export default async function EmbedPage({ params }: EmbedPageProps) {
         </p>
         {document.excerpt && <p className="mt-3 text-lg text-muted-foreground">{document.excerpt}</p>}
         <div
-          className="prose prose-neutral prose-img:my-8 prose-img:w-full prose-img:rounded-xl mt-8 max-w-none"
-          dangerouslySetInnerHTML={{ __html: document.contentHtml }}
+          className="article-view prose prose-neutral prose-img:my-8 prose-img:w-full prose-img:rounded-xl mt-8 max-w-none"
+          data-content-type={document.contentType ?? undefined}
+          dangerouslySetInnerHTML={{ __html: decorateArticleHtml(document.contentHtml, document.contentType) }}
         />
       </article>
       <footer className="border-t py-4">

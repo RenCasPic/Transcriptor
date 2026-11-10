@@ -174,6 +174,198 @@
   color: hsl(var(--muted-foreground));
 }
 
+/* ============================================================
+   PRESENTACIÓN POR TIPO DE ARTÍCULO — solo vista previa y página
+   pública (`.article-view` + data-content-type). No se aplica en el
+   editor para no estorbar al escribir. Los H2 especiales los marca
+   `decorateArticleHtml` (src/lib/content/article-presentation.ts).
+   ============================================================ */
+.article-view {
+  --av-accent: hsl(var(--primary));
+  --av-accent-soft: hsl(var(--primary) / 0.12);
+  --av-serif: ui-serif, Georgia, Cambria, 'Times New Roman', serif;
+}
+.article-view :where(blockquote p)::before,
+.article-view :where(blockquote p)::after {
+  content: none;
+}
+
+/* Tutorial: pasos con insignia numerada y listas numeradas como pasos. */
+.article-view .step-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.article-view .step-badge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  background: var(--av-accent);
+  color: hsl(var(--primary-foreground));
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.article-view[data-content-type='tutorial'] ol {
+  list-style: none;
+  padding-left: 0;
+  counter-reset: av-step;
+}
+.article-view[data-content-type='tutorial'] ol > li {
+  counter-increment: av-step;
+  position: relative;
+  margin: 0.75rem 0;
+  padding: 0.5rem 0.75rem 0.5rem 3rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius) - 2px);
+  background: hsl(var(--card));
+}
+.article-view[data-content-type='tutorial'] ol > li::before {
+  content: counter(av-step);
+  position: absolute;
+  left: 0.75rem;
+  top: 0.55rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 9999px;
+  background: var(--av-accent-soft);
+  color: var(--av-accent);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.article-view[data-content-type='tutorial'] ol > li > p {
+  margin: 0;
+}
+
+/* Lista: número grande junto a cada elemento. */
+.article-view .item-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid hsl(var(--border));
+}
+.article-view .item-num {
+  flex: none;
+  min-width: 2.25rem;
+  color: var(--av-accent);
+  font-size: 1.6em;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* Guía: primer párrafo destacado y listas como checklist. */
+.article-view[data-content-type='guide'] > p:first-of-type {
+  color: hsl(var(--foreground));
+  font-size: 1.2em;
+  line-height: 1.6;
+}
+.article-view[data-content-type='guide'] > ul {
+  list-style: none;
+  padding: 0.75rem 1.25rem;
+  border-radius: calc(var(--radius) - 2px);
+  background: hsl(142 70% 40% / 0.1);
+}
+.article-view[data-content-type='guide'] > ul > li {
+  position: relative;
+  padding-left: 1.5rem;
+}
+.article-view[data-content-type='guide'] > ul > li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: hsl(142 70% 35%);
+  font-weight: 700;
+}
+.dark .article-view[data-content-type='guide'] > ul > li::before {
+  color: hsl(142 60% 55%);
+}
+
+/* Entrevista: citas con borde de color y tipografía serif. */
+.article-view[data-content-type='interview'] blockquote {
+  margin: 1.5rem 0;
+  padding: 0.25rem 0 0.25rem 1.25rem;
+  border-left: 3px solid var(--av-accent);
+  border-radius: 0;
+  font-family: var(--av-serif);
+  font-size: 1.15em;
+  font-style: normal;
+  font-weight: 400;
+}
+
+/* Resumen: la primera lista (puntos clave) como tarjeta destacada. */
+.article-view[data-content-type='summary'] > ul:first-of-type {
+  padding: 1rem 1.25rem 1rem 2.25rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius) - 2px);
+  background: hsl(var(--muted));
+}
+
+/* Caso de estudio: cada sección con su color. */
+.article-view .case-heading {
+  padding: 0.35rem 0.75rem;
+  border-left: 4px solid var(--case-color, var(--av-accent));
+  border-radius: 0;
+  background: color-mix(in srgb, var(--case-color, var(--av-accent)) 10%, transparent);
+}
+.article-view .case-heading[data-case='context'] { --case-color: hsl(var(--primary)); }
+.article-view .case-heading[data-case='problem'] { --case-color: hsl(0 72% 51%); }
+.article-view .case-heading[data-case='solution'] { --case-color: hsl(38 92% 45%); }
+.article-view .case-heading[data-case='results'] { --case-color: hsl(142 70% 38%); }
+.article-view .case-heading[data-case='lessons'] { --case-color: hsl(262 70% 55%); }
+
+/* Opinión: editorial con serif y cita destacada centrada. */
+.article-view[data-content-type='opinion'] > p:first-of-type {
+  color: hsl(var(--foreground));
+  font-family: var(--av-serif);
+  font-size: 1.3em;
+  line-height: 1.55;
+}
+.article-view[data-content-type='opinion'] blockquote {
+  margin: 2rem 0;
+  padding: 1rem 0;
+  border-width: 1px 0;
+  border-style: solid;
+  border-color: hsl(var(--border));
+  border-radius: 0;
+  font-family: var(--av-serif);
+  font-size: 1.35em;
+  font-style: normal;
+  font-weight: 400;
+  text-align: center;
+}
+
+/* Preguntas y respuestas: cada pregunta con insignia "?". */
+.article-view .qa-question {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid hsl(var(--border));
+}
+.article-view .qa-question::before {
+  content: '?';
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.5rem;
+  background: var(--av-accent-soft);
+  color: var(--av-accent);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
 /* Resalte breve al saltar a una sección desde el índice. */
 @keyframes outline-flash {
   0% {
